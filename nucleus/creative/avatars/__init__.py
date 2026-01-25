@@ -3,64 +3,188 @@ Avatars Subsystem
 =================
 
 3DGS, Neural PBR, SMPL-X, procedural parameters.
+
+Modules:
+- smplx_extractor: SMPL-X body model extraction from images/video
+- gaussian_splatting: 3D Gaussian Splatting representation
+- deformable: Deformable gaussian avatars with skinning
+- neural_pbr: Neural physically-based rendering materials
+- procedural: Procedural avatar parameter generation
+- bus_events: Bus event definitions for avatars subsystem
 """
 
 from __future__ import annotations
-import importlib.util
-import sys
-from pathlib import Path
 
-_cache_dir = Path(__file__).parent / "__pycache__"
-
-def _load_from_pyc(name: str):
-    """Load a module from its .pyc file."""
-    pyc_pattern = f"{name}.cpython-*.pyc"
-    pyc_files = list(_cache_dir.glob(pyc_pattern))
-    if not pyc_files:
-        return None
-
-    pyc_path = pyc_files[0]
-    module_name = f"nucleus.creative.avatars.{name}"
-
-    spec = importlib.util.spec_from_file_location(module_name, pyc_path)
-    if spec and spec.loader:
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = module
-        try:
-            spec.loader.exec_module(module)
-            return module
-        except Exception:
-            del sys.modules[module_name]
-            return None
-    return None
-
-# Load submodules
-smplx_extractor = _load_from_pyc("smplx_extractor")
-gaussian_splatting = _load_from_pyc("gaussian_splatting")
-deformable = _load_from_pyc("deformable")
-neural_pbr = _load_from_pyc("neural_pbr")
-procedural = _load_from_pyc("procedural")
-bus_events = _load_from_pyc("bus_events")
+# Import submodules
+from . import smplx_extractor
+from . import gaussian_splatting
+from . import deformable
+from . import neural_pbr
+from . import procedural
+from . import bus_events
 
 # Export from smplx_extractor
-if smplx_extractor:
-    SMPLXParams = getattr(smplx_extractor, "SMPLXParams", None)
-    SMPLXExtractor = getattr(smplx_extractor, "SMPLXExtractor", None)
+from .smplx_extractor import (
+    SMPLXParams,
+    SMPLXExtractor,
+    ExtractionConfig,
+    ExtractionResult,
+    BodyPart,
+    HandJoint,
+    create_t_pose,
+    create_a_pose,
+    axis_angle_to_rotation_matrix,
+    rotation_matrix_to_axis_angle,
+)
 
 # Export from gaussian_splatting
-if gaussian_splatting:
-    Gaussian3D = getattr(gaussian_splatting, "Gaussian3D", None)
-    GaussianSplatCloud = getattr(gaussian_splatting, "GaussianSplatCloud", None)
-    GaussianCloudOperations = getattr(gaussian_splatting, "GaussianCloudOperations", None)
+from .gaussian_splatting import (
+    Gaussian3D,
+    GaussianSplatCloud,
+    GaussianCloudOperations,
+    SHDegree,
+)
 
 # Export from deformable
-if deformable:
-    DeformableGaussians = getattr(deformable, "DeformableGaussians", None)
-    DeformationResult = getattr(deformable, "DeformationResult", None)
+from .deformable import (
+    DeformableGaussians,
+    DeformationResult,
+    DeformationType,
+    BindingType,
+    SkinningWeights,
+    DeformableGaussiansConfig,
+)
+
+# Export from neural_pbr
+from .neural_pbr import (
+    NeuralPBRMaterial,
+    MaterialProperties,
+    MaterialType,
+    TextureType,
+    PBRTexture,
+    NeuralMaterialEncoder,
+    create_skin_material,
+    create_hair_material,
+    create_cloth_material,
+)
+
+# Export from procedural
+from .procedural import (
+    ProceduralAvatarGenerator,
+    ProceduralAvatarParams,
+    ProceduralBodyParams,
+    ProceduralFaceParams,
+    ProceduralClothingParams,
+    ProceduralHairParams,
+    AvatarStyle,
+    Gender,
+    BodyType,
+    FaceType,
+    ClothingType,
+    HairStyle,
+    generate_random_avatar,
+    generate_avatar_from_description,
+)
+
+# Export from bus_events
+from .bus_events import (
+    AvatarBusEvent,
+    AvatarEventType,
+    AvatarBusEmitter,
+    AVATAR_TOPICS,
+    create_extraction_started_event,
+    create_extraction_progress_event,
+    create_extraction_completed_event,
+    create_extraction_failed_event,
+    create_gaussian_cloud_event,
+    create_deformation_started_event,
+    create_deformation_completed_event,
+    create_material_event,
+    create_procedural_started_event,
+    create_procedural_completed_event,
+    create_render_completed_event,
+    get_emitter,
+    emit_event,
+)
 
 __all__ = [
-    "SMPLXParams", "SMPLXExtractor",
-    "Gaussian3D", "GaussianSplatCloud", "GaussianCloudOperations",
-    "DeformableGaussians", "DeformationResult",
-    "smplx_extractor", "gaussian_splatting", "deformable", "neural_pbr", "procedural",
+    # Submodules
+    "smplx_extractor",
+    "gaussian_splatting",
+    "deformable",
+    "neural_pbr",
+    "procedural",
+    "bus_events",
+
+    # SMPL-X
+    "SMPLXParams",
+    "SMPLXExtractor",
+    "ExtractionConfig",
+    "ExtractionResult",
+    "BodyPart",
+    "HandJoint",
+    "create_t_pose",
+    "create_a_pose",
+    "axis_angle_to_rotation_matrix",
+    "rotation_matrix_to_axis_angle",
+
+    # Gaussian Splatting
+    "Gaussian3D",
+    "GaussianSplatCloud",
+    "GaussianCloudOperations",
+    "SHDegree",
+
+    # Deformable
+    "DeformableGaussians",
+    "DeformationResult",
+    "DeformationType",
+    "BindingType",
+    "SkinningWeights",
+    "DeformableGaussiansConfig",
+
+    # Neural PBR
+    "NeuralPBRMaterial",
+    "MaterialProperties",
+    "MaterialType",
+    "TextureType",
+    "PBRTexture",
+    "NeuralMaterialEncoder",
+    "create_skin_material",
+    "create_hair_material",
+    "create_cloth_material",
+
+    # Procedural
+    "ProceduralAvatarGenerator",
+    "ProceduralAvatarParams",
+    "ProceduralBodyParams",
+    "ProceduralFaceParams",
+    "ProceduralClothingParams",
+    "ProceduralHairParams",
+    "AvatarStyle",
+    "Gender",
+    "BodyType",
+    "FaceType",
+    "ClothingType",
+    "HairStyle",
+    "generate_random_avatar",
+    "generate_avatar_from_description",
+
+    # Bus Events
+    "AvatarBusEvent",
+    "AvatarEventType",
+    "AvatarBusEmitter",
+    "AVATAR_TOPICS",
+    "create_extraction_started_event",
+    "create_extraction_progress_event",
+    "create_extraction_completed_event",
+    "create_extraction_failed_event",
+    "create_gaussian_cloud_event",
+    "create_deformation_started_event",
+    "create_deformation_completed_event",
+    "create_material_event",
+    "create_procedural_started_event",
+    "create_procedural_completed_event",
+    "create_render_completed_event",
+    "get_emitter",
+    "emit_event",
 ]

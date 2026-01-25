@@ -1011,7 +1011,7 @@ class OmegaHeartMonitor:
         
         # Agent categories with glyphs
         CATS = {
-            "models": ("🧠", ["claude", "codex", "gemini", "chatgpt", "qwen", "claude-opus", "claude-codex", "claude-reviewer", "claude-hygiene"]),
+            "models": ("🧠", ["claude", "codex", "gemini", "glm", "chatgpt", "qwen", "claude-opus", "claude-codex", "claude-reviewer", "claude-hygiene"]),
             "infrastructure": ("⚙", ["omega", "omega_guardian", "bus-mirror", "bus-mirror-reverse", "world-router"]),
             "qa": ("✓", ["qa-live-checker", "smoketest", "ui-benchmark"]),
             "dialogos": ("💬", ["dialogosd", "dialogos-indexer", "dialogos-search"]),
@@ -1518,7 +1518,7 @@ def check_bootstrap_compliance() -> dict:
     import shutil
     from pathlib import Path
     
-    wrappers = ["bus-claude", "bus-codex", "bus-gemini", "bus-qwen"]
+    wrappers = ["bus-claude", "bus-codex", "bus-gemini", "bus-qwen", "bus-glm"]
     tools_dir = Path(__file__).parent
     
     status = {"compliant": 0, "missing": 0, "agents": {}}
@@ -1557,7 +1557,7 @@ AGENT_TAXONOMY = {
     "models": {
         "glyph": "🧠",
         "ring": 1,
-        "agents": ["claude", "codex", "gemini", "chatgpt", "qwen", "claude-opus", "claude-codex", "claude-reviewer", "claude-hygiene"],
+        "agents": ["claude", "codex", "gemini", "glm", "chatgpt", "qwen", "claude-opus", "claude-codex", "claude-reviewer", "claude-hygiene"],
         "color": "magenta",
     },
     # Ring 2 - QA and Verification
@@ -1624,4 +1624,3 @@ def categorize_agent(actor: str) -> tuple:
         if actor in meta["agents"]:
             return (cat, meta["glyph"], meta["ring"], meta["color"])
     return ("unknown", "?", 3, "dim")
-

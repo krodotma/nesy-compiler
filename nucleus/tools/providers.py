@@ -70,7 +70,7 @@ class GeminiProvider(BaseLLMProvider):
     def __init__(self, model_name: str = "gemini-2.0-flash-thinking-exp"):
         super().__init__(model_name)
         self.token = load_auth_token("gemini")
-        self.api_key = os.getenv("GOOGLE_API_KEY")
+        self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
     @property
     def provider_id(self) -> str:

@@ -37,11 +37,34 @@ def _load_from_pyc(name: str):
             return None
     return None
 
-# Try to load submodules from cache
-cgp = _load_from_pyc("cgp")
-eggp = _load_from_pyc("eggp")
-parser = _load_from_pyc("parser")
-metagrammar = _load_from_pyc("metagrammar")
+# Try to load submodules from cache, fall back to source
+def _load_module(name: str):
+    """Load a module from cache or source."""
+    # Try bytecode cache first
+    module = _load_from_pyc(name)
+    if module:
+        return module
+
+    # Fall back to source import
+    source_path = Path(__file__).parent / f"{name}.py"
+    if source_path.exists():
+        module_name = f"nucleus.creative.grammars.{name}"
+        spec = importlib.util.spec_from_file_location(module_name, source_path)
+        if spec and spec.loader:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            try:
+                spec.loader.exec_module(module)
+                return module
+            except Exception:
+                del sys.modules[module_name]
+                return None
+    return None
+
+cgp = _load_module("cgp")
+eggp = _load_module("eggp")
+parser = _load_module("parser")
+metagrammar = _load_module("metagrammar")
 
 # Export public API from submodules
 if cgp:

@@ -2,72 +2,148 @@
 DiTS Subsystem
 ==============
 
-Diegetic Transition System, narrative constructivity, μ/ν calculus.
+Diegetic Transition System, narrative constructivity, mu/nu calculus.
+
+The DiTS subsystem provides:
+- kernel: Core mu/nu calculus transition system
+- narrative: Episode and narrative construction
+- rheomode: Bohm-inspired flowing language processing
+- omega_bridge: Bridge to higher-level reflexive systems
+- spec_loader: Specification loading and validation
+
+Example usage:
+    >>> from nucleus.creative.dits import DiTSSpec, DiTSKernel, NarrativeEngine
+    >>> spec = DiTSSpec(name="story")
+    >>> kernel = DiTSKernel(spec)
+    >>> engine = NarrativeEngine()
 """
 
 from __future__ import annotations
-import importlib.util
-import sys
-from pathlib import Path
 
-_cache_dir = Path(__file__).parent / "__pycache__"
-
-def _load_from_pyc(name: str):
-    """Load a module from its .pyc file."""
-    pyc_pattern = f"{name}.cpython-*.pyc"
-    pyc_files = list(_cache_dir.glob(pyc_pattern))
-    if not pyc_files:
-        return None
-
-    pyc_path = pyc_files[0]
-    module_name = f"nucleus.creative.dits.{name}"
-
-    spec = importlib.util.spec_from_file_location(module_name, pyc_path)
-    if spec and spec.loader:
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = module
-        try:
-            spec.loader.exec_module(module)
-            return module
-        except Exception:
-            del sys.modules[module_name]
-            return None
-    return None
-
-# Load submodules
-kernel = _load_from_pyc("kernel")
-narrative = _load_from_pyc("narrative")
-rheomode = _load_from_pyc("rheomode")
-omega_bridge = _load_from_pyc("omega_bridge")
-spec_loader = _load_from_pyc("spec_loader")
+# Import submodules
+from . import kernel
+from . import narrative
+from . import rheomode
+from . import omega_bridge
+from . import spec_loader
 
 # Export from kernel
-if kernel:
-    DiTSSpec = getattr(kernel, "DiTSSpec", None)
-    DiTSState = getattr(kernel, "DiTSState", None)
-    DiTSKernel = getattr(kernel, "DiTSKernel", None)
+from .kernel import (
+    DiTSSpec,
+    DiTSState,
+    DiTSKernel,
+    # Additional kernel exports
+    StateId,
+    TransitionLabel,
+    FixpointType,
+    TransitionType,
+    EvaluationMode,
+    EvaluationResult,
+    Formula,
+    AtomicFormula,
+    StateSetFormula,
+    VariableFormula,
+    NotFormula,
+    AndFormula,
+    OrFormula,
+    DiamondFormula,
+    BoxFormula,
+    MuFormula,
+    NuFormula,
+)
 
 # Export from narrative
-if narrative:
-    Episode = getattr(narrative, "Episode", None)
-    Narrative = getattr(narrative, "Narrative", None)
-    NarrativeEngine = getattr(narrative, "NarrativeEngine", None)
+from .narrative import (
+    Episode,
+    Narrative,
+    NarrativeEngine,
+    # Additional narrative exports
+    NarrativeMode,
+    EpisodeType,
+    NarrativeArc,
+    EmotionalTone,
+    NarrativeEdge,
+    GenerationConfig,
+    NarrativeEvent,
+)
 
 # Export from rheomode
-if rheomode:
-    VerbInfo = getattr(rheomode, "VerbInfo", None)
-    RheomodeFlow = getattr(rheomode, "RheomodeFlow", None)
-    RheomodeEngine = getattr(rheomode, "RheomodeEngine", None)
+from .rheomode import (
+    VerbInfo,
+    RheomodeFlow,
+    RheomodeEngine,
+    # Additional rheomode exports
+    VerbMode,
+    FlowState,
+    AttentionLevel,
+    FlowElement,
+    RheomodeConfig,
+)
 
 # Export from omega_bridge
-if omega_bridge:
-    OmegaState = getattr(omega_bridge, "OmegaState", None)
-    OmegaBridge = getattr(omega_bridge, "OmegaBridge", None)
+from .omega_bridge import (
+    OmegaState,
+    OmegaBridge,
+    # Additional omega_bridge exports
+    OmegaLevel,
+    IntegrationMode,
+    CoherenceStatus,
+    OmegaEventType,
+    OmegaEvent,
+    ReflexiveLoop,
+    EmergenceSignal,
+    BridgeConfig,
+)
+
+# Export from spec_loader
+from .spec_loader import (
+    SpecLoader,
+    LoadResult,
+    ValidationResult,
+    # Additional spec_loader exports
+    SpecFormat,
+    ValidationLevel,
+    ValidationError,
+    LoaderConfig,
+    PRESET_SPECS,
+    load_from_dict,
+    load_from_json,
+    load_from_yaml,
+    load_preset,
+    list_presets,
+    validate_spec,
+    load_spec,
+    create_spec,
+)
 
 __all__ = [
+    # Core types
     "DiTSSpec", "DiTSState", "DiTSKernel",
     "Episode", "Narrative", "NarrativeEngine",
     "VerbInfo", "RheomodeFlow", "RheomodeEngine",
     "OmegaState", "OmegaBridge",
+    "SpecLoader", "LoadResult", "ValidationResult",
+    # Submodules
     "kernel", "narrative", "rheomode", "omega_bridge", "spec_loader",
+    # Kernel types
+    "StateId", "TransitionLabel", "FixpointType", "TransitionType",
+    "EvaluationMode", "EvaluationResult",
+    "Formula", "AtomicFormula", "StateSetFormula", "VariableFormula",
+    "NotFormula", "AndFormula", "OrFormula",
+    "DiamondFormula", "BoxFormula", "MuFormula", "NuFormula",
+    # Narrative types
+    "NarrativeMode", "EpisodeType", "NarrativeArc", "EmotionalTone",
+    "NarrativeEdge", "GenerationConfig", "NarrativeEvent",
+    # Rheomode types
+    "VerbMode", "FlowState", "AttentionLevel",
+    "FlowElement", "RheomodeConfig",
+    # Omega bridge types
+    "OmegaLevel", "IntegrationMode", "CoherenceStatus", "OmegaEventType",
+    "OmegaEvent", "ReflexiveLoop", "EmergenceSignal", "BridgeConfig",
+    # Spec loader types
+    "SpecFormat", "ValidationLevel", "ValidationError", "LoaderConfig",
+    "PRESET_SPECS", "load_from_dict", "load_from_json", "load_from_yaml",
+    "load_preset", "list_presets", "validate_spec", "load_spec", "create_spec",
 ]
+
+__version__ = "1.0.0"

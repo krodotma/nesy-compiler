@@ -41,6 +41,39 @@ class HeaderAuditor:
     
     # Legacy JSON pattern for detection
     JSON_PATTERN = r"REPL_HEADER:\s+\{.*\"agent_id\":.*"
+    TABLE_TOKEN = "UNIFORM v2.1"
+    PROTO_TOKEN = "PLURIBUS v1"
+
+    def _parse_table_header(self, text: str) -> Optional[HeaderResult]:
+        """Detect the UNIFORM table-style header."""
+        lines = text.splitlines()
+        header_line = next((line for line in lines if self.TABLE_TOKEN in line), "")
+        proto_line = next((line for line in lines if self.PROTO_TOKEN in line), "")
+        if not header_line or not proto_line:
+            return None
+
+        agent_id = "unknown"
+        parts = [part.strip() for part in header_line.strip("|").split("|")]
+        for part in parts:
+            if part.startswith("agent:"):
+                agent_id = part.split("agent:", 1)[1].strip().split()[0]
+                break
+        if agent_id == "unknown" and len(parts) >= 2:
+            candidate = parts[1].split()[0].strip()
+            if candidate:
+                agent_id = candidate
+
+        return HeaderResult(
+            is_valid=True,
+            agent_id=agent_id,
+            dkin_version="v30",
+            paip_version="v16",
+            visual_bar="",
+            phi_score_str="?",
+            timestamp="",
+            raw_header=header_line,
+            error=None,
+        )
 
     def audit_string(self, text: str) -> HeaderResult:
         """Audit a single string/response."""
@@ -55,7 +88,12 @@ class HeaderAuditor:
                 error="Legacy JSON Header detected (Instructional Contention)"
             )
 
-        # 2. Check for Visual v2
+        # 2. Check for UNIFORM table header (v2.1)
+        table_header = self._parse_table_header(text)
+        if table_header:
+            return table_header
+
+        # 3. Check for Visual v2
         match = re.search(self.V2_PATTERN, text)
         if match:
             agent_id, dkin, paip, bar, score, date = match.groups()
@@ -74,7 +112,7 @@ class HeaderAuditor:
                 error=None
             )
         
-        # 3. Missing
+        # 4. Missing
         return HeaderResult(
             is_valid=False,
             agent_id="", dkin_version="", paip_version="",
