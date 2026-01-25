@@ -29,6 +29,11 @@ from .fiber_bundle import (
     FiberBundleGeometry,
     create_fiber_bundle_geometry,
 )
+from .pipeline import (
+    GeometricPipelineResult,
+    GeometricPipeline,
+    create_geometric_pipeline,
+)
 
 __all__ = [
     # Metalearning
@@ -53,4 +58,9 @@ __all__ = [
     "ParallelTransportResult",
     "FiberBundleGeometry",
     "create_fiber_bundle_geometry",
+
+    # Pipeline
+    "GeometricPipelineResult",
+    "GeometricPipeline",
+    "create_geometric_pipeline",
 ]
