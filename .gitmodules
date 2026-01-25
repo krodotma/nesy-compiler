@@ -1,0 +1,3 @@
+[submodule "membrane/oss-skills/antigravity-awesome-skills"]
+	path = membrane/oss-skills/antigravity-awesome-skills
+	url = https://github.com/sickn33/antigravity-awesome-skills.git
