@@ -16,6 +16,11 @@ from .manager import (
     CMP_DISCOUNT,
     GLOBAL_CMP_FLOOR,
 )
+from .pipeline import (
+    CMPIntegrationResult,
+    CMPPipelineIntegrator,
+    create_cmp_pipeline_integrator,
+)
 
 __all__ = [
     "CladeState",
@@ -26,4 +31,7 @@ __all__ = [
     "PHI",
     "CMP_DISCOUNT",
     "GLOBAL_CMP_FLOOR",
+    "CMPIntegrationResult",
+    "CMPPipelineIntegrator",
+    "create_cmp_pipeline_integrator",
 ]
