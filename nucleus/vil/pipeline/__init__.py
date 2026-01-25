@@ -44,6 +44,14 @@ from .vision_pipeline import (
     VisionPipeline,
     create_vision_pipeline,
 )
+from .metalearning_adapter import (
+    MetalearningMethod,
+    MetalearningTask,
+    MetalearningResult,
+    MetalearningAdapter,
+    create_metalearning_adapter,
+    OMEGA_AVAILABLE,
+)
 
 __all__ = [
     "TheiaVILAdapter",
@@ -72,4 +80,10 @@ __all__ = [
     "PipelineResult",
     "VisionPipeline",
     "create_vision_pipeline",
+    "MetalearningMethod",
+    "MetalearningTask",
+    "MetalearningResult",
+    "MetalearningAdapter",
+    "create_metalearning_adapter",
+    "OMEGA_AVAILABLE",
 ]
