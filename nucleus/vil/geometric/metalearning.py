@@ -125,32 +125,58 @@ class SphericalManifold:
         to_point: np.ndarray,
     ) -> np.ndarray:
         """
-        Parallel transport vector on sphere.
+        Parallel transport vector on n-dimensional sphere.
 
-        Uses Rodrigues' rotation formula.
+        For n-dimensional spheres (n > 3), uses projection-based transport.
+        Formula projects vector onto the tangent plane at to_point.
+
+        For 3D case, falls back to Rodrigues' rotation formula.
         """
         from_p = SphericalManifold.project_to_sphere(from_point)
         to_p = SphericalManifold.project_to_sphere(to_point)
 
-        # Compute rotation axis and angle
-        axis = np.cross(from_p, to_p)
-        axis_norm = np.linalg.norm(axis)
+        # Ensure vector is tangent at from_point
+        vector = vector - np.dot(vector, from_p) * from_p
 
-        if axis_norm < 1e-8:
-            return vector  # Points are same or antipodal
+        # For 3D, use Rodrigues' formula
+        if len(from_p) == 3:
+            # Compute rotation axis and angle
+            axis = np.cross(from_p, to_p)
+            axis_norm = np.linalg.norm(axis)
 
-        axis = axis / axis_norm
-        angle = SphericalManifold.great_circle_distance(from_p, to_p)
+            if axis_norm < 1e-8:
+                return vector  # Points are same or antipodal
 
-        # Rodrigues' formula
-        cos_angle = np.cos(angle)
-        sin_angle = np.sin(angle)
+            axis = axis / axis_norm
+            angle = SphericalManifold.great_circle_distance(from_p, to_p)
 
-        transported = (
-            vector * cos_angle +
-            np.cross(axis, vector) * sin_angle +
-            axis * np.dot(axis, vector) * (1 - cos_angle)
-        )
+            # Rodrigues' formula
+            cos_angle = np.cos(angle)
+            sin_angle = np.sin(angle)
+
+            transported = (
+                vector * cos_angle +
+                np.cross(axis, vector) * sin_angle +
+                axis * np.dot(axis, vector) * (1 - cos_angle)
+            )
+
+            return transported
+
+        # For n-dimensional case: project-based transport
+        # Formula: transport(v, p->q) = v - (v·q)/(1 + p·q) * (p + q)
+        dot_product = np.dot(from_p, to_p)
+
+        if abs(dot_product + 1) < 1e-8:
+            # Antipodal points - no unique transport
+            return vector
+
+        denom = 1 + dot_product
+        transport_component = (np.dot(vector, to_p) / denom) * (from_p + to_p)
+
+        transported = vector - transport_component
+
+        # Ensure result is tangent at to_point
+        transported = transported - np.dot(transported, to_p) * to_p
 
         return transported
 

@@ -79,6 +79,7 @@ from .geometric import (
 )
 
 __all__ = [
+    "__version__",
     # Coordinator
     "VILCoordinator",
     "create_vil_coordinator",

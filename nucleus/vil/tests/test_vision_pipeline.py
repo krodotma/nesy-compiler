@@ -120,7 +120,8 @@ class TestEntropyNormalization:
         # Add different image
         novel_metrics = normalizer.compute_entropy(image_data=sample_images[3])
 
-        assert normalizer.is_novel(novel_metrics) == novel_metrics.novelty_score > 0.5
+        # Fixed: Add parentheses for correct operator precedence
+        assert normalizer.is_novel(novel_metrics) == (novel_metrics.novelty_score > 0.5)
 
 
 # === Quality Tests ===
@@ -142,15 +143,18 @@ class TestQualityAssessment:
         """Test quality threshold filtering."""
         processor = VisionQualityProcessor(quality_threshold=0.8)
 
-        high_quality = False
-        for img in sample_images:
-            quality = processor.assess_quality(img)
-            if quality.overall >= 0.8:
-                high_quality = True
+        # Build batch frames
+        frames = [{"image_data": img, "frame_id": f"frame_{i}"} for i, img in enumerate(sample_images)]
 
-        # At least one should pass or all should fail
+        # Process as batch (which updates stats)
+        results = processor.process_batch(frames)
+
+        # Verify processing completed
         stats = processor.get_stats()
         assert stats["frames_processed"] == len(sample_images)
+
+        # Check that results match input size
+        assert len(results) == len(sample_images)
 
     def test_deduplication(self, sample_images):
         """Test frame deduplication."""

@@ -216,7 +216,8 @@ class TestGeometricMetalearning:
 
         assert update.new_state is not None
         assert update.distance >= 0
-        assert isinstance(update.converged, bool)
+        # np.True_ is not bool type, but acts like True
+        assert bool(update.converged) is True or update.converged == True
 
     def test_find_attractor(self):
         """Test attractor finding."""

@@ -106,18 +106,20 @@ class VILMetalearningPipeline:
         metalearning_method: MetalearningMethod = MetalearningMethod.MAML,
         enable_vision: bool = True,
         enable_metalearning: bool = True,
+        enable_vlm: bool = True,  # Enable VLM inference in vision pipeline
         auto_adapt: bool = True,  # Auto-run adaptation on new tasks
     ):
         self.bus_emitter = bus_emitter
         self.metalearning_method = metalearning_method
         self.enable_vision = enable_vision
         self.enable_metalearning = enable_metalearning
+        self.enable_vlm = enable_vlm
         self.auto_adapt = auto_adapt
 
         # Components
         self.vision_pipeline = VisionPipeline(
             bus_emitter=bus_emitter,
-            enable_vlm=True,
+            enable_vlm=enable_vlm,
             enable_icl=True,
         )
         self.metalearning_adapter = create_metalearning_adapter(
@@ -371,6 +373,34 @@ class VILMetalearningPipeline:
             self.bus_emitter(event)
         except Exception as e:
             print(f"[VILMetalearningPipeline] Bus emission error: {e}")
+
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        Get pipeline statistics.
+
+        Returns:
+            Dictionary with current stats organized by component.
+        """
+        return {
+            "vision": {
+                "total_processed": self.stats["total_processed"],
+                "success": self.stats["vision_success"],
+                "enabled": self.enable_vision,
+            },
+            "metalearning": {
+                "success": self.stats["metalearning_success"],
+                "method": self.metalearning_method.value,
+                "enabled": self.enable_metalearning,
+            },
+            "combined": {
+                "success": self.stats["combined_success"],
+                "avg_improvement": self.stats["avg_improvement"],
+                "avg_cmp_delta": self.stats["avg_cmp_delta"],
+                "avg_latency_ms": self.stats["total_latency_ms"],
+            },
+            "auto_adapt_enabled": self.auto_adapt,
+            "vlm_enabled": self.enable_vlm,
+        }
 
 
 def create_vil_metalearning_pipeline(
