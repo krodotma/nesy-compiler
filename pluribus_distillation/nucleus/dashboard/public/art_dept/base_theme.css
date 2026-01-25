@@ -1,0 +1,17 @@
+:root {
+  --art-primary: #00ffcc;
+  --art-secondary: #ff00ff;
+  --art-bg-opacity: 0.1;
+  --art-font-mono: 'JetBrains Mono', monospace;
+  --art-border-radius: 8px;
+  --art-glitch-offset: 0px;
+}
+
+.art-glitch-hover:hover {
+  text-shadow: 2px 0 var(--art-secondary), -2px 0 var(--art-primary);
+  transform: translate(var(--art-glitch-offset), 0);
+}
+
+body {
+  transition: background-color 2s ease, color 2s ease;
+}

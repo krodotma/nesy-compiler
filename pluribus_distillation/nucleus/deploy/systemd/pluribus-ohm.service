@@ -1,0 +1,27 @@
+[Unit]
+Description=Pluribus OHM (Omega Heart Monitor) Daemon
+After=pluribus-bus-bridge.service pluribus-omega-heartbeat.service
+Wants=pluribus-bus-bridge.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/pluribus
+EnvironmentFile=/pluribus/nucleus/deploy/systemd/pluribus-bus-partition.env
+Environment=PLURIBUS_ROOT=/pluribus
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=PLURIBUS_ACTOR=ohm
+Environment=OHM_REFRESH_S=5
+Environment=OHM_EMIT_S=30
+Environment=OHM_EMIT_TOPIC=ohm.status
+Environment=OHM_EMIT_ALERTS=1
+ExecStart=/usr/bin/python3 /pluribus/nucleus/tools/ohm.py --daemon
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+[Unit]
+Description=Pluribus Omega Dispatcher (rd.tasks.dispatch -> a2a.negotiate.request)
+After=network.target pluribus-omega-guardian.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/pluribus
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=PLURIBUS_ACTOR=omega-dispatcher
+ExecStart=/usr/bin/python3 /pluribus/nucleus/tools/omega_dispatcher.py --emit-on-empty
+Restart=on-failure
+RestartSec=2
+MemoryMax=256M
+MemoryHigh=192M
+MemorySwapMax=64M
+OOMScoreAdjust=300
+
+[Install]
+WantedBy=multi-user.target

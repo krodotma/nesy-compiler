@@ -1,0 +1,1 @@
+{"type": "task_start", "timestamp": 1766775813.904296, "data": {"id": "dkin-restore-01", "domain": "orchestration", "agent": "Antigravity", "input_hash": "restored"}, "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000", "hash": "9676c4f1ff77e8029f0258df907f0bb0ce035d65ebaaf81569ac45402b2195df"}

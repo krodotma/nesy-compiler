@@ -1,0 +1,245 @@
+/**
+ * HeaderOmega_Agency.tsx (Scratch)
+ * ================================
+ * Agency-grade redesign of the Pluribus header.
+ * 
+ * Design Specs:
+ * - Removed hamburger menu button.
+ * - Logo text "emerging from sphere" (z-index interplay).
+ * - "Harder light" shadows and catchlights.
+ * - Suave, crisp typography with chromatic complements.
+ */
+
+import { component$ } from '@builder.io/qwik';
+import { VNCAuthFab } from '../VNCAuthFab';
+import { ThemeModeToggle } from '../ThemeModeToggle';
+import { GestaltPill } from '../GestaltPill';
+import { ShaderToyPluribusLogo } from './ShaderToyPluribusLogo';
+
+interface HeaderOmegaProps {
+  connected: boolean;
+  workerCount: number;
+  mood: 'focused' | 'anxious' | 'calm';
+  entropy: number;
+  providerStatus: Record<string, { available: boolean; error?: string }>;
+  onOpenAuth$: () => void;
+}
+
+export const HeaderOmega = component$<HeaderOmegaProps>((props) => {
+  return (
+    <header class="header-omega-agency">
+      {/* 
+        Glass background layer 
+        - Increased blur for "depth"
+        - Subtle noise texture for "studio" feel
+      */}
+      <div class="header-glass-agency" />
+
+      {/* Content layer */}
+      <div class="header-content-agency">
+        {/* Left section: Logo + Title */}
+        <div class="header-left-agency">
+          
+          {/* Sphere Container - z-index 10 */}
+          <div class="header-logo-wrapper-agency">
+            <ShaderToyPluribusLogo />
+          </div>
+
+          {/* 
+            Premium Logo Text 
+            - Negative margin to overlap sphere
+            - z-index 20 (in front of sphere)
+            - Drop shadow hitting the sphere "behind" it
+          */}
+          <h1 class="header-title-agency">
+            <span class="title-text-agency">Pluribus</span>
+            
+            {/* Catchlight / Hard Light Accent */}
+            <span class="title-catchlight" aria-hidden="true">Pluribus</span>
+            
+            {/* Crisp Stroke Gap */}
+            <span class="title-stroke-gap" aria-hidden="true">Pluribus</span>
+          </h1>
+
+          <div class="header-branding-agency">
+            <span class="header-tagline-agency">
+              AIOS: Evolutionary Code Agency
+            </span>
+            <span class="header-subtitle-agency">
+              Multi-Agent Autonomous Orchestration
+            </span>
+          </div>
+        </div>
+
+        {/* Right section: Status + Controls */}
+        <div class="header-right-agency">
+          <div class="header-stat-agency">
+            <span class="header-stat-label">Workers</span>
+            <span class={`header-stat-value ${props.workerCount > 0 ? 'active' : ''}`}>
+              {props.workerCount}
+            </span>
+          </div>
+
+          <div class="header-stat-agency">
+            <span class={`status-dot ${props.connected ? 'available' : 'unavailable'}`} />
+            <span class="header-stat-value">{props.connected ? 'Live' : 'Offline'}</span>
+          </div>
+
+          <ThemeModeToggle />
+          <GestaltPill mood={props.mood} entropy={props.entropy} />
+          
+          {/* Removed Hamburger Menu Button */}
+          
+          <VNCAuthFab
+            providerStatus={props.providerStatus}
+            onOpen$={props.onOpenAuth$}
+            inline={true}
+          />
+        </div>
+      </div>
+
+      <style>{`
+        .header-omega-agency {
+          position: relative;
+          z-index: 50;
+          height: 80px; /* Taller for agency feel */
+        }
+
+        .header-glass-agency {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            180deg,
+            rgba(10, 10, 15, 0.8) 0%,
+            rgba(20, 20, 30, 0.6) 100%
+          );
+          backdrop-filter: blur(20px) saturate(1.2);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+        }
+
+        .header-content-agency {
+          position: relative;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 2rem;
+          max-width: 1920px;
+          margin: 0 auto;
+        }
+
+        .header-left-agency {
+          display: flex;
+          align-items: center;
+          /* Overlap logic */
+        }
+
+        .header-logo-wrapper-agency {
+          width: 64px;
+          height: 64px;
+          z-index: 10;
+          position: relative;
+          filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.3));
+        }
+
+        /* 
+           AGENCY TYPOGRAPHY 
+           =================
+        */
+        .header-title-agency {
+          position: relative;
+          font-family: 'Inter', sans-serif; /* Assuming Inter or similar sans */
+          font-weight: 900;
+          font-size: 2.5rem;
+          line-height: 1;
+          letter-spacing: -0.04em;
+          margin-left: -18px; /* EMERGE FROM SPHERE */
+          z-index: 20; /* IN FRONT OF SPHERE */
+          
+          /* Hard shadow onto layers behind */
+          filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.6));
+          
+          /* Studio lighting gradient */
+          background: linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #e2e8f0 40%,
+            #94a3b8 100%
+          );
+          -webkit-background-clip: text;
+          color: transparent;
+        }
+
+        /* Catchlight Effect - "Harder Light" */
+        .title-catchlight {
+          position: absolute;
+          inset: 0;
+          z-index: 22;
+          background: linear-gradient(
+            170deg,
+            rgba(255,255,255,0.9) 10%, 
+            rgba(255,255,255,0) 25%,
+            rgba(255,255,255,0) 80%,
+            rgba(255,255,255,0.4) 95%
+          );
+          -webkit-background-clip: text;
+          color: transparent;
+          pointer-events: none;
+          mix-blend-mode: overlay;
+        }
+
+        /* Crisp Stroke Gap */
+        .title-stroke-gap {
+          position: absolute;
+          inset: 0;
+          z-index: 19; /* Behind text, front of sphere */
+          -webkit-text-stroke: 4px rgba(0,0,0,0.8); /* Dark gap */
+          color: transparent;
+          pointer-events: none;
+        }
+
+        .header-branding-agency {
+          margin-left: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          opacity: 0.8;
+          border-left: 1px solid rgba(255,255,255,0.1);
+          padding-left: 1rem;
+        }
+
+        .header-tagline-agency {
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: #38bdf8; /* Cyan-400 */
+          text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        .header-subtitle-agency {
+          font-size: 0.7rem;
+          color: #94a3b8;
+        }
+
+        .header-right-agency {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+        }
+
+        .header-stat-agency {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.8rem;
+          background: rgba(0,0,0,0.3);
+          padding: 0.4rem 0.8rem;
+          border-radius: 99px;
+          border: 1px solid rgba(255,255,255,0.05);
+        }
+      `}</style>
+    </header>
+  );
+});

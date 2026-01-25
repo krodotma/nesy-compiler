@@ -1,0 +1,523 @@
+/* =============================================================================
+   LOADING OVERLAY - Modern Premium Design
+   ============================================================================= */
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1a 100%);
+    backdrop-filter: blur(20px);
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    overflow: visible !important;
+}
+
+/* Animated Orb - Pure CSS */
+.loading-orb {
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    /* overflow: visible is critical for the glow */
+    overflow: visible !important;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Box shadow REMOVED to prevent grey muddiness */
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Chromatic Aurora Halo - DOM Element */
+.loading-glow {
+    position: absolute;
+    inset: -50px;
+    z-index: 0;
+    /* Behind canvas (1) */
+    background: conic-gradient(from 0deg, #00ffff, #0984e3, #6c5ce7, #ff00cc, #00ffff);
+    filter: blur(40px);
+    border-radius: 50%;
+    animation: chromatic-spin 8s linear infinite;
+    opacity: 0;
+    mix-blend-mode: screen;
+    transition: opacity 1.5s ease-out;
+}
+
+.loading-glow.visible {
+    opacity: 0.4;
+}
+
+@keyframes chromatic-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-orb canvas {
+    /* Offset correction: Sphere visual center is slightly off in raw shader */
+    /* 30px right shift + 1.25 scale to cover gaps */
+    transform: translateX(30px) scale(1.25);
+    transform-origin: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    /* On top of halo */
+}
+
+@keyframes orb-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes orb-pulse {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1);
+    }
+
+    50% {
+        transform: scale(1.1) rotate(180deg);
+        filter: brightness(1.2);
+    }
+}
+
+/* Title */
+.loading-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #54a0ff, #ff6b6b, #feca57, #48dbfb);
+    background-size: 300% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: title-shimmer 3s ease-in-out infinite;
+    margin: 0;
+}
+
+@keyframes title-shimmer {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Progress Bar */
+.loading-progress {
+    width: 100%;
+    height: 6px;
+    position: relative;
+}
+
+.loading-progress-track {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: visible;
+    position: relative;
+}
+
+.loading-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #54a0ff, #48dbfb, #ff6b6b);
+    background-size: 200% 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease-out;
+    animation: progress-shimmer 2s linear infinite;
+    box-shadow: 0 0 10px rgba(84, 160, 255, 0.5);
+}
+
+@keyframes progress-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+.loading-progress-glow {
+    position: absolute;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, rgba(84, 160, 255, 0.8) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: left 0.3s ease-out;
+}
+
+/* Stats */
+.loading-stats {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.loading-count {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.loading-percent {
+    color: #54a0ff;
+    font-weight: 600;
+}
+
+/* Activity List */
+.loading-activity {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.activity-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border-left: 2px solid rgba(84, 160, 255, 0.5);
+    font-size: 0.8rem;
+    animation: row-slide-in 0.3s ease-out;
+}
+
+@keyframes row-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.activity-name {
+    color: rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.activity-time {
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    font-size: 0.75rem;
+}
+
+/* =============================================================================
+   ARK STATUS GRID - Deep System Telemetry
+   Phase 36: WebUI Enhancement with ARK/ML/DevOps Modes
+   ============================================================================= */
+
+.ark-status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* Individual Status Box */
+.ark-status-box {
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.ark-status-box:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(84, 160, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.ark-status-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    transition: background 0.3s ease;
+}
+
+/* Gate Status - Inertia/Entelecheia/Homeostasis */
+.ark-status-box.gates::before {
+    background: linear-gradient(180deg, #00ffff, #0984e3);
+}
+
+/* CL Engine Status */
+.ark-status-box.cl-engine::before {
+    background: linear-gradient(180deg, #ff6b6b, #feca57);
+}
+
+/* Neural Gate Status */
+.ark-status-box.neural::before {
+    background: linear-gradient(180deg, #6c5ce7, #a29bfe);
+}
+
+/* Performance Status */
+.ark-status-box.perf::before {
+    background: linear-gradient(180deg, #00b894, #55efc4);
+}
+
+/* Safety Status */
+.ark-status-box.safety::before {
+    background: linear-gradient(180deg, #ff9f43, #ee5a24);
+}
+
+/* Testing Status */
+.ark-status-box.testing::before {
+    background: linear-gradient(180deg, #fd79a8, #e84393);
+}
+
+.ark-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.ark-status-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.ark-status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.ark-status-indicator.active {
+    background: #4ade80;
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+}
+
+.ark-status-indicator.warning {
+    background: #fbbf24;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+}
+
+.ark-status-indicator.error {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.ark-status-indicator.idle {
+    background: rgba(255, 255, 255, 0.3);
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.ark-status-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #54a0ff, #48dbfb);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.ark-status-sublabel {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 0.25rem;
+}
+
+/* Mini Sparkline */
+.ark-status-sparkline {
+    height: 20px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    margin-top: 0.5rem;
+}
+
+.sparkline-bar {
+    flex: 1;
+    background: linear-gradient(180deg, rgba(84, 160, 255, 0.8), rgba(84, 160, 255, 0.2));
+    border-radius: 2px 2px 0 0;
+    transition: height 0.3s ease;
+    min-height: 2px;
+}
+
+/* Triplet DNA Visual */
+.ark-triplet-dna {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.dna-gate {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    position: relative;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.dna-gate-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.dna-gate.inertia .dna-gate-fill {
+    background: linear-gradient(90deg, #00ffff, #0984e3);
+}
+
+.dna-gate.entelecheia .dna-gate-fill {
+    background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+}
+
+.dna-gate.homeostasis .dna-gate-fill {
+    background: linear-gradient(90deg, #00b894, #55efc4);
+}
+
+/* Entropy Vector Visualization */
+.ark-entropy-vec {
+    display: flex;
+    gap: 2px;
+    margin-top: 0.5rem;
+}
+
+.entropy-dim {
+    flex: 1;
+    height: 12px;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+.entropy-dim.h-info { background: rgba(84, 160, 255, var(--dim-opacity, 0.5)); }
+.entropy-dim.h-miss { background: rgba(255, 107, 107, var(--dim-opacity, 0.5)); }
+.entropy-dim.h-conj { background: rgba(254, 202, 87, var(--dim-opacity, 0.5)); }
+.entropy-dim.h-alea { background: rgba(108, 92, 231, var(--dim-opacity, 0.5)); }
+.entropy-dim.h-epis { background: rgba(0, 184, 148, var(--dim-opacity, 0.5)); }
+.entropy-dim.h-struct { background: rgba(253, 121, 168, var(--dim-opacity, 0.5)); }
+.entropy-dim.c-load { background: rgba(99, 110, 114, var(--dim-opacity, 0.5)); }
+.entropy-dim.h-goal { background: rgba(255, 159, 67, var(--dim-opacity, 0.5)); }
+
+/* Mode Badge */
+.ark-mode-badge {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.ark-mode-badge.training {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.ark-mode-badge.inference {
+    background: rgba(84, 160, 255, 0.2);
+    color: #54a0ff;
+    border: 1px solid rgba(84, 160, 255, 0.3);
+}
+
+.ark-mode-badge.verifying {
+    background: rgba(0, 184, 148, 0.2);
+    color: #00b894;
+    border: 1px solid rgba(0, 184, 148, 0.3);
+}
+
+/* Cell Cycle Indicator */
+.ark-cell-cycle {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.cycle-phase {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.cycle-phase.active {
+    background: linear-gradient(90deg, #54a0ff, #48dbfb);
+    animation: cycle-glow 1.5s ease-in-out infinite;
+}
+
+.cycle-phase::after {
+    content: attr(data-phase);
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.5rem;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+}
+
+@keyframes cycle-glow {
+    0%, 100% { box-shadow: 0 0 4px rgba(84, 160, 255, 0.5); }
+    50% { box-shadow: 0 0 12px rgba(84, 160, 255, 0.8); }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .ark-status-grid {
+        grid-template-columns: 1fr;
+    }
+}

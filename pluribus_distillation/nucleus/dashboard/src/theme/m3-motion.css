@@ -1,0 +1,411 @@
+/**
+ * Material Design 3 Motion Token System
+ * ======================================
+ * Provides M3-compliant duration and easing tokens for animations.
+ *
+ * Reference: https://m3.material.io/styles/motion/transitions
+ * Spec: M3 + Glassmorphism 100-Step Enhancement Plan
+ *
+ * Architecture:
+ * - Duration tokens: short (50-200ms), medium (250-400ms), long (450-700ms)
+ * - Easing tokens: standard, emphasized variants
+ * - Utility classes: .transition-* for common patterns
+ *
+ * Usage: Import AFTER material-tokens.css
+ */
+
+/* =============================================================================
+   M3 DURATION TOKENS
+   Time values for animation durations
+   ============================================================================= */
+
+:root {
+  /* ------------------------------------------------------------------
+     Short Durations (50ms - 200ms)
+     For micro-interactions, state changes, ripples
+     ------------------------------------------------------------------ */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+
+  /* ------------------------------------------------------------------
+     Medium Durations (250ms - 400ms)
+     For expanding/collapsing, card enters, standard transitions
+     ------------------------------------------------------------------ */
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+
+  /* ------------------------------------------------------------------
+     Long Durations (450ms - 700ms)
+     For page transitions, large-scale animations
+     ------------------------------------------------------------------ */
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-duration-long3: 550ms;
+  --md-sys-motion-duration-long4: 600ms;
+
+  /* Extra long for special effects */
+  --md-sys-motion-duration-extra-long1: 700ms;
+  --md-sys-motion-duration-extra-long2: 800ms;
+  --md-sys-motion-duration-extra-long3: 900ms;
+  --md-sys-motion-duration-extra-long4: 1000ms;
+}
+
+/* =============================================================================
+   M3 EASING TOKENS
+   Cubic-bezier curves for animation timing
+   ============================================================================= */
+
+:root {
+  /* ------------------------------------------------------------------
+     Standard Easing
+     Default for most UI transitions
+     ------------------------------------------------------------------ */
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+
+  /* ------------------------------------------------------------------
+     Emphasized Easing
+     For more expressive, dramatic transitions
+     ------------------------------------------------------------------ */
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+
+  /* ------------------------------------------------------------------
+     Legacy/Compatibility Easings
+     For fallback and specific use cases
+     ------------------------------------------------------------------ */
+  --md-sys-motion-easing-linear: linear;
+  --md-sys-motion-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --md-sys-motion-easing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --md-sys-motion-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ------------------------------------------------------------------
+     Spring Easing (Custom - for bouncy effects)
+     Not official M3, but useful for playful UIs
+     ------------------------------------------------------------------ */
+  --md-sys-motion-easing-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --md-sys-motion-easing-spring-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* =============================================================================
+   TRANSITION UTILITY CLASSES
+   Ready-to-use transition configurations
+   ============================================================================= */
+
+/* ------------------------------------------------------------------
+   Standard Transitions
+   For general UI state changes
+   ------------------------------------------------------------------ */
+.transition-standard {
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short2);
+}
+
+.transition-standard-enter {
+  transition-timing-function: var(--md-sys-motion-easing-standard-decelerate);
+  transition-duration: var(--md-sys-motion-duration-medium1);
+}
+
+.transition-standard-exit {
+  transition-timing-function: var(--md-sys-motion-easing-standard-accelerate);
+  transition-duration: var(--md-sys-motion-duration-short4);
+}
+
+/* ------------------------------------------------------------------
+   Emphasized Transitions
+   For more dramatic, expressive animations
+   ------------------------------------------------------------------ */
+.transition-emphasized {
+  transition-timing-function: var(--md-sys-motion-easing-emphasized);
+  transition-duration: var(--md-sys-motion-duration-medium2);
+}
+
+.transition-emphasized-enter {
+  transition-timing-function: var(--md-sys-motion-easing-emphasized-decelerate);
+  transition-duration: var(--md-sys-motion-duration-medium4);
+}
+
+.transition-emphasized-exit {
+  transition-timing-function: var(--md-sys-motion-easing-emphasized-accelerate);
+  transition-duration: var(--md-sys-motion-duration-short4);
+}
+
+/* ------------------------------------------------------------------
+   Duration Modifiers
+   Override duration while keeping easing
+   ------------------------------------------------------------------ */
+.duration-instant {
+  transition-duration: var(--md-sys-motion-duration-short1);
+}
+
+.duration-fast {
+  transition-duration: var(--md-sys-motion-duration-short2);
+}
+
+.duration-normal {
+  transition-duration: var(--md-sys-motion-duration-short4);
+}
+
+.duration-slow {
+  transition-duration: var(--md-sys-motion-duration-medium2);
+}
+
+.duration-slower {
+  transition-duration: var(--md-sys-motion-duration-medium4);
+}
+
+.duration-slowest {
+  transition-duration: var(--md-sys-motion-duration-long2);
+}
+
+/* ------------------------------------------------------------------
+   Property-Specific Transitions
+   Common transition configurations
+   ------------------------------------------------------------------ */
+.transition-colors {
+  transition-property: color, background-color, border-color, fill, stroke;
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short2);
+}
+
+.transition-opacity {
+  transition-property: opacity;
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short3);
+}
+
+.transition-transform {
+  transition-property: transform;
+  transition-timing-function: var(--md-sys-motion-easing-emphasized);
+  transition-duration: var(--md-sys-motion-duration-short3);
+}
+
+.transition-shadow {
+  transition-property: box-shadow;
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short3);
+}
+
+.transition-all-standard {
+  transition-property: all;
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short3);
+}
+
+.transition-all-emphasized {
+  transition-property: all;
+  transition-timing-function: var(--md-sys-motion-easing-emphasized);
+  transition-duration: var(--md-sys-motion-duration-medium1);
+}
+
+/* ------------------------------------------------------------------
+   Interactive State Transitions
+   Optimized for hover/focus/active states
+   ------------------------------------------------------------------ */
+.transition-hover {
+  transition-property: background-color, border-color, box-shadow, transform;
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short3);
+}
+
+.transition-focus {
+  transition-property: box-shadow, outline, border-color;
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short2);
+}
+
+.transition-active {
+  transition-property: transform, background-color;
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short1);
+}
+
+/* ------------------------------------------------------------------
+   Component Transitions
+   For specific UI patterns
+   ------------------------------------------------------------------ */
+
+/* Card enter/hover */
+.transition-card {
+  transition-property: background-color, border-color, box-shadow, transform;
+  transition-timing-function: var(--md-sys-motion-easing-emphasized);
+  transition-duration: var(--md-sys-motion-duration-short3);
+}
+
+/* Modal/Dialog open */
+.transition-modal-enter {
+  transition-property: opacity, transform;
+  transition-timing-function: var(--md-sys-motion-easing-emphasized-decelerate);
+  transition-duration: var(--md-sys-motion-duration-medium2);
+}
+
+/* Modal/Dialog close */
+.transition-modal-exit {
+  transition-property: opacity, transform;
+  transition-timing-function: var(--md-sys-motion-easing-emphasized-accelerate);
+  transition-duration: var(--md-sys-motion-duration-short4);
+}
+
+/* Sidebar slide */
+.transition-sidebar {
+  transition-property: transform, opacity;
+  transition-timing-function: var(--md-sys-motion-easing-emphasized);
+  transition-duration: var(--md-sys-motion-duration-medium3);
+}
+
+/* Tab switch */
+.transition-tab {
+  transition-property: background-color, color, border-color;
+  transition-timing-function: var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-duration-short4);
+}
+
+/* List item stagger (use with animation-delay) */
+.transition-list-item {
+  transition-property: opacity, transform;
+  transition-timing-function: var(--md-sys-motion-easing-emphasized-decelerate);
+  transition-duration: var(--md-sys-motion-duration-medium1);
+}
+
+/* ------------------------------------------------------------------
+   Animation Keyframes (Reusable)
+   ------------------------------------------------------------------ */
+
+/* Fade in */
+@keyframes m3-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fade out */
+@keyframes m3-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Scale in */
+@keyframes m3-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scale out */
+@keyframes m3-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+/* Slide up in */
+@keyframes m3-slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide down out */
+@keyframes m3-slide-down-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+/* Slide in from right */
+@keyframes m3-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide out to left */
+@keyframes m3-slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Animation Utility Classes
+   ------------------------------------------------------------------ */
+.animate-fade-in {
+  animation: m3-fade-in var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard-decelerate) forwards;
+}
+
+.animate-fade-out {
+  animation: m3-fade-out var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard-accelerate) forwards;
+}
+
+.animate-scale-in {
+  animation: m3-scale-in var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized-decelerate) forwards;
+}
+
+.animate-scale-out {
+  animation: m3-scale-out var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate) forwards;
+}
+
+.animate-slide-up {
+  animation: m3-slide-up-in var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate) forwards;
+}
+
+.animate-slide-down {
+  animation: m3-slide-down-out var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized-accelerate) forwards;
+}
+
+/* ------------------------------------------------------------------
+   Reduced Motion Support
+   Respect user preferences
+   ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

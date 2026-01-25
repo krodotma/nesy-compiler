@@ -1,0 +1,27 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/2023-07-16/schema.json",
+  "motion": {
+    "duration": {
+      "short1": {"$type": "duration", "$value": "50ms"},
+      "short2": {"$type": "duration", "$value": "100ms"},
+      "short3": {"$type": "duration", "$value": "150ms"},
+      "short4": {"$type": "duration", "$value": "200ms"},
+      "medium1": {"$type": "duration", "$value": "250ms"},
+      "medium2": {"$type": "duration", "$value": "300ms"},
+      "medium3": {"$type": "duration", "$value": "350ms"},
+      "medium4": {"$type": "duration", "$value": "400ms"},
+      "long1": {"$type": "duration", "$value": "450ms"},
+      "long2": {"$type": "duration", "$value": "500ms"},
+      "long3": {"$type": "duration", "$value": "550ms"},
+      "long4": {"$type": "duration", "$value": "600ms"}
+    },
+    "easing": {
+      "standard": {"$type": "cubicBezier", "$value": [0.2, 0, 0, 1]},
+      "standard-decelerate": {"$type": "cubicBezier", "$value": [0, 0, 0, 1]},
+      "standard-accelerate": {"$type": "cubicBezier", "$value": [0.3, 0, 1, 1]},
+      "emphasized": {"$type": "cubicBezier", "$value": [0.2, 0, 0, 1]},
+      "emphasized-decelerate": {"$type": "cubicBezier", "$value": [0.05, 0.7, 0.1, 1]},
+      "emphasized-accelerate": {"$type": "cubicBezier", "$value": [0.3, 0, 0.8, 0.15]}
+    }
+  }
+}

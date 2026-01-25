@@ -1,0 +1,8 @@
+
+/* Simulated CSS 1766282282 */
+/* Based on: A CSS theme with glassmorphism and drifting gradients */
+:root {
+    --art-simulated: 1766282282;
+    --art-primary: #ff58aa;
+}
+body { background: #000; color: #fff; }

@@ -1,0 +1,8 @@
+
+/* Simulated CSS 1766282293 */
+/* Based on: A CSS theme that introduces subtle glitch animations on hover */
+:root {
+    --art-simulated: 1766282293;
+    --art-primary: #ff43aa;
+}
+body { background: #000; color: #fff; }

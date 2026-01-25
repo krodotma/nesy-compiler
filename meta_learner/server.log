@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/kroma/pluribus/meta_learner/server.py", line 5, in <module>
+    learner = MetaLearner()
+  File "/Users/kroma/pluribus/meta_learner/learner.py", line 7, in __init__
+    self.cfg = self._load_cfg(config_path)
+               ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/kroma/pluribus/meta_learner/learner.py", line 16, in _load_cfg
+    return yaml.safe_load(f)
+           ~~~~~~~~~~~~~~^^^
+  File "/Users/kroma/pluribus/venv/lib/python3.14/site-packages/yaml/__init__.py", line 125, in safe_load
+    return load(stream, SafeLoader)
+  File "/Users/kroma/pluribus/venv/lib/python3.14/site-packages/yaml/__init__.py", line 81, in load
+    return loader.get_single_data()
+           ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/kroma/pluribus/venv/lib/python3.14/site-packages/yaml/constructor.py", line 49, in get_single_data
+    node = self.get_single_node()
+  File "/Users/kroma/pluribus/venv/lib/python3.14/site-packages/yaml/composer.py", line 39, in get_single_node
+    if not self.check_event(StreamEndEvent):
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/Users/kroma/pluribus/venv/lib/python3.14/site-packages/yaml/parser.py", line 98, in check_event
+    self.current_event = self.state()
+                         ~~~~~~~~~~^^
+  File "/Users/kroma/pluribus/venv/lib/python3.14/site-packages/yaml/parser.py", line 171, in parse_document_start
+    raise ParserError(None, None,
+    ...<2 lines>...
+            self.peek_token().start_mark)
+yaml.parser.ParserError: expected '<document start>', but found '<block mapping start>'
+  in "meta_learner/config.yaml", line 4, column 1

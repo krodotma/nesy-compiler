@@ -1,0 +1,99 @@
+version: "2.0"
+composition: app-of-apps
+protocol_stack: "DKIN v28 | PAIP v15 | Citizen v1"
+
+# Component Registry - Phase 0 Foundation
+components:
+  # Constitutional Documents (Ring 0)
+  constitutional:
+    - path: DNA.md
+      ring: 0
+      description: "Core constitution - EVO loop, 10 principles"
+    - path: AGENTS.md
+      ring: 0
+      description: "Agent registry, REPL Header Contract v1"
+    - path: CITIZEN.md
+      ring: 0
+      description: "Citizenship tiers, Φ-scoring, handoffs"
+
+  # Protocol Specifications (Ring 0-1)
+  protocols:
+    - path: nucleus/specs/dkin_protocol_v1.md
+      ring: 1
+      description: "DKIN ledger schema, resumption protocol"
+    - path: nucleus/specs/paip_protocol_v1.md
+      ring: 1
+      description: "Clone lifecycle, orphan detection"
+    - path: nucleus/specs/dialogos_protocol_v1.md
+      ring: 1
+      description: "Message schema, provider abstraction"
+    - path: nucleus/specs/semops.json
+      ring: 1
+      description: "Semantic operator registry"
+
+  # Infrastructure Tools (Ring 1)
+  tools:
+    - path: nucleus/tools/agent_bus.py
+      ring: 1
+      description: "NDJSON event bus, emit_bus_event utility"
+    - path: nucleus/tools/tmux_swarm_orchestrator.py
+      ring: 1
+      description: "TMUX-based multi-agent orchestration"
+
+  # Auralux / Avatar Nexus (Ring 2)
+  auralux:
+    - path: nucleus/auralux/pipeline_orchestrator.ts
+      ring: 2
+      description: "Voice pipeline controller (VAD+SSL+Vocoder)"
+    - path: nucleus/auralux/ring_buffer.ts
+      ring: 2
+      description: "Thread-safe SharedArrayBuffer audio queue"
+    - path: nucleus/auralux/vad_service.ts
+      ring: 2
+      description: "Silero VAD service (ONNX)"
+    - path: nucleus/auralux/ssl_service.ts
+      ring: 2
+      description: "HuBERT-soft feature extractor (ONNX)"
+    - path: nucleus/auralux/vocoder_service.ts
+      ring: 2
+      description: "Vocos streaming vocoder (ONNX)"
+
+  # Runtime State (Ring 2-3)
+  runtime:
+    - path: .pluribus/bus/events.ndjson
+      ring: 2
+      description: "Append-only event log"
+    - path: .pluribus/dkin/task_ledger.ndjson
+      ring: 2
+      description: "Lossless task state"
+
+# 5-Agent Swarm Configuration
+agents:
+  - id: claude_architect
+    phi: 0.93
+    ring_access: [0, 1, 2]
+  - id: codex_codemaster
+    phi: 0.88
+    ring_access: [1, 2]
+  - id: gemini_polymath
+    phi: 0.88
+    ring_access: [1, 2]
+  - id: qwen_visionary
+    phi: 0.87
+    ring_access: [2, 3]
+  - id: superworker_d
+    phi: 0.75
+    ring_access: [2, 3]
+
+# Phase Status
+phases:
+  phase_0_foundation:
+    status: complete
+    steps: 1-25
+    pblock: "2025-12-30"
+  phase_1_dialogos:
+    status: complete
+    steps: 26-50
+  phase_2_citizen:
+    status: pending
+    steps: 51-80

@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kroma.live/schemas/metaingest/knowledge.schema.json",
+  "title": "MetaIngest Knowledge Graph Schemas",
+  "description": "Schema definitions for Knowledge Graph API endpoints",
+  "$defs": {
+    "RelationshipType": {
+      "type": "string",
+      "enum": ["RELATED_TO", "EVOLVED_FROM", "DRIFTED_TO", "LEARNED", "PROPOSED"],
+      "description": "Knowledge graph relationship types"
+    },
+    "GraphNode": {
+      "type": "object",
+      "required": ["term"],
+      "properties": {
+        "term": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "definition": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "lineage_id": {
+          "type": "string"
+        },
+        "concept_id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NeighborNode": {
+      "type": "object",
+      "required": ["node", "relationship", "distance"],
+      "properties": {
+        "node": {
+          "$ref": "#/$defs/GraphNode"
+        },
+        "relationship": {
+          "$ref": "#/$defs/RelationshipType"
+        },
+        "distance": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Hop distance from center node"
+        }
+      },
+      "additionalProperties": false
+    },
+    "KnowledgeGraphStats": {
+      "type": "object",
+      "required": ["graph_name", "falkordb_available", "total_nodes", "total_relationships", "fallback_concepts", "fallback_relationships", "state_path"],
+      "properties": {
+        "graph_name": {
+          "type": "string"
+        },
+        "falkordb_available": {
+          "type": "boolean"
+        },
+        "total_nodes": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string", "enum": ["error"] }
+          ]
+        },
+        "total_relationships": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string", "enum": ["error"] }
+          ]
+        },
+        "fallback_concepts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fallback_relationships": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state_path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CypherQueryRequest": {
+      "type": "object",
+      "required": ["query"],
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10000,
+          "description": "Cypher query to execute"
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Query parameters"
+        },
+        "read_only": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, write operations are blocked"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CypherQueryResponse": {
+      "type": "object",
+      "required": ["success", "result_set", "row_count", "execution_time_ms", "query_hash"],
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "result_set": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "execution_time_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "query_hash": {
+          "type": "string",
+          "description": "SHA-256 hash of normalized query"
+        }
+      },
+      "additionalProperties": false
+    },
+    "GetNeighborsRequest": {
+      "type": "object",
+      "properties": {
+        "depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 1,
+          "description": "Traversal depth"
+        },
+        "rel_type": {
+          "$ref": "#/$defs/RelationshipType",
+          "description": "Filter by relationship type"
+        }
+      },
+      "additionalProperties": false
+    },
+    "GetNeighborsResponse": {
+      "type": "object",
+      "required": ["center_node", "depth", "neighbors", "total_count"],
+      "properties": {
+        "center_node": {
+          "type": "string"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "neighbors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/NeighborNode"
+          }
+        },
+        "total_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

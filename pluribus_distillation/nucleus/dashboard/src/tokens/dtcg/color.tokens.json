@@ -1,0 +1,60 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/2023-07-16/schema.json",
+  "color": {
+    "palette": {
+      "primary": {
+        "30": {"$type": "color", "$value": "oklch(0.40 0.14 240)"},
+        "60": {"$type": "color", "$value": "oklch(0.65 0.15 240)"},
+        "90": {"$type": "color", "$value": "oklch(0.92 0.06 240)"}
+      },
+      "secondary": {
+        "30": {"$type": "color", "$value": "oklch(0.40 0.12 300)"},
+        "60": {"$type": "color", "$value": "oklch(0.70 0.12 300)"},
+        "90": {"$type": "color", "$value": "oklch(0.92 0.05 300)"}
+      },
+      "tertiary": {
+        "30": {"$type": "color", "$value": "oklch(0.45 0.14 80)"},
+        "60": {"$type": "color", "$value": "oklch(0.75 0.15 65)"},
+        "90": {"$type": "color", "$value": "oklch(0.94 0.05 50)"}
+      },
+      "neutral": {
+        "10": {"$type": "color", "$value": "oklch(0.10 0.015 240)"},
+        "90": {"$type": "color", "$value": "oklch(0.90 0.004 240)"}
+      },
+      "neutral-variant": {
+        "30": {"$type": "color", "$value": "oklch(0.30 0.025 240)"},
+        "60": {"$type": "color", "$value": "oklch(0.60 0.02 240)"},
+        "80": {"$type": "color", "$value": "oklch(0.80 0.015 240)"}
+      },
+      "error": {
+        "60": {"$type": "color", "$value": "oklch(0.68 0.18 25)"}
+      }
+    },
+    "sys": {
+      "primary": {"$type": "color", "$value": "{color.palette.primary.60}"},
+      "on-primary": {"$type": "color", "$value": "{color.palette.neutral.90}"},
+      "primary-container": {"$type": "color", "$value": "{color.palette.primary.30}"},
+      "on-primary-container": {"$type": "color", "$value": "{color.palette.primary.90}"},
+      "secondary": {"$type": "color", "$value": "{color.palette.secondary.60}"},
+      "on-secondary": {"$type": "color", "$value": "{color.palette.neutral.90}"},
+      "secondary-container": {"$type": "color", "$value": "{color.palette.secondary.30}"},
+      "on-secondary-container": {"$type": "color", "$value": "{color.palette.secondary.90}"},
+      "tertiary": {"$type": "color", "$value": "{color.palette.tertiary.60}"},
+      "on-tertiary": {"$type": "color", "$value": "{color.palette.neutral.90}"},
+      "tertiary-container": {"$type": "color", "$value": "{color.palette.tertiary.30}"},
+      "on-tertiary-container": {"$type": "color", "$value": "{color.palette.tertiary.90}"},
+      "background": {"$type": "color", "$value": "{color.palette.neutral.10}"},
+      "on-background": {"$type": "color", "$value": "{color.palette.neutral.90}"},
+      "surface": {"$type": "color", "$value": "oklch(0.12 0.015 240 / 0.6)"},
+      "on-surface": {"$type": "color", "$value": "{color.palette.neutral.90}"},
+      "surface-variant": {"$type": "color", "$value": "{color.palette.neutral-variant.30}"},
+      "on-surface-variant": {"$type": "color", "$value": "{color.palette.neutral-variant.80}"},
+      "outline": {"$type": "color", "$value": "{color.palette.neutral-variant.60}"},
+      "outline-variant": {"$type": "color", "$value": "{color.palette.neutral-variant.30}"},
+      "error": {"$type": "color", "$value": "{color.palette.error.60}"},
+      "on-error": {"$type": "color", "$value": "{color.palette.neutral.90}"},
+      "inverse-surface": {"$type": "color", "$value": "{color.palette.neutral.90}"},
+      "inverse-on-surface": {"$type": "color", "$value": "{color.palette.neutral.10}"}
+    }
+  }
+}

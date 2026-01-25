@@ -1,0 +1,93 @@
+/*
+  Token Kernel (Alias Layer)
+  ==========================
+  Canonical --sys-* aliases mapped to M3 + glass tokens.
+  This layer lets components target one stable namespace while
+  preserving the existing M3/Deep-Neon sources of truth.
+*/
+
+@layer tokens {
+  :root {
+    /* Color system */
+    --sys-color-primary: var(--md-sys-color-primary);
+    --sys-color-on-primary: var(--md-sys-color-on-primary);
+    --sys-color-primary-container: var(--md-sys-color-primary-container);
+    --sys-color-on-primary-container: var(--md-sys-color-on-primary-container);
+
+    --sys-color-secondary: var(--md-sys-color-secondary);
+    --sys-color-on-secondary: var(--md-sys-color-on-secondary);
+    --sys-color-secondary-container: var(--md-sys-color-secondary-container);
+    --sys-color-on-secondary-container: var(--md-sys-color-on-secondary-container);
+
+    --sys-color-tertiary: var(--md-sys-color-tertiary);
+    --sys-color-on-tertiary: var(--md-sys-color-on-tertiary);
+    --sys-color-tertiary-container: var(--md-sys-color-tertiary-container);
+    --sys-color-on-tertiary-container: var(--md-sys-color-on-tertiary-container);
+
+    --sys-color-background: var(--md-sys-color-background);
+    --sys-color-on-background: var(--md-sys-color-on-background);
+    --sys-color-surface: var(--md-sys-color-surface);
+    --sys-color-on-surface: var(--md-sys-color-on-surface);
+    --sys-color-surface-variant: var(--md-sys-color-surface-variant);
+    --sys-color-on-surface-variant: var(--md-sys-color-on-surface-variant);
+
+    --sys-color-outline: var(--md-sys-color-outline);
+    --sys-color-outline-variant: var(--md-sys-color-outline-variant);
+    --sys-color-error: var(--md-sys-color-error);
+    --sys-color-on-error: var(--md-sys-color-on-error);
+
+    /* Shape system */
+    --sys-shape-corner-none: var(--md-sys-shape-corner-none);
+    --sys-shape-corner-extra-small: var(--md-sys-shape-corner-extra-small);
+    --sys-shape-corner-small: var(--md-sys-shape-corner-small);
+    --sys-shape-corner-medium: var(--md-sys-shape-corner-medium);
+    --sys-shape-corner-large: var(--md-sys-shape-corner-large);
+    --sys-shape-corner-extra-large: var(--md-sys-shape-corner-extra-large);
+    --sys-shape-corner-full: var(--md-sys-shape-corner-full);
+
+    /* Motion system */
+    --sys-motion-duration-short1: var(--md-sys-motion-duration-short1);
+    --sys-motion-duration-short2: var(--md-sys-motion-duration-short2);
+    --sys-motion-duration-short3: var(--md-sys-motion-duration-short3);
+    --sys-motion-duration-short4: var(--md-sys-motion-duration-short4);
+    --sys-motion-duration-medium1: var(--md-sys-motion-duration-medium1);
+    --sys-motion-duration-medium2: var(--md-sys-motion-duration-medium2);
+    --sys-motion-duration-medium3: var(--md-sys-motion-duration-medium3);
+    --sys-motion-duration-medium4: var(--md-sys-motion-duration-medium4);
+    --sys-motion-duration-long1: var(--md-sys-motion-duration-long1);
+    --sys-motion-duration-long2: var(--md-sys-motion-duration-long2);
+    --sys-motion-duration-long3: var(--md-sys-motion-duration-long3);
+    --sys-motion-duration-long4: var(--md-sys-motion-duration-long4);
+
+    --sys-motion-easing-standard: var(--md-sys-motion-easing-standard);
+    --sys-motion-easing-standard-decelerate: var(--md-sys-motion-easing-standard-decelerate);
+    --sys-motion-easing-standard-accelerate: var(--md-sys-motion-easing-standard-accelerate);
+    --sys-motion-easing-emphasized: var(--md-sys-motion-easing-emphasized);
+    --sys-motion-easing-emphasized-decelerate: var(--md-sys-motion-easing-emphasized-decelerate);
+    --sys-motion-easing-emphasized-accelerate: var(--md-sys-motion-easing-emphasized-accelerate);
+
+    /* Typography system */
+    --sys-font-sans: Inter, system-ui, sans-serif;
+    --sys-font-mono: JetBrains Mono, monospace;
+
+    /* Spacing system */
+    --sys-space-2xs: 2px;
+    --sys-space-xs: 4px;
+    --sys-space-sm: 8px;
+    --sys-space-md: 12px;
+    --sys-space-lg: 16px;
+    --sys-space-xl: 24px;
+    --sys-space-2xl: 32px;
+    --sys-space-3xl: 40px;
+    --sys-space-4xl: 48px;
+    --sys-space-5xl: 64px;
+
+    /* Glass aliases */
+    --sys-glass-bg-card: var(--glass-bg-card);
+    --sys-glass-bg-card-elevated: var(--glass-bg-card-elevated);
+    --sys-glass-border: var(--glass-border);
+    --sys-glass-border-hover: var(--glass-border-hover);
+    --sys-glass-blur-md: var(--glass-blur-md);
+    --sys-glass-shadow: var(--glass-shadow);
+  }
+}

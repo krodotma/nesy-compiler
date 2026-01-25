@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "updated_iso": "2025-12-26T00:00:00Z",
+  "checks": [
+    {
+      "id": "omega-heartbeat-buchi",
+      "type": "buchi",
+      "category": "liveness",
+      "topics": ["omega.heartbeat"],
+      "max_silence_s": 30,
+      "level": "warn"
+    },
+    {
+      "id": "bus-activity-buchi",
+      "type": "buchi",
+      "category": "truth",
+      "topics": ["*"],
+      "exclude_actors": ["omega_guardian", "omega"],
+      "max_silence_s": 120,
+      "level": "warn"
+    },
+    {
+      "id": "pending-pairs-streett",
+      "type": "streett_pairs",
+      "category": "correctness",
+      "pairs_spec": "nucleus/specs/omega_pairs.json",
+      "max_age_s": 600,
+      "level": "warn"
+    },
+    {
+      "id": "bus-parse-truth",
+      "type": "truth_parse",
+      "category": "truth",
+      "window_s": 300,
+      "max_count": 0,
+      "level": "warn"
+    },
+    {
+      "id": "missing-reqid-correctness",
+      "type": "correctness_reqid",
+      "category": "correctness",
+      "window_s": 300,
+      "max_count": 0,
+      "level": "warn"
+    },
+    {
+      "id": "error-rate-safety",
+      "type": "safety_errors",
+      "category": "safety",
+      "levels": ["error"],
+      "window_s": 300,
+      "max_count": 5,
+      "level": "warn"
+    },
+    {
+      "id": "resource-safety",
+      "type": "safety_resources",
+      "category": "safety",
+      "min_disk_free_gb": 5,
+      "max_mem_used_pct": 92,
+      "max_load1_per_cpu": 2.0,
+      "level": "warn"
+    },
+    {
+      "id": "verification-report-buchi",
+      "type": "verification_report",
+      "category": "verification",
+      "topic": "pluribus.check.report",
+      "max_silence_s": 86400,
+      "autotrigger_topic": "pluribus.check.trigger",
+      "autotrigger_interval_s": 21600,
+      "level": "warn"
+    },
+    {
+      "id": "rabin-recovery",
+      "type": "rabin",
+      "category": "safety",
+      "window_s": 600,
+      "bad_topics": ["browser.chat.error", "browser.auto_login.blocked_insecure"],
+      "good_topics": ["browser.chat.completed", "omega.health"],
+      "bad_threshold": 1,
+      "level": "warn"
+    },
+    {
+      "id": "evolution-stall",
+      "type": "evolution_stall",
+      "category": "evolution",
+      "max_idle_s": 21600,
+      "max_report": 10,
+      "level": "warn"
+    }
+  ],
+  "settings": {
+    "interval_s": 10,
+    "warmup_s": 30,
+    "bootstrap_bus_tail_bytes": 524288,
+    "task_ledger_max_bootstrap_bytes": 1048576
+  }
+}

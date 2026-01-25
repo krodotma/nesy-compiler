@@ -1,0 +1,45 @@
+{
+    "version": "1.0",
+    "dkin_v": "18",
+    "entry_types": {
+        "task_start": {
+            "description": "Marks the beginning of a unit of work",
+            "required": [
+                "id",
+                "parent_id",
+                "domain",
+                "agent",
+                "input_hash"
+            ]
+        },
+        "task_update": {
+            "description": "Incremental progress update",
+            "required": [
+                "id",
+                "status",
+                "progress_tokens"
+            ]
+        },
+        "task_complete": {
+            "description": "Marks unit of work completion",
+            "required": [
+                "id",
+                "output_hash",
+                "artifacts"
+            ]
+        },
+        "knowledge_injection": {
+            "description": "Formal insertion of new knowledge into the mesh",
+            "required": [
+                "id",
+                "topic",
+                "data_uri",
+                "vector_id"
+            ]
+        }
+    },
+    "constraints": {
+        "append_only": true,
+        "integrity_check": "sha256_chain"
+    }
+}

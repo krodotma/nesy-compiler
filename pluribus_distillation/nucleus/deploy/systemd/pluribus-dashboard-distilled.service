@@ -1,0 +1,16 @@
+[Unit]
+Description=Pluribus Dashboard DISTILLED (Standalone Port 5174)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/pluribus/pluribus_distillation/pluribus/nucleus/dashboard
+ExecStart=/usr/bin/npm run serve
+Environment=PORT=5174
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--max-old-space-size=1536
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kroma.live/schemas/metaingest/drift.schema.json",
+  "title": "MetaIngest Drift Schemas",
+  "description": "Schema definitions for Drift Tracking API endpoints",
+  "$defs": {
+    "DriftDirection": {
+      "type": "string",
+      "enum": ["specialization", "generalization", "shift", "none"],
+      "description": "Direction of semantic drift"
+    },
+    "AlertSeverity": {
+      "type": "string",
+      "enum": ["low", "medium", "high"],
+      "description": "Drift alert severity level"
+    },
+    "DriftSummary": {
+      "type": "object",
+      "required": ["term", "observation_count", "created_at", "updated_at", "drift_magnitude", "drift_direction", "is_drifting"],
+      "properties": {
+        "term": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "observation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "drift_magnitude": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "drift_direction": {
+          "$ref": "#/$defs/DriftDirection"
+        },
+        "is_drifting": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DriftReport": {
+      "type": "object",
+      "required": ["term", "drift_magnitude", "drift_direction", "historical_count", "current_centroid", "historical_centroid", "confidence", "is_significant", "timestamp"],
+      "properties": {
+        "term": {
+          "type": "string"
+        },
+        "drift_magnitude": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "drift_direction": {
+          "$ref": "#/$defs/DriftDirection"
+        },
+        "historical_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "current_centroid": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Vector embedding centroid for current usage"
+        },
+        "historical_centroid": {
+          "type": "array",
+          "items": { "type": "number" },
+          "description": "Vector embedding centroid for historical usage"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "is_significant": {
+          "type": "boolean"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DriftAlert": {
+      "type": "object",
+      "required": ["term", "drift_magnitude", "drift_direction", "confidence", "historical_count", "detected_at", "severity"],
+      "properties": {
+        "term": {
+          "type": "string"
+        },
+        "drift_magnitude": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "drift_direction": {
+          "$ref": "#/$defs/DriftDirection"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "historical_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "detected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "severity": {
+          "$ref": "#/$defs/AlertSeverity"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ListDriftRequest": {
+      "type": "object",
+      "properties": {
+        "significant_only": {
+          "type": "boolean",
+          "default": false,
+          "description": "Only return terms with significant drift"
+        },
+        "sort_by": {
+          "type": "string",
+          "enum": ["drift_magnitude", "updated_at"],
+          "default": "drift_magnitude"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "ListDriftResponse": {
+      "type": "object",
+      "required": ["terms", "summary"],
+      "properties": {
+        "terms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DriftSummary"
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": ["total_terms", "drifting_terms", "stable_terms", "avg_drift"],
+          "properties": {
+            "total_terms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "drifting_terms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stable_terms": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "avg_drift": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "GetDriftAlertsRequest": {
+      "type": "object",
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.15,
+          "description": "Minimum drift magnitude for alerts"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "additionalProperties": false
+    },
+    "GetDriftAlertsResponse": {
+      "type": "object",
+      "required": ["alerts", "total_alerts", "threshold"],
+      "properties": {
+        "alerts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DriftAlert"
+          }
+        },
+        "total_alerts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

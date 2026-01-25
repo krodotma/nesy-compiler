@@ -1,0 +1,1888 @@
+/**
+ * Glassmorphism Token System - Pluribus Deep Neon Integration
+ * ============================================================
+ * Provides design tokens and utility classes for glassmorphism surfaces.
+ *
+ * Reference: Aysenur Turk's Creative Cloud redesign (CodePen)
+ * Spec: M3 + Glassmorphism 100-Step Enhancement Plan
+ *
+ * Architecture:
+ * - Layer 1: Raw glass tokens (--glass-*)
+ * - Layer 2: Semantic glass aliases
+ * - Layer 3: Utility classes (.glass-surface-*)
+ *
+ * Usage: Import AFTER material-tokens.css, BEFORE Tailwind
+ */
+
+/* =============================================================================
+   LAYER 1: GLASSMORPHISM RAW TOKENS
+   Core values for transparency, blur, and light effects
+   ============================================================================= */
+
+:root {
+  /* ------------------------------------------------------------------
+     Glass Backgrounds
+     Varying opacities for different surface hierarchies
+     ------------------------------------------------------------------ */
+  --glass-bg-dark: rgba(17, 17, 27, 0.8);
+  --glass-bg-card: rgba(255, 255, 255, 0.03);
+  --glass-bg-card-elevated: rgba(255, 255, 255, 0.05);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-bg-active: rgba(255, 255, 255, 0.08);
+  --glass-bg-overlay: rgba(17, 17, 27, 0.9);
+
+  /* ------------------------------------------------------------------
+     Glass Borders
+     Subtle white borders that catch light
+     ------------------------------------------------------------------ */
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.15);
+  --glass-border-active: rgba(255, 255, 255, 0.20);
+  --glass-border-focus: rgba(255, 255, 255, 0.25);
+
+  /* ------------------------------------------------------------------
+     Blur Values
+     Backdrop-filter blur intensities
+     ------------------------------------------------------------------ */
+  --glass-blur-xs: 4px;
+  --glass-blur-sm: 8px;
+  --glass-blur-md: 16px;
+  --glass-blur-lg: 24px;
+  --glass-blur-xl: 32px;
+
+  /* ------------------------------------------------------------------
+     Shadows
+     Depth and floating effects
+     ------------------------------------------------------------------ */
+  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+  --glass-shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.5);
+
+  /* Inset highlight for glass edge effect */
+  --glass-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --glass-inset-highlight-strong: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  /* ------------------------------------------------------------------
+     Accents (Deep Neon Palette Integration)
+     Glowing accent colors for highlights and focus states
+     ------------------------------------------------------------------ */
+  --glass-accent-cyan: rgba(0, 255, 255, 0.6);
+  --glass-accent-cyan-subtle: rgba(0, 255, 255, 0.3);
+  --glass-accent-cyan-glow: rgba(0, 255, 255, 0.4);
+
+  --glass-accent-magenta: rgba(255, 0, 255, 0.6);
+  --glass-accent-magenta-subtle: rgba(255, 0, 255, 0.3);
+  --glass-accent-magenta-glow: rgba(255, 0, 255, 0.4);
+
+  --glass-accent-purple: rgba(138, 43, 226, 0.6);
+  --glass-accent-amber: rgba(255, 191, 0, 0.6);
+  --glass-accent-emerald: rgba(16, 185, 129, 0.6);
+
+  /* ------------------------------------------------------------------
+     Border Radius
+     Consistent rounding for glass surfaces
+     ------------------------------------------------------------------ */
+  --glass-radius-sm: 8px;
+  --glass-radius-md: 12px;
+  --glass-radius-lg: 16px;
+  --glass-radius-xl: 24px;
+  --glass-radius-full: 9999px;
+
+  /* ------------------------------------------------------------------
+     Gradient Borders
+     For premium glass surfaces with gradient edges
+     ------------------------------------------------------------------ */
+  --glass-gradient-border: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+}
+
+/* =============================================================================
+   LAYER 2: SEMANTIC GLASS ALIASES
+   Context-specific token mappings
+   ============================================================================= */
+
+:root {
+  /* Surface Levels (analogous to M3 elevation) */
+  --glass-surface-level-0: var(--glass-bg-card);
+  --glass-surface-level-1: var(--glass-bg-card-elevated);
+  --glass-surface-level-2: rgba(255, 255, 255, 0.07);
+  --glass-surface-level-3: rgba(255, 255, 255, 0.09);
+
+  /* Interactive States */
+  --glass-state-hover: var(--glass-bg-hover);
+  --glass-state-active: var(--glass-bg-active);
+  --glass-state-focus: var(--glass-border-focus);
+
+  /* Component-Specific */
+  --glass-card-bg: var(--glass-bg-card);
+  --glass-card-border: var(--glass-border);
+  --glass-card-blur: var(--glass-blur-md);
+  --glass-card-shadow: var(--glass-shadow);
+
+  --glass-modal-bg: var(--glass-bg-overlay);
+  --glass-modal-blur: var(--glass-blur-lg);
+
+  --glass-sidebar-bg: var(--glass-bg-dark);
+  --glass-sidebar-blur: var(--glass-blur-lg);
+
+  --glass-header-bg: var(--glass-bg-dark);
+  --glass-header-blur: var(--glass-blur-md);
+
+  --glass-tooltip-bg: rgba(30, 30, 40, 0.95);
+  --glass-tooltip-blur: var(--glass-blur-sm);
+}
+
+/* =============================================================================
+   LAYER 3: GLASS SURFACE UTILITY CLASSES
+   Ready-to-use glassmorphism surfaces
+   ============================================================================= */
+
+/* ------------------------------------------------------------------
+   Base Glass Surface
+   The foundation for all glass elements
+   ------------------------------------------------------------------ */
+.glass-surface {
+  position: relative;
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(var(--glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--glass-blur-md));
+  border-radius: var(--glass-radius-lg);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+
+  /* Default transition using M3 motion tokens (defined in m3-motion.css) */
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    transform var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-surface:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+}
+
+/* ------------------------------------------------------------------
+   Elevated Glass Surface
+   Higher visual prominence with stronger blur and shadow
+   ------------------------------------------------------------------ */
+.glass-surface-elevated {
+  position: relative;
+  background: var(--glass-bg-card-elevated);
+  backdrop-filter: blur(var(--glass-blur-lg));
+  -webkit-backdrop-filter: blur(var(--glass-blur-lg));
+  border-radius: var(--glass-radius-lg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inset-highlight);
+  overflow: hidden;
+
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-medium1, 250ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)),
+    transform var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-surface-elevated:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-shadow-lg), var(--glass-inset-highlight-strong);
+  transform: translateY(-2px);
+}
+
+/* ------------------------------------------------------------------
+   Overlay Glass Surface
+   For modals, dialogs, and overlays
+   ------------------------------------------------------------------ */
+.glass-surface-overlay {
+  position: relative;
+  background: var(--glass-bg-overlay);
+  backdrop-filter: blur(var(--glass-blur-xl));
+  -webkit-backdrop-filter: blur(var(--glass-blur-xl));
+  border-radius: var(--glass-radius-xl);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-xl), var(--glass-inset-highlight);
+  overflow: hidden;
+
+  transition:
+    opacity var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)),
+    transform var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
+}
+
+/* ------------------------------------------------------------------
+   Interactive Glass Surface
+   For buttons, clickable cards, and interactive elements
+   ------------------------------------------------------------------ */
+.glass-interactive {
+  position: relative;
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(var(--glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--glass-blur-md));
+  border-radius: var(--glass-radius-md);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    transform var(--md-sys-motion-duration-short1, 50ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-interactive:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+.glass-interactive:active {
+  background: var(--glass-bg-active);
+  border-color: var(--glass-border-active);
+  transform: scale(0.98);
+}
+
+.glass-interactive:focus-visible {
+  outline: none;
+  border-color: var(--glass-border-focus);
+  box-shadow:
+    var(--glass-shadow-sm),
+    0 0 0 2px var(--glass-accent-cyan-subtle);
+}
+
+/* ------------------------------------------------------------------
+   Glass Surface Modifiers
+   Additional styling options
+   ------------------------------------------------------------------ */
+
+/* Subtle variant - less prominent */
+.glass-surface-subtle {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Gradient border effect */
+.glass-surface-gradient {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(var(--glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--glass-blur-md));
+  border: 1px solid transparent;
+  border-radius: var(--glass-radius-lg);
+}
+
+.glass-surface-gradient::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: var(--glass-gradient-border);
+  z-index: -1;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  padding: 1px;
+}
+
+/* Glow effect on hover */
+.glass-surface-glow:hover {
+  box-shadow:
+    var(--glass-shadow),
+    0 0 30px -10px var(--glass-accent-cyan-glow);
+}
+
+/* ------------------------------------------------------------------
+   Glass Input Styles
+   For form elements
+   ------------------------------------------------------------------ */
+.glass-input {
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius-md);
+  padding: 0.75rem 1rem;
+  color: inherit;
+
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-input:hover {
+  border-color: var(--glass-border-hover);
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--glass-accent-cyan);
+  box-shadow: 0 0 0 2px var(--glass-accent-cyan-subtle);
+}
+
+.glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ------------------------------------------------------------------
+   Glass Chip/Badge Styles
+   For status indicators and tags
+   ------------------------------------------------------------------ */
+.glass-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-chip:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+}
+
+.glass-chip-accent-cyan {
+  border-color: var(--glass-accent-cyan-subtle);
+  color: var(--glass-accent-cyan);
+}
+
+.glass-chip-accent-magenta {
+  border-color: var(--glass-accent-magenta-subtle);
+  color: var(--glass-accent-magenta);
+}
+
+.glass-chip-accent-purple {
+  border-color: var(--glass-accent-purple);
+  color: var(--glass-accent-purple);
+}
+
+.glass-chip-accent-amber {
+  border-color: var(--glass-accent-amber);
+  color: var(--glass-accent-amber);
+}
+
+.glass-chip-accent-emerald {
+  border-color: var(--glass-accent-emerald);
+  color: var(--glass-accent-emerald);
+}
+
+/* ------------------------------------------------------------------
+   Glass Sidebar/Panel Styles
+   For navigation and side panels
+   ------------------------------------------------------------------ */
+.glass-sidebar {
+  background: var(--glass-sidebar-bg);
+  backdrop-filter: blur(var(--glass-sidebar-blur));
+  -webkit-backdrop-filter: blur(var(--glass-sidebar-blur));
+  border-right: 1px solid var(--glass-border);
+}
+
+.glass-panel {
+  background: var(--glass-bg-dark);
+  backdrop-filter: blur(var(--glass-blur-lg));
+  -webkit-backdrop-filter: blur(var(--glass-blur-lg));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius-lg);
+}
+
+/* ------------------------------------------------------------------
+   Glass Header/Nav Styles
+   For navigation headers
+   ------------------------------------------------------------------ */
+.glass-header {
+  background: var(--glass-header-bg);
+  backdrop-filter: blur(var(--glass-header-blur));
+  -webkit-backdrop-filter: blur(var(--glass-header-blur));
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* ------------------------------------------------------------------
+   Glass Footer Styles
+   For status bar and footer components
+   ------------------------------------------------------------------ */
+.glass-footer {
+  position: relative;
+  background: var(--glass-bg-dark);
+  backdrop-filter: blur(var(--glass-blur-md));
+  -webkit-backdrop-filter: blur(var(--glass-blur-md));
+  border-top: 1px solid var(--glass-border);
+  z-index: 50;
+}
+
+.glass-footer-interactive {
+  cursor: pointer;
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-footer-interactive:hover {
+  background: var(--glass-bg-hover);
+}
+
+/* ------------------------------------------------------------------
+   Glass Section Header Styles
+   For section titles and headers
+   ------------------------------------------------------------------ */
+.glass-section-header {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ------------------------------------------------------------------
+   Glass Text Accent Colors
+   For accent-colored text using glass tokens
+   ------------------------------------------------------------------ */
+.glass-text-cyan {
+  color: var(--glass-accent-cyan);
+}
+
+.glass-text-magenta {
+  color: var(--glass-accent-magenta);
+}
+
+.glass-text-purple {
+  color: var(--glass-accent-purple);
+}
+
+.glass-text-amber {
+  color: var(--glass-accent-amber);
+}
+
+.glass-text-emerald {
+  color: var(--glass-accent-emerald);
+}
+
+.glass-text-muted {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ------------------------------------------------------------------
+   Glass Tooltip Styles
+   For contextual information
+   ------------------------------------------------------------------ */
+.glass-tooltip {
+  background: var(--glass-tooltip-bg);
+  backdrop-filter: blur(var(--glass-tooltip-blur));
+  -webkit-backdrop-filter: blur(var(--glass-tooltip-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  box-shadow: var(--glass-shadow);
+}
+
+/* ------------------------------------------------------------------
+   Elevation Level Classes
+   For M3-style surface elevation mapping
+   ------------------------------------------------------------------ */
+.glass-surface-1 {
+  background: var(--glass-surface-level-0);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+.glass-surface-2 {
+  background: var(--glass-surface-level-1);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-surface-3 {
+  background: var(--glass-surface-level-2);
+  box-shadow: var(--glass-shadow-lg);
+}
+
+.glass-surface-4 {
+  background: var(--glass-surface-level-3);
+  box-shadow: var(--glass-shadow-xl);
+}
+
+/* =============================================================================
+   PHASE 4: MOTION & ANIMATION (Steps 56-70)
+   M3-compliant animations for glass surfaces
+   ============================================================================= */
+
+/* --- 4.1: Page/View Transition Animation (Step 56) --- */
+@keyframes glass-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glass-page-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.glass-page-transition-enter {
+  animation: glass-page-enter var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+}
+
+.glass-page-transition-exit {
+  animation: glass-page-exit var(--md-sys-motion-duration-short4, 200ms) var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15)) forwards;
+}
+
+/* --- 4.2: Card Entrance Animation (Step 57) --- */
+@keyframes glass-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glass-card-enter-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes glass-card-enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Staggered entrance - use CSS variable --stagger for delay */
+.glass-animate-enter {
+  animation: glass-card-enter var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+  animation-delay: calc(var(--stagger, 0) * 50ms);
+  opacity: 0;
+}
+
+.glass-animate-enter-scale {
+  animation: glass-card-enter-scale var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+  animation-delay: calc(var(--stagger, 0) * 50ms);
+  opacity: 0;
+}
+
+.glass-animate-enter-fade {
+  animation: glass-card-enter-fade var(--md-sys-motion-duration-medium1, 250ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) forwards;
+  animation-delay: calc(var(--stagger, 0) * 30ms);
+  opacity: 0;
+}
+
+/* --- 4.3: Hover State Transitions (Step 58) --- */
+.glass-hover-lift {
+  transition:
+    transform var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-hover-lift:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--glass-shadow-lg);
+}
+
+.glass-hover-glow {
+  transition:
+    border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-hover-glow:hover {
+  border-color: var(--glass-accent-cyan-subtle);
+  box-shadow: var(--glass-shadow), 0 0 20px -5px var(--glass-accent-cyan-glow);
+}
+
+.glass-hover-scale {
+  transition: transform var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-hover-scale:hover {
+  transform: scale(1.02);
+}
+
+.glass-hover-scale-subtle:hover {
+  transform: scale(1.01);
+}
+
+/* --- 4.4: Focus State Animations (Step 59) --- */
+.glass-focus-ring {
+  transition:
+    outline var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    outline-offset var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  outline: 2px solid transparent;
+  outline-offset: 0;
+}
+
+.glass-focus-ring:focus-visible {
+  outline: 2px solid var(--glass-accent-cyan);
+  outline-offset: 2px;
+}
+
+.glass-focus-glow:focus-visible {
+  box-shadow: var(--glass-shadow), 0 0 20px -5px var(--glass-accent-cyan-glow);
+  border-color: var(--glass-border-focus);
+}
+
+/* --- 4.5: Loading Skeleton Animation (Step 60) --- */
+@keyframes glass-skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes glass-skeleton-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.glass-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--glass-bg-card) 0%,
+    var(--glass-bg-hover) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    var(--glass-bg-hover) 75%,
+    var(--glass-bg-card) 100%
+  );
+  background-size: 400% 100%;
+  animation: glass-skeleton-shimmer 1.5s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+  border-radius: var(--glass-radius-sm);
+}
+
+.glass-skeleton-pulse {
+  animation: glass-skeleton-pulse 1.5s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+}
+
+/* Skeleton text placeholder */
+.glass-skeleton-text {
+  height: 1em;
+  border-radius: 4px;
+}
+
+.glass-skeleton-text-sm { height: 0.75em; }
+.glass-skeleton-text-lg { height: 1.25em; }
+
+/* --- 4.6: Progress Bar Animation (Step 61) --- */
+@keyframes glass-progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@keyframes glass-progress-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.glass-progress-bar {
+  position: relative;
+  height: 4px;
+  background: var(--glass-bg-card);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.glass-progress-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--glass-accent-cyan),
+    var(--glass-accent-purple),
+    var(--glass-accent-magenta)
+  );
+  background-size: 200% 100%;
+  border-radius: 2px;
+  transition: width var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  animation: glass-progress-gradient-shift 2s linear infinite;
+}
+
+.glass-progress-indeterminate .glass-progress-fill {
+  width: 30%;
+  animation: glass-progress-indeterminate 1.5s var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)) infinite;
+}
+
+/* --- 4.7: Chip Selection Animation (Step 62) --- */
+@keyframes glass-chip-select {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.glass-chip-animated {
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    transform var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-chip-animated:active {
+  animation: glass-chip-select var(--md-sys-motion-duration-short4, 200ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-chip-selected {
+  background: var(--glass-bg-active);
+  border-color: var(--glass-accent-cyan-subtle);
+}
+
+/* --- 4.8: Button Press Feedback (Step 63) --- */
+@keyframes glass-button-press {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+.glass-button-animated {
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    transform var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-button-animated:active {
+  transform: scale(0.98);
+}
+
+.glass-button-animated:hover {
+  box-shadow: var(--glass-shadow), 0 0 12px -3px var(--glass-accent-cyan-glow);
+}
+
+/* --- 4.9: Modal Open/Close Animation (Step 64) --- */
+@keyframes glass-modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes glass-modal-exit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+}
+
+@keyframes glass-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes glass-backdrop-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.glass-modal-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+}
+
+.glass-modal-backdrop-enter {
+  animation: glass-backdrop-enter var(--md-sys-motion-duration-medium1, 250ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) forwards;
+}
+
+.glass-modal-backdrop-exit {
+  animation: glass-backdrop-exit var(--md-sys-motion-duration-short4, 200ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) forwards;
+}
+
+.glass-modal-enter {
+  animation: glass-modal-enter var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+}
+
+.glass-modal-exit {
+  animation: glass-modal-exit var(--md-sys-motion-duration-short4, 200ms) var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15)) forwards;
+}
+
+/* --- 4.10: Sidebar Slide Animation (Step 65) --- */
+@keyframes glass-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes glass-slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes glass-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes glass-slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.glass-slide-enter-left {
+  animation: glass-slide-in-left var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+}
+
+.glass-slide-exit-left {
+  animation: glass-slide-out-left var(--md-sys-motion-duration-short4, 200ms) var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15)) forwards;
+}
+
+.glass-slide-enter-right {
+  animation: glass-slide-in-right var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+}
+
+.glass-slide-exit-right {
+  animation: glass-slide-out-right var(--md-sys-motion-duration-short4, 200ms) var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15)) forwards;
+}
+
+/* --- 4.11: Tab Switch Transition (Step 66) --- */
+@keyframes glass-tab-indicator-slide {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.glass-tab {
+  position: relative;
+  transition:
+    color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--glass-accent-cyan);
+  transform-origin: left;
+  animation: glass-tab-indicator-slide var(--md-sys-motion-duration-short4, 200ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)) forwards;
+}
+
+/* --- 4.12: List Item Entrance (Step 67) --- */
+@keyframes glass-list-item-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.glass-list-item {
+  animation: glass-list-item-enter var(--md-sys-motion-duration-short4, 200ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) forwards;
+  animation-delay: calc(var(--item-index, 0) * 30ms);
+  opacity: 0;
+}
+
+/* Utility classes for list item stagger */
+.glass-list-item[data-index="0"] { --item-index: 0; }
+.glass-list-item[data-index="1"] { --item-index: 1; }
+.glass-list-item[data-index="2"] { --item-index: 2; }
+.glass-list-item[data-index="3"] { --item-index: 3; }
+.glass-list-item[data-index="4"] { --item-index: 4; }
+.glass-list-item[data-index="5"] { --item-index: 5; }
+.glass-list-item[data-index="6"] { --item-index: 6; }
+.glass-list-item[data-index="7"] { --item-index: 7; }
+.glass-list-item[data-index="8"] { --item-index: 8; }
+.glass-list-item[data-index="9"] { --item-index: 9; }
+
+/* --- 4.13: Notification/Toast Animation (Step 68) --- */
+@keyframes glass-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes glass-toast-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
+
+.glass-toast-enter {
+  animation: glass-toast-enter var(--md-sys-motion-duration-medium1, 250ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+}
+
+.glass-toast-exit {
+  animation: glass-toast-exit var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-emphasized-accelerate, cubic-bezier(0.3, 0, 0.8, 0.15)) forwards;
+}
+
+/* --- 4.14: Tooltip Fade Animation (Step 69) --- */
+@keyframes glass-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glass-tooltip-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.glass-tooltip-animated {
+  animation: glass-tooltip-enter var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) forwards;
+}
+
+.glass-tooltip-exit {
+  animation: glass-tooltip-exit var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) forwards;
+}
+
+/* --- 4.15: Scroll-Triggered Reveal (Step 70) --- */
+.glass-reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)),
+    transform var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
+}
+
+.glass-reveal.visible,
+.glass-reveal[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reveal from different directions */
+.glass-reveal-left {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.glass-reveal-right {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.glass-reveal-scale {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.glass-reveal-left.visible,
+.glass-reveal-right.visible,
+.glass-reveal-scale.visible {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+
+/* =============================================================================
+   PHASE 5: GLASS EFFECTS POLISH (Steps 71-85)
+   Advanced glassmorphism visual effects
+   ============================================================================= */
+
+/* --- 5.1: Animated Gradient Border (Step 71) --- */
+/* Note: @property requires browser support, fallback included */
+@property --gradient-angle {
+  syntax: '<angle>';
+  initial-value: 135deg;
+  inherits: false;
+}
+
+@keyframes glass-gradient-rotate {
+  to {
+    --gradient-angle: 495deg; /* 135 + 360 */
+  }
+}
+
+.glass-gradient-border {
+  position: relative;
+  border: none;
+  background-clip: padding-box;
+}
+
+.glass-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    var(--gradient-angle, 135deg),
+    var(--glass-accent-cyan),
+    var(--glass-accent-magenta),
+    var(--glass-accent-purple),
+    var(--glass-accent-cyan)
+  );
+  z-index: -1;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  padding: 1px;
+  animation: glass-gradient-rotate 8s linear infinite;
+}
+
+/* Static gradient border (no animation) for performance */
+.glass-gradient-border-static::before {
+  animation: none;
+}
+
+/* Featured/hero card with stronger gradient */
+.glass-gradient-border-hero::before {
+  padding: 2px;
+  inset: -2px;
+  filter: brightness(1.2);
+}
+
+/* --- 5.2: Chromatic Aberration Effect (Step 72) --- */
+/* Performance note: Use sparingly - CPU intensive */
+@keyframes glass-chromatic-shift {
+  0%, 100% {
+    text-shadow:
+      -1px 0 var(--glass-accent-cyan),
+      1px 0 var(--glass-accent-magenta);
+  }
+  50% {
+    text-shadow:
+      1px 0 var(--glass-accent-cyan),
+      -1px 0 var(--glass-accent-magenta);
+  }
+}
+
+.glass-chromatic:hover {
+  animation: glass-chromatic-shift 0.15s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+/* Subtle chromatic effect for headings */
+.glass-chromatic-subtle {
+  text-shadow:
+    -0.5px 0 rgba(0, 255, 255, 0.3),
+    0.5px 0 rgba(255, 0, 255, 0.3);
+}
+
+/* --- 5.3: Noise Texture Overlay (Step 73) --- */
+/* SVG noise pattern for glass depth - very performant */
+.glass-noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Higher noise intensity variant */
+.glass-noise-strong::after {
+  opacity: 0.06;
+}
+
+/* --- 5.4: Frosted Glass Blur Animation (Step 74) --- */
+/* Note: Animating backdrop-filter is expensive - use sparingly */
+@keyframes glass-frost-breathe {
+  0%, 100% {
+    backdrop-filter: blur(var(--glass-blur-md));
+    -webkit-backdrop-filter: blur(var(--glass-blur-md));
+  }
+  50% {
+    backdrop-filter: blur(calc(var(--glass-blur-md) + 4px));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur-md) + 4px));
+  }
+}
+
+.glass-frost-animate {
+  animation: glass-frost-breathe 4s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+}
+
+/* --- 5.5: Focus/Hover Glow Effect (Step 75) --- */
+@keyframes glass-glow-pulse {
+  0%, 100% {
+    box-shadow: var(--glass-shadow), 0 0 20px -5px var(--glass-accent-cyan-glow);
+  }
+  50% {
+    box-shadow: var(--glass-shadow-lg), 0 0 30px -3px var(--glass-accent-cyan-glow), 0 0 40px -5px var(--glass-accent-magenta-glow);
+  }
+}
+
+.glass-glow-pulse:focus {
+  animation: glass-glow-pulse 2s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+}
+
+/* Static glow variants */
+.glass-glow-cyan {
+  box-shadow: var(--glass-shadow), 0 0 20px -5px var(--glass-accent-cyan-glow);
+}
+
+.glass-glow-magenta {
+  box-shadow: var(--glass-shadow), 0 0 20px -5px var(--glass-accent-magenta-glow);
+}
+
+.glass-glow-purple {
+  box-shadow: var(--glass-shadow), 0 0 20px -5px rgba(138, 43, 226, 0.4);
+}
+
+/* --- 5.6: Reflection/Shine Effect (Step 76) --- */
+.glass-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shine::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 70%
+  );
+  transform: rotate(45deg) translateY(-100%);
+  transition: transform var(--md-sys-motion-duration-long2, 500ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+  pointer-events: none;
+}
+
+.glass-shine:hover::after {
+  transform: rotate(45deg) translateY(100%);
+}
+
+/* Continuous shine animation for featured items */
+@keyframes glass-shine-continuous {
+  0% {
+    transform: rotate(45deg) translateY(-100%);
+  }
+  100% {
+    transform: rotate(45deg) translateY(100%);
+  }
+}
+
+.glass-shine-auto::after {
+  animation: glass-shine-continuous 3s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+  animation-delay: 2s;
+}
+
+/* --- 5.7: Multi-Layer Depth Effect (Step 77) --- */
+.glass-depth-layers {
+  position: relative;
+}
+
+.glass-depth-layers::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: calc(var(--glass-radius-lg) - 4px);
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(var(--glass-blur-sm));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm));
+  opacity: 0.5;
+  z-index: -1;
+}
+
+/* --- 5.8: Error "Crack" Effect (Step 78) --- */
+@keyframes glass-crack-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px) rotate(-0.5deg); }
+  40% { transform: translateX(3px) rotate(0.5deg); }
+  60% { transform: translateX(-2px) rotate(-0.3deg); }
+  80% { transform: translateX(2px) rotate(0.3deg); }
+}
+
+.glass-error {
+  border-color: rgba(255, 71, 87, 0.5) !important;
+  box-shadow:
+    var(--glass-shadow),
+    0 0 20px -5px rgba(255, 71, 87, 0.4),
+    inset 0 0 10px rgba(255, 71, 87, 0.1);
+}
+
+.glass-error-shake {
+  animation: glass-crack-shake 0.4s var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+/* --- 5.9: Prismatic Border Refraction (Step 79) --- */
+@keyframes glass-prismatic {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+.glass-prismatic-border::before {
+  animation: glass-prismatic 6s linear infinite;
+}
+
+/* --- 5.10: Aurora Gradient Background (Step 80) --- */
+@keyframes glass-aurora {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.glass-aurora-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(10, 10, 15, 1) 0%,
+    rgba(15, 15, 25, 1) 25%,
+    rgba(10, 15, 20, 1) 50%,
+    rgba(8, 8, 18, 1) 75%,
+    rgba(10, 10, 15, 1) 100%
+  );
+  background-size: 400% 400%;
+  animation: glass-aurora 15s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+}
+
+/* Colorful aurora variant */
+.glass-aurora-colorful {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 40, 60, 0.3) 0%,
+    rgba(40, 0, 60, 0.3) 25%,
+    rgba(0, 60, 40, 0.3) 50%,
+    rgba(60, 40, 0, 0.3) 75%,
+    rgba(0, 40, 60, 0.3) 100%
+  );
+  background-size: 400% 400%;
+  animation: glass-aurora 20s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+}
+
+/* --- 5.11: Particle Background Effect (Step 81) --- */
+/* CSS-only floating particles - very lightweight */
+@keyframes glass-particle-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+    opacity: 0.6;
+  }
+}
+
+.glass-particles {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-particles::before,
+.glass-particles::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--glass-accent-cyan);
+  opacity: 0.3;
+  animation: glass-particle-float 6s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+  pointer-events: none;
+}
+
+.glass-particles::before {
+  top: 20%;
+  left: 15%;
+  animation-delay: 0s;
+}
+
+.glass-particles::after {
+  top: 60%;
+  right: 20%;
+  animation-delay: 3s;
+  background: var(--glass-accent-magenta);
+}
+
+/* --- 5.12: Liquid Glass Morphing (Step 82) --- */
+@keyframes glass-morph {
+  0%, 100% {
+    border-radius: var(--glass-radius-lg);
+  }
+  25% {
+    border-radius: 20px 16px 18px 14px;
+  }
+  50% {
+    border-radius: 14px 20px 16px 18px;
+  }
+  75% {
+    border-radius: 18px 14px 20px 16px;
+  }
+}
+
+.glass-morph {
+  animation: glass-morph 8s var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) infinite;
+}
+
+/* --- 5.13: Holographic Shimmer (Step 83) --- */
+@keyframes glass-holographic {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.glass-holographic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 255, 255, 0.08) 20%,
+    rgba(138, 43, 226, 0.12) 40%,
+    rgba(255, 0, 255, 0.08) 60%,
+    rgba(255, 191, 0, 0.1) 80%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: glass-holographic 3s linear infinite;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* --- 5.14: Condensation Effect (Step 84) --- */
+/* Simulates water droplets on glass */
+.glass-condensation {
+  position: relative;
+}
+
+.glass-condensation::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at 20% 30%,
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 3%
+  ),
+  radial-gradient(
+    circle at 70% 20%,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 2%
+  ),
+  radial-gradient(
+    circle at 40% 70%,
+    rgba(255, 255, 255, 0.07) 0%,
+    transparent 2.5%
+  ),
+  radial-gradient(
+    circle at 80% 60%,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 2%
+  ),
+  radial-gradient(
+    circle at 15% 80%,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 1.5%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* --- 5.15: Parallax Glass Layers (Step 85) --- */
+.glass-parallax-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.glass-parallax-layer {
+  transform: translateZ(var(--parallax-z, 0));
+  transition: transform var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-parallax-layer-1 { --parallax-z: 10px; }
+.glass-parallax-layer-2 { --parallax-z: 20px; }
+.glass-parallax-layer-3 { --parallax-z: 30px; }
+
+/* =============================================================================
+   REDUCED MOTION SUPPORT
+   Accessibility - respect user preferences
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Disable all animations */
+  .glass-animate-enter,
+  .glass-animate-enter-scale,
+  .glass-animate-enter-fade,
+  .glass-list-item,
+  .glass-modal-enter,
+  .glass-modal-exit,
+  .glass-modal-backdrop-enter,
+  .glass-modal-backdrop-exit,
+  .glass-toast-enter,
+  .glass-toast-exit,
+  .glass-slide-enter-left,
+  .glass-slide-exit-left,
+  .glass-slide-enter-right,
+  .glass-slide-exit-right,
+  .glass-tooltip-animated,
+  .glass-tooltip-exit,
+  .glass-skeleton,
+  .glass-skeleton-pulse,
+  .glass-progress-indeterminate .glass-progress-fill,
+  .glass-progress-fill,
+  .glass-gradient-border::before,
+  .glass-frost-animate,
+  .glass-glow-pulse,
+  .glass-aurora-bg,
+  .glass-aurora-colorful,
+  .glass-particles::before,
+  .glass-particles::after,
+  .glass-morph,
+  .glass-holographic::before,
+  .glass-chromatic:hover,
+  .glass-shine::after,
+  .glass-shine-auto::after,
+  .glass-page-transition-enter,
+  .glass-page-transition-exit,
+  .glass-tab-indicator,
+  .glass-prismatic-border::before {
+    animation: none !important;
+  }
+
+  /* Reduce transitions to minimum */
+  .glass-surface,
+  .glass-surface-elevated,
+  .glass-surface-overlay,
+  .glass-interactive,
+  .glass-hover-lift,
+  .glass-hover-glow,
+  .glass-hover-scale,
+  .glass-hover-scale-subtle,
+  .glass-focus-ring,
+  .glass-button-animated,
+  .glass-chip,
+  .glass-chip-animated,
+  .glass-input,
+  .glass-reveal,
+  .glass-reveal-left,
+  .glass-reveal-right,
+  .glass-reveal-scale,
+  .glass-parallax-layer,
+  .glass-tab {
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Keep essential visibility changes instant */
+  .glass-reveal.visible,
+  .glass-reveal-left.visible,
+  .glass-reveal-right.visible,
+  .glass-reveal-scale.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Disable parallax */
+  .glass-parallax-layer {
+    transform: none !important;
+  }
+}
+
+/* =============================================================================
+   UTILITY CLASSES
+   Composable glass utilities for convenience
+   ============================================================================= */
+
+/* Animation delay utilities for staggering */
+.glass-delay-0 { --stagger: 0; }
+.glass-delay-1 { --stagger: 1; }
+.glass-delay-2 { --stagger: 2; }
+.glass-delay-3 { --stagger: 3; }
+.glass-delay-4 { --stagger: 4; }
+.glass-delay-5 { --stagger: 5; }
+.glass-delay-6 { --stagger: 6; }
+.glass-delay-7 { --stagger: 7; }
+.glass-delay-8 { --stagger: 8; }
+.glass-delay-9 { --stagger: 9; }
+
+/* List item index utilities */
+.glass-item-0 { --item-index: 0; }
+.glass-item-1 { --item-index: 1; }
+.glass-item-2 { --item-index: 2; }
+.glass-item-3 { --item-index: 3; }
+.glass-item-4 { --item-index: 4; }
+.glass-item-5 { --item-index: 5; }
+.glass-item-6 { --item-index: 6; }
+.glass-item-7 { --item-index: 7; }
+.glass-item-8 { --item-index: 8; }
+.glass-item-9 { --item-index: 9; }
+
+/* Duration override utilities */
+.glass-duration-short { --anim-duration: var(--md-sys-motion-duration-short4, 200ms); }
+.glass-duration-medium { --anim-duration: var(--md-sys-motion-duration-medium2, 300ms); }
+.glass-duration-long { --anim-duration: var(--md-sys-motion-duration-long2, 500ms); }
+
+/* =============================================================================
+   PHASE 4: LAYOUT WRAPPER INTEGRATION (Steps 46-55)
+   Glass system integration for the root layout component
+   ============================================================================= */
+
+/* --- 4.1: Layout Root Container (Step 47) --- */
+.glass-layout-root {
+  /* Dark glass base layer */
+  background: var(--glass-bg-dark);
+  /* Ensure proper stacking context */
+  isolation: isolate;
+}
+
+/* --- 4.2: Layout Noise Texture Overlay (Step 53) --- */
+.glass-layout-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* --- 4.3: Content Wrapper (Step 48) --- */
+.glass-content-wrapper {
+  /* Subtle frosted glass effect on content layer */
+  backdrop-filter: blur(var(--glass-blur-xs, 4px));
+  -webkit-backdrop-filter: blur(var(--glass-blur-xs, 4px));
+}
+
+/* --- 4.4: Main Content Area (Step 49-50) --- */
+.glass-main-content {
+  /* Default state - ready for page transitions */
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1)),
+    transform var(--md-sys-motion-duration-medium2, 300ms) var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+/* --- 4.5: Layout Background Blur (Step 52) --- */
+.glass-layout-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  backdrop-filter: blur(var(--glass-blur-sm, 8px));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm, 8px));
+  pointer-events: none;
+}
+
+/* --- 4.6: Layout Aurora Background (Step 54) --- */
+/* Note: .glass-aurora-bg is already defined above - this extends it for layout */
+.glass-layout-root .glass-aurora-bg {
+  /* Make aurora more subtle for layout background */
+  opacity: 0.6;
+}
+
+/* --- 4.7: Layout Glass Atmosphere (Step 55) --- */
+.glass-layout-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Radial gradient for depth */
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(0, 255, 255, 0.02) 0%,
+    transparent 50%
+  ),
+  radial-gradient(
+    ellipse at 100% 100%,
+    rgba(138, 43, 226, 0.02) 0%,
+    transparent 40%
+  ),
+  radial-gradient(
+    ellipse at 0% 100%,
+    rgba(255, 0, 255, 0.015) 0%,
+    transparent 40%
+  );
+}
+
+/* --- Reduced Motion Support for Layout --- */
+@media (prefers-reduced-motion: reduce) {
+  .glass-layout-root .glass-aurora-bg {
+    animation: none !important;
+    background-position: 0% 50% !important;
+  }
+
+  .glass-main-content {
+    transition-duration: 0.01ms !important;
+  }
+
+  .glass-content-wrapper {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* =============================================================================
+   PHASE 2: HEADER UNIFICATION UTILITIES (Steps 16-30)
+   Glass system integration for HeaderOmega component
+   ============================================================================= */
+
+/* --- Status Tokens (Step 28) --- */
+:root {
+  --glass-status-success: oklch(70% 0.25 150);
+  --glass-status-success-glow: oklch(70% 0.25 150 / 0.6);
+  --glass-status-error: oklch(60% 0.25 25);
+  --glass-status-error-glow: oklch(60% 0.25 25 / 0.5);
+  --glass-status-warning: oklch(75% 0.2 85);
+  --glass-status-warning-glow: oklch(75% 0.2 85 / 0.5);
+  --glass-status-info: oklch(65% 0.2 240);
+  --glass-status-info-glow: oklch(65% 0.2 240 / 0.5);
+}
+
+/* --- Status Dot Classes (Step 28) --- */
+.glass-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition:
+    background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-short3, 150ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.glass-status-dot-success {
+  background: var(--glass-status-success);
+  box-shadow: 0 0 8px var(--glass-status-success-glow);
+  animation: glass-status-pulse-success 2s ease-in-out infinite;
+}
+
+.glass-status-dot-error {
+  background: var(--glass-status-error);
+  box-shadow: 0 0 4px var(--glass-status-error-glow);
+}
+
+.glass-status-dot-warning {
+  background: var(--glass-status-warning);
+  box-shadow: 0 0 6px var(--glass-status-warning-glow);
+}
+
+.glass-status-dot-info {
+  background: var(--glass-status-info);
+  box-shadow: 0 0 6px var(--glass-status-info-glow);
+}
+
+@keyframes glass-status-pulse-success {
+  0%, 100% { box-shadow: 0 0 8px var(--glass-status-success-glow); }
+  50% { box-shadow: 0 0 16px oklch(75% 0.28 150 / 0.8); }
+}
+
+/* --- Status Text Classes (Step 28) --- */
+.glass-status-success {
+  color: var(--glass-status-success);
+}
+
+.glass-status-error {
+  color: var(--glass-status-error);
+}
+
+.glass-status-warning {
+  color: var(--glass-status-warning);
+}
+
+.glass-status-info {
+  color: var(--glass-status-info);
+}
+
+/* --- Typography Utility Classes (Step 24) --- */
+.glass-text-headline {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.glass-text-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.glass-text-body {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.glass-text-body-sm {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.glass-text-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+}
+
+.glass-text-caption {
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Light mode typography */
+:root[data-theme="light"] .glass-text-headline { color: rgba(0, 0, 0, 0.9); }
+:root[data-theme="light"] .glass-text-title { color: rgba(0, 0, 0, 0.85); }
+:root[data-theme="light"] .glass-text-body { color: rgba(0, 0, 0, 0.7); }
+:root[data-theme="light"] .glass-text-body-sm { color: rgba(0, 0, 0, 0.5); }
+:root[data-theme="light"] .glass-text-label { color: rgba(0, 0, 0, 0.55); }
+:root[data-theme="light"] .glass-text-caption { color: rgba(0, 0, 0, 0.4); }
+
+/* --- Border Utility Classes (Step 27) --- */
+.glass-border {
+  border: 1px solid var(--glass-border);
+}
+
+.glass-border-bottom {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.glass-border-left {
+  border-left: 1px solid var(--glass-border);
+  padding-left: 0.75rem;
+  margin-left: 0.75rem;
+}
+
+.glass-border-right {
+  border-right: 1px solid var(--glass-border);
+  padding-right: 0.75rem;
+  margin-right: 0.75rem;
+}
+
+.glass-border-accent {
+  border-color: var(--glass-accent-cyan-subtle);
+}
+
+/* --- Reduced Motion Support for Header Classes --- */
+@media (prefers-reduced-motion: reduce) {
+  .glass-status-dot-success {
+    animation: none;
+  }
+}

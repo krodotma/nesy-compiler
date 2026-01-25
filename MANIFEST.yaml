@@ -1,0 +1,52 @@
+version: "1.0"
+composition: app-of-apps
+
+apps:
+  pluribus-core:
+    status: monolith
+    description: "Shared kernel - bus infrastructure, operators, dispatchers"
+    mount: /
+    domains: [pluribus, omega, evolution, cmp, hgt, vgt, rag, kg, pqc]
+    branch_target: dev
+
+  pluribus-dashboard:
+    status: extractable
+    description: "TypeScript/Qwik frontend dashboard"
+    mount: nucleus/dashboard/
+    domains: [kroma, webgpu, webrtc]
+    branch_target: dev
+
+  pluribus-specs:
+    status: extractable
+    description: "Protocol definitions, JSON schemas, spec docs"
+    mount: nucleus/specs/
+    domains: [pluribus, evolution]
+    branch_target: main
+
+  pluribus-art:
+    status: extractable
+    description: "Generative art and media services"
+    mount: nucleus/art_dept/
+    domains: [cinema, mirrorstudios, avtr, oooo]
+    branch_target: dev
+
+tools:
+  distiller:
+    path: nucleus/tools/distillation/distill_engine.py
+    interface: cli
+    capabilities: [code_cleaning, feature_migration]
+    dna_support: [inertia, entelecheia, homeostasis]
+  
+  ark:
+    path: nucleus/ark/cli.py
+    interface: cli
+    description: "Autonomous Reactive Kernel - Negentropic VCS"
+    capabilities: [version_control, evolution, distillation, synthesis]
+    dna_support: [inertia, entelecheia, homeostasis, witness, hysteresis, infinity]
+    features:
+      - cell_cycle_commit
+      - rhizom_dag
+      - cmp_scoring
+      - ltl_synthesis
+
+

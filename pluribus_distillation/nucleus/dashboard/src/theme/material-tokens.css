@@ -1,0 +1,1262 @@
+/**
+ * Material Web 3 Token System - Deep Neon Integration
+ * =====================================================
+ * Bridges the Pluribus "Deep Neon" design system to Material 3 component tokens.
+ *
+ * Architecture:
+ * - Layer 1: Deep Neon tokens (--mat-*) - Our aesthetic identity
+ * - Layer 2: M3 System tokens (--md-sys-*) - Component semantics
+ * - Layer 3: M3 Ref tokens (--md-ref-*) - Typography, shapes, motion
+ *
+ * Usage: Import this BEFORE global.css or at the start of global.css
+ */
+
+/* =============================================================================
+   LAYER 1: DEEP NEON PALETTE (Source of Truth)
+   These are consumed by --md-sys-* tokens below.
+   ============================================================================= */
+
+:root {
+  /* Primary Spectrum - Cyan/Electric Blue */
+  --mat-primary-10: oklch(0.20 0.08 240);
+  --mat-primary-20: oklch(0.30 0.12 240);
+  --mat-primary-30: oklch(0.40 0.14 240);
+  --mat-primary-40: oklch(0.50 0.15 240);
+  --mat-primary-50: oklch(0.60 0.15 240);
+  --mat-primary-60: oklch(0.65 0.15 240);  /* Default primary */
+  --mat-primary-70: oklch(0.75 0.14 240);
+  --mat-primary-80: oklch(0.85 0.10 240);
+  --mat-primary-90: oklch(0.92 0.06 240);
+  --mat-primary-95: oklch(0.96 0.03 240);
+  --mat-primary-99: oklch(0.99 0.01 240);
+
+  /* Secondary Spectrum - Magenta/Violet */
+  --mat-secondary-10: oklch(0.20 0.08 300);
+  --mat-secondary-20: oklch(0.30 0.10 300);
+  --mat-secondary-30: oklch(0.40 0.12 300);
+  --mat-secondary-40: oklch(0.50 0.12 300);
+  --mat-secondary-50: oklch(0.60 0.12 300);
+  --mat-secondary-60: oklch(0.70 0.12 300);  /* Default secondary */
+  --mat-secondary-70: oklch(0.78 0.10 300);
+  --mat-secondary-80: oklch(0.85 0.08 300);
+  --mat-secondary-90: oklch(0.92 0.05 300);
+  --mat-secondary-95: oklch(0.96 0.02 300);
+
+  /* Tertiary Spectrum - Amber/Gold */
+  --mat-tertiary-10: oklch(0.25 0.08 80);
+  --mat-tertiary-20: oklch(0.35 0.12 80);
+  --mat-tertiary-30: oklch(0.45 0.14 80);
+  --mat-tertiary-40: oklch(0.55 0.16 75);
+  --mat-tertiary-50: oklch(0.65 0.16 70);
+  --mat-tertiary-60: oklch(0.75 0.15 65);
+  --mat-tertiary-70: oklch(0.82 0.12 60);
+  --mat-tertiary-80: oklch(0.88 0.09 55);
+  --mat-tertiary-90: oklch(0.94 0.05 50);
+
+  /* Error Spectrum - Red */
+  --mat-error-10: oklch(0.25 0.10 25);
+  --mat-error-20: oklch(0.35 0.15 25);
+  --mat-error-30: oklch(0.45 0.18 25);
+  --mat-error-40: oklch(0.55 0.20 25);
+  --mat-error-50: oklch(0.60 0.20 25);
+  --mat-error-60: oklch(0.68 0.18 25);
+  --mat-error-80: oklch(0.85 0.10 25);
+  --mat-error-90: oklch(0.92 0.05 25);
+
+  /* Neutral Spectrum - Blue-Gray */
+  --mat-neutral-0: oklch(0.00 0 0);
+  --mat-neutral-4: oklch(0.04 0.01 240);
+  --mat-neutral-6: oklch(0.06 0.01 240);
+  --mat-neutral-10: oklch(0.10 0.015 240);
+  --mat-neutral-12: oklch(0.12 0.015 240);
+  --mat-neutral-17: oklch(0.17 0.015 240);
+  --mat-neutral-20: oklch(0.20 0.015 240);
+  --mat-neutral-22: oklch(0.22 0.015 240);
+  --mat-neutral-24: oklch(0.24 0.015 240);
+  --mat-neutral-30: oklch(0.30 0.015 240);
+  --mat-neutral-40: oklch(0.40 0.015 240);
+  --mat-neutral-50: oklch(0.50 0.01 240);
+  --mat-neutral-60: oklch(0.60 0.01 240);
+  --mat-neutral-70: oklch(0.70 0.008 240);
+  --mat-neutral-80: oklch(0.80 0.006 240);
+  --mat-neutral-87: oklch(0.87 0.004 240);
+  --mat-neutral-90: oklch(0.90 0.004 240);
+  --mat-neutral-92: oklch(0.92 0.003 240);
+  --mat-neutral-94: oklch(0.94 0.002 240);
+  --mat-neutral-95: oklch(0.95 0.002 240);
+  --mat-neutral-96: oklch(0.96 0.001 240);
+  --mat-neutral-98: oklch(0.98 0.001 240);
+  --mat-neutral-100: oklch(1.00 0 0);
+
+  /* Neutral Variant - Slightly more saturated */
+  --mat-neutral-variant-20: oklch(0.20 0.025 240);
+  --mat-neutral-variant-30: oklch(0.30 0.025 240);
+  --mat-neutral-variant-50: oklch(0.50 0.02 240);
+  --mat-neutral-variant-60: oklch(0.60 0.02 240);
+  --mat-neutral-variant-80: oklch(0.80 0.015 240);
+  --mat-neutral-variant-90: oklch(0.90 0.01 240);
+}
+
+/* =============================================================================
+   LAYER 2: MATERIAL 3 SYSTEM TOKENS (Dark Mode - Default)
+   Maps to component internals. M3 components read these.
+   ============================================================================= */
+
+:root {
+  /* Primary */
+  --md-sys-color-primary: var(--mat-primary-60);
+  --md-sys-color-on-primary: var(--mat-neutral-10);
+  --md-sys-color-primary-container: var(--mat-primary-30);
+  --md-sys-color-on-primary-container: var(--mat-primary-90);
+
+  /* Secondary */
+  --md-sys-color-secondary: var(--mat-secondary-60);
+  --md-sys-color-on-secondary: var(--mat-neutral-10);
+  --md-sys-color-secondary-container: var(--mat-secondary-30);
+  --md-sys-color-on-secondary-container: var(--mat-secondary-90);
+
+  /* Tertiary */
+  --md-sys-color-tertiary: var(--mat-tertiary-60);
+  --md-sys-color-on-tertiary: var(--mat-neutral-10);
+  --md-sys-color-tertiary-container: var(--mat-tertiary-30);
+  --md-sys-color-on-tertiary-container: var(--mat-tertiary-90);
+
+  /* Error */
+  --md-sys-color-error: var(--mat-error-60);
+  --md-sys-color-on-error: var(--mat-neutral-10);
+  --md-sys-color-error-container: var(--mat-error-30);
+  --md-sys-color-on-error-container: var(--mat-error-90);
+
+  /* Surface (Dark Mode) */
+  --md-sys-color-surface: var(--mat-neutral-6);
+  --md-sys-color-on-surface: var(--mat-neutral-90);
+  --md-sys-color-surface-variant: var(--mat-neutral-variant-30);
+  --md-sys-color-on-surface-variant: var(--mat-neutral-variant-80);
+
+  /* Surface Containers (M3 Elevation) */
+  --md-sys-color-surface-container-lowest: var(--mat-neutral-4);
+  --md-sys-color-surface-container-low: var(--mat-neutral-10);
+  --md-sys-color-surface-container: var(--mat-neutral-12);
+  --md-sys-color-surface-container-high: var(--mat-neutral-17);
+  --md-sys-color-surface-container-highest: var(--mat-neutral-22);
+
+  /* Inverse */
+  --md-sys-color-inverse-surface: var(--mat-neutral-90);
+  --md-sys-color-inverse-on-surface: var(--mat-neutral-20);
+  --md-sys-color-inverse-primary: var(--mat-primary-40);
+
+  /* Outline */
+  --md-sys-color-outline: var(--mat-neutral-variant-60);
+  --md-sys-color-outline-variant: var(--mat-neutral-variant-30);
+
+  /* Background / Scrim / Shadow */
+  --md-sys-color-background: var(--mat-neutral-6);
+  --md-sys-color-on-background: var(--mat-neutral-90);
+  --md-sys-color-scrim: var(--mat-neutral-0);
+  --md-sys-color-shadow: var(--mat-neutral-0);
+
+  /* Surface Tint (for elevation-based tinting) */
+  --md-sys-color-surface-tint: var(--mat-primary-60);
+}
+
+/* =============================================================================
+   LIGHT MODE OVERRIDES
+   ============================================================================= */
+
+:root[data-theme="light"] {
+  /* Primary */
+  --md-sys-color-primary: var(--mat-primary-40);
+  --md-sys-color-on-primary: var(--mat-neutral-100);
+  --md-sys-color-primary-container: var(--mat-primary-90);
+  --md-sys-color-on-primary-container: var(--mat-primary-10);
+
+  /* Secondary */
+  --md-sys-color-secondary: var(--mat-secondary-40);
+  --md-sys-color-on-secondary: var(--mat-neutral-100);
+  --md-sys-color-secondary-container: var(--mat-secondary-90);
+  --md-sys-color-on-secondary-container: var(--mat-secondary-10);
+
+  /* Tertiary */
+  --md-sys-color-tertiary: var(--mat-tertiary-40);
+  --md-sys-color-on-tertiary: var(--mat-neutral-100);
+  --md-sys-color-tertiary-container: var(--mat-tertiary-90);
+  --md-sys-color-on-tertiary-container: var(--mat-tertiary-10);
+
+  /* Error */
+  --md-sys-color-error: var(--mat-error-40);
+  --md-sys-color-on-error: var(--mat-neutral-100);
+  --md-sys-color-error-container: var(--mat-error-90);
+  --md-sys-color-on-error-container: var(--mat-error-10);
+
+  /* Surface (Light Mode) */
+  --md-sys-color-surface: var(--mat-neutral-98);
+  --md-sys-color-on-surface: var(--mat-neutral-10);
+  --md-sys-color-surface-variant: var(--mat-neutral-variant-90);
+  --md-sys-color-on-surface-variant: var(--mat-neutral-variant-30);
+
+  /* Surface Containers (Light Mode) */
+  --md-sys-color-surface-container-lowest: var(--mat-neutral-100);
+  --md-sys-color-surface-container-low: var(--mat-neutral-96);
+  --md-sys-color-surface-container: var(--mat-neutral-94);
+  --md-sys-color-surface-container-high: var(--mat-neutral-92);
+  --md-sys-color-surface-container-highest: var(--mat-neutral-90);
+
+  /* Inverse */
+  --md-sys-color-inverse-surface: var(--mat-neutral-20);
+  --md-sys-color-inverse-on-surface: var(--mat-neutral-95);
+  --md-sys-color-inverse-primary: var(--mat-primary-80);
+
+  /* Outline */
+  --md-sys-color-outline: var(--mat-neutral-variant-50);
+  --md-sys-color-outline-variant: var(--mat-neutral-variant-80);
+
+  /* Background */
+  --md-sys-color-background: var(--mat-neutral-98);
+  --md-sys-color-on-background: var(--mat-neutral-10);
+
+  /* Surface Tint */
+  --md-sys-color-surface-tint: var(--mat-primary-40);
+}
+
+/* =============================================================================
+   LAYER 3: REFERENCE TOKENS (Typography, Shape, Motion)
+   ============================================================================= */
+
+:root {
+  /* Typography - Font Families */
+  --md-ref-typeface-brand: 'JetBrains Mono', 'Fira Code', monospace;
+  --md-ref-typeface-plain: 'Inter', system-ui, sans-serif;
+
+  /* Typography - Typescale (Display, Headline, Title, Body, Label) */
+  --md-sys-typescale-display-large-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-display-large-size: 57px;
+  --md-sys-typescale-display-large-line-height: 64px;
+  --md-sys-typescale-display-large-weight: 400;
+  --md-sys-typescale-display-large-tracking: -0.25px;
+
+  --md-sys-typescale-display-medium-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-display-medium-size: 45px;
+  --md-sys-typescale-display-medium-line-height: 52px;
+  --md-sys-typescale-display-medium-weight: 400;
+
+  --md-sys-typescale-headline-large-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-headline-large-size: 32px;
+  --md-sys-typescale-headline-large-line-height: 40px;
+  --md-sys-typescale-headline-large-weight: 400;
+
+  --md-sys-typescale-headline-medium-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-headline-medium-size: 28px;
+  --md-sys-typescale-headline-medium-line-height: 36px;
+
+  --md-sys-typescale-title-large-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-title-large-size: 22px;
+  --md-sys-typescale-title-large-line-height: 28px;
+  --md-sys-typescale-title-large-weight: 400;
+
+  --md-sys-typescale-title-medium-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-title-medium-size: 16px;
+  --md-sys-typescale-title-medium-line-height: 24px;
+  --md-sys-typescale-title-medium-weight: 500;
+  --md-sys-typescale-title-medium-tracking: 0.15px;
+
+  --md-sys-typescale-body-large-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-large-size: 16px;
+  --md-sys-typescale-body-large-line-height: 24px;
+  --md-sys-typescale-body-large-weight: 400;
+  --md-sys-typescale-body-large-tracking: 0.5px;
+
+  --md-sys-typescale-body-medium-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-medium-size: 14px;
+  --md-sys-typescale-body-medium-line-height: 20px;
+  --md-sys-typescale-body-medium-weight: 400;
+  --md-sys-typescale-body-medium-tracking: 0.25px;
+
+  --md-sys-typescale-body-small-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-body-small-size: 12px;
+  --md-sys-typescale-body-small-line-height: 16px;
+  --md-sys-typescale-body-small-weight: 400;
+
+  --md-sys-typescale-label-large-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-large-size: 14px;
+  --md-sys-typescale-label-large-line-height: 20px;
+  --md-sys-typescale-label-large-weight: 500;
+  --md-sys-typescale-label-large-tracking: 0.1px;
+
+  --md-sys-typescale-label-medium-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-medium-size: 12px;
+  --md-sys-typescale-label-medium-line-height: 16px;
+  --md-sys-typescale-label-medium-weight: 500;
+  --md-sys-typescale-label-medium-tracking: 0.5px;
+
+  --md-sys-typescale-label-small-font: var(--md-ref-typeface-plain);
+  --md-sys-typescale-label-small-size: 11px;
+  --md-sys-typescale-label-small-line-height: 16px;
+  --md-sys-typescale-label-small-weight: 500;
+  --md-sys-typescale-label-small-tracking: 0.5px;
+
+  /* Shape Scale */
+  --md-sys-shape-corner-none: 0px;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+
+  /* Motion - Easing Curves */
+  --md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --md-sys-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --md-sys-motion-easing-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --md-sys-motion-easing-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --md-sys-motion-easing-legacy: cubic-bezier(0.4, 0, 0.2, 1);
+  --md-sys-motion-easing-legacy-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --md-sys-motion-easing-legacy-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --md-sys-motion-easing-linear: linear;
+
+  /* Motion - Duration */
+  --md-sys-motion-duration-short1: 50ms;
+  --md-sys-motion-duration-short2: 100ms;
+  --md-sys-motion-duration-short3: 150ms;
+  --md-sys-motion-duration-short4: 200ms;
+  --md-sys-motion-duration-medium1: 250ms;
+  --md-sys-motion-duration-medium2: 300ms;
+  --md-sys-motion-duration-medium3: 350ms;
+  --md-sys-motion-duration-medium4: 400ms;
+  --md-sys-motion-duration-long1: 450ms;
+  --md-sys-motion-duration-long2: 500ms;
+  --md-sys-motion-duration-long3: 550ms;
+  --md-sys-motion-duration-long4: 600ms;
+  --md-sys-motion-duration-extra-long1: 700ms;
+  --md-sys-motion-duration-extra-long2: 800ms;
+  --md-sys-motion-duration-extra-long3: 900ms;
+  --md-sys-motion-duration-extra-long4: 1000ms;
+
+  /* State Layer Opacities */
+  --md-sys-state-hover-state-layer-opacity: 0.08;
+  --md-sys-state-focus-state-layer-opacity: 0.12;
+  --md-sys-state-pressed-state-layer-opacity: 0.12;
+  --md-sys-state-dragged-state-layer-opacity: 0.16;
+
+  /* Density Scale (0 = default, -1 = compact, -2 = dense, -3 = tight) */
+  --md-sys-density: 0;
+  
+  /* Workbench Density Tokens (for high-density layouts) */
+  --workbench-spacing-unit: 4px;
+  --workbench-row-height-dense: 32px;
+  --workbench-row-height-compact: 28px;
+  --workbench-font-size-dense: 12px;
+  --workbench-font-size-compact: 11px;
+}
+
+/* =============================================================================
+   ELEVATION (Surface Tint + Shadow)
+   M3 uses surface tint overlays instead of pure shadows in dark mode.
+   ============================================================================= */
+
+:root {
+  /* Elevation Levels - Shadow (used sparingly in dark mode) */
+  --md-sys-elevation-level0: none;
+  --md-sys-elevation-level1: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level2: 0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level3: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 4px 8px 3px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level4: 0 2px 3px 0 rgba(0, 0, 0, 0.3), 0 6px 10px 4px rgba(0, 0, 0, 0.15);
+  --md-sys-elevation-level5: 0 4px 4px 0 rgba(0, 0, 0, 0.3), 0 8px 12px 6px rgba(0, 0, 0, 0.15);
+
+  /* Surface Tint Opacity per Elevation Level (Dark Mode) */
+  --md-sys-elevation-tint-level0: 0;
+  --md-sys-elevation-tint-level1: 0.05;
+  --md-sys-elevation-tint-level2: 0.08;
+  --md-sys-elevation-tint-level3: 0.11;
+  --md-sys-elevation-tint-level4: 0.12;
+  --md-sys-elevation-tint-level5: 0.14;
+}
+
+/* =============================================================================
+   COMPONENT-SPECIFIC OVERRIDES
+   Apply Deep Neon styling to specific M3 components.
+   ============================================================================= */
+
+/* Icon Button - Glass effect with neon glow on hover */
+md-icon-button {
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-hover-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-pressed-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-focus-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-state-layer-shape: var(--md-sys-shape-corner-medium);
+}
+
+/* Switch - Neon accent colors */
+md-switch {
+  --md-switch-selected-handle-color: var(--md-sys-color-primary);
+  --md-switch-selected-track-color: var(--md-sys-color-primary-container);
+  --md-switch-selected-icon-color: var(--md-sys-color-on-primary);
+}
+
+/* Filled Button - Gradient background option */
+md-filled-button {
+  --md-filled-button-container-color: var(--md-sys-color-primary);
+  --md-filled-button-label-text-color: var(--md-sys-color-on-primary);
+  --md-filled-button-container-shape: var(--md-sys-shape-corner-medium);
+}
+
+/* Text Field - Deep Neon styling */
+md-outlined-text-field {
+  --md-outlined-text-field-outline-color: var(--md-sys-color-outline);
+  --md-outlined-text-field-focus-outline-color: var(--md-sys-color-primary);
+  --md-outlined-text-field-container-shape: var(--md-sys-shape-corner-small);
+}
+
+/* Dialog - Glass morphism background */
+md-dialog {
+  --md-dialog-container-color: var(--md-sys-color-surface-container-high);
+  --md-dialog-container-shape: var(--md-sys-shape-corner-extra-large);
+}
+
+/* Tabs - Neon underline indicator */
+md-tabs {
+  --md-primary-tab-active-indicator-color: var(--md-sys-color-primary);
+}
+
+/* Linear Progress - Neon gradient */
+md-linear-progress {
+  --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
+  --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
+}
+
+/* Circular Progress - Neon glow */
+md-circular-progress {
+  --md-circular-progress-active-indicator-color: var(--md-sys-color-primary);
+}
+
+/* FAB - Glass with neon accent */
+md-fab {
+  --md-fab-container-color: var(--md-sys-color-primary-container);
+  --md-fab-icon-color: var(--md-sys-color-on-primary-container);
+  --md-fab-container-shape: var(--md-sys-shape-corner-large);
+}
+
+/* Chips - Filter chips with neon selected state */
+md-filter-chip {
+  --md-filter-chip-selected-container-color: var(--md-sys-color-secondary-container);
+  --md-filter-chip-selected-label-text-color: var(--md-sys-color-on-secondary-container);
+}
+
+/* =============================================================================
+   FOCUS RING GLOBAL DEFAULTS
+   ============================================================================= */
+
+:root {
+  --md-focus-ring-color: var(--md-sys-color-primary);
+  --md-focus-ring-width: 2px;
+  --md-focus-ring-offset: 2px;
+}
+
+/* =============================================================================
+   ICON SIZE SCALE (Material Symbols)
+   ============================================================================= */
+
+:root {
+  --md-icon-size-small: 20px;
+  --md-icon-size-default: 24px;
+  --md-icon-size-large: 40px;
+  --md-icon-size-extra-large: 48px;
+}
+
+/* =============================================================================
+   DEEP NEON GLOW SYSTEM
+   Aesthetic enhancements for the cyberpunk/sci-fi visual identity.
+   ============================================================================= */
+
+:root {
+  /* Glow intensities */
+  --neon-glow-subtle: 0 0 8px;
+  --neon-glow-medium: 0 0 16px;
+  --neon-glow-strong: 0 0 24px, 0 0 48px;
+  --neon-glow-intense: 0 0 16px, 0 0 32px, 0 0 64px;
+
+  /* Glow colors (using oklch for consistency) */
+  --neon-glow-primary: oklch(0.65 0.15 240 / 0.6);
+  --neon-glow-secondary: oklch(0.70 0.12 300 / 0.5);
+  --neon-glow-tertiary: oklch(0.75 0.15 65 / 0.5);
+  --neon-glow-error: oklch(0.60 0.20 25 / 0.5);
+  --neon-glow-success: oklch(0.65 0.15 145 / 0.5);
+
+  /* Chromatic aberration offsets for glitch effects */
+  --chroma-offset-r: 2px;
+  --chroma-offset-b: -2px;
+}
+
+/* =============================================================================
+   ENHANCED M3 COMPONENT STYLES - NEON INTEGRATION
+   ============================================================================= */
+
+/* Icon Button - Neon glow on hover/focus */
+md-icon-button {
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-hover-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-pressed-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-focus-icon-color: var(--md-sys-color-primary);
+  --md-icon-button-state-layer-shape: var(--md-sys-shape-corner-medium);
+  transition: filter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
+}
+
+md-icon-button:hover {
+  filter: drop-shadow(var(--neon-glow-subtle) var(--neon-glow-primary));
+}
+
+md-icon-button:focus-visible {
+  filter: drop-shadow(var(--neon-glow-medium) var(--neon-glow-primary));
+}
+
+md-icon-button[selected] {
+  filter: drop-shadow(var(--neon-glow-medium) var(--neon-glow-primary));
+}
+
+/* Filled Button - Gradient background with glow */
+md-filled-button {
+  --md-filled-button-container-color: var(--md-sys-color-primary);
+  --md-filled-button-label-text-color: var(--md-sys-color-on-primary);
+  --md-filled-button-container-shape: var(--md-sys-shape-corner-medium);
+  --md-filled-button-hover-state-layer-opacity: 0.12;
+  transition:
+    box-shadow var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized),
+    transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+}
+
+md-filled-button:hover {
+  box-shadow: var(--neon-glow-medium) var(--neon-glow-primary);
+  transform: translateY(-1px);
+}
+
+md-filled-button:active {
+  transform: translateY(0);
+}
+
+/* Filled Tonal Button - Softer glow */
+md-filled-tonal-button {
+  --md-filled-tonal-button-container-color: var(--md-sys-color-secondary-container);
+  --md-filled-tonal-button-label-text-color: var(--md-sys-color-on-secondary-container);
+  --md-filled-tonal-button-container-shape: var(--md-sys-shape-corner-medium);
+  transition:
+    box-shadow var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized),
+    transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+}
+
+md-filled-tonal-button:hover {
+  box-shadow: var(--neon-glow-subtle) var(--neon-glow-secondary);
+  transform: translateY(-1px);
+}
+
+/* Outlined Button - Border glow */
+md-outlined-button {
+  --md-outlined-button-outline-color: var(--md-sys-color-outline);
+  --md-outlined-button-label-text-color: var(--md-sys-color-primary);
+  --md-outlined-button-container-shape: var(--md-sys-shape-corner-medium);
+  transition:
+    box-shadow var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized),
+    border-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+}
+
+md-outlined-button:hover {
+  --md-outlined-button-outline-color: var(--md-sys-color-primary);
+  box-shadow:
+    inset 0 0 12px var(--neon-glow-primary),
+    var(--neon-glow-subtle) var(--neon-glow-primary);
+}
+
+/* Switch - Neon track when selected */
+md-switch {
+  --md-switch-selected-handle-color: var(--md-sys-color-on-primary);
+  --md-switch-selected-track-color: var(--md-sys-color-primary);
+  --md-switch-selected-icon-color: var(--md-sys-color-primary);
+  --md-switch-unselected-handle-color: var(--md-sys-color-outline);
+  --md-switch-unselected-track-color: var(--md-sys-color-surface-container-highest);
+  transition: filter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
+}
+
+md-switch[selected] {
+  filter: drop-shadow(var(--neon-glow-subtle) var(--neon-glow-primary));
+}
+
+/* Text Field - Focus glow */
+md-outlined-text-field {
+  --md-outlined-text-field-outline-color: var(--md-sys-color-outline);
+  --md-outlined-text-field-focus-outline-color: var(--md-sys-color-primary);
+  --md-outlined-text-field-container-shape: var(--md-sys-shape-corner-small);
+  --md-outlined-text-field-focus-outline-width: 2px;
+  transition: filter var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard);
+}
+
+md-outlined-text-field:focus-within {
+  filter: drop-shadow(var(--neon-glow-subtle) var(--neon-glow-primary));
+}
+
+md-filled-text-field {
+  --md-filled-text-field-container-color: var(--md-sys-color-surface-container-highest);
+  --md-filled-text-field-focus-active-indicator-color: var(--md-sys-color-primary);
+  --md-filled-text-field-container-shape: var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small) 0 0;
+}
+
+/* FAB - Prominent glow */
+md-fab {
+  --md-fab-container-color: var(--md-sys-color-primary-container);
+  --md-fab-icon-color: var(--md-sys-color-on-primary-container);
+  --md-fab-container-shape: var(--md-sys-shape-corner-large);
+  transition:
+    box-shadow var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized),
+    transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+}
+
+md-fab:hover {
+  box-shadow: var(--neon-glow-strong) var(--neon-glow-primary);
+  transform: scale(1.05);
+}
+
+md-fab:active {
+  transform: scale(0.98);
+}
+
+/* Linear Progress - Animated glow */
+md-linear-progress {
+  --md-linear-progress-active-indicator-color: var(--md-sys-color-primary);
+  --md-linear-progress-track-color: var(--md-sys-color-surface-container-highest);
+  --md-linear-progress-track-shape: var(--md-sys-shape-corner-full);
+  --md-linear-progress-active-indicator-shape: var(--md-sys-shape-corner-full);
+}
+
+md-linear-progress[indeterminate] {
+  filter: drop-shadow(var(--neon-glow-subtle) var(--neon-glow-primary));
+}
+
+/* Circular Progress - Pulsing glow */
+md-circular-progress {
+  --md-circular-progress-active-indicator-color: var(--md-sys-color-primary);
+}
+
+md-circular-progress[indeterminate] {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Chips - Selection glow */
+md-filter-chip {
+  --md-filter-chip-container-shape: var(--md-sys-shape-corner-small);
+  --md-filter-chip-selected-container-color: var(--md-sys-color-secondary-container);
+  --md-filter-chip-selected-label-text-color: var(--md-sys-color-on-secondary-container);
+  transition:
+    box-shadow var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
+    transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized);
+}
+
+md-filter-chip[selected] {
+  box-shadow: var(--neon-glow-subtle) var(--neon-glow-secondary);
+}
+
+md-filter-chip:hover {
+  transform: translateY(-1px);
+}
+
+md-assist-chip, md-suggestion-chip, md-input-chip {
+  --md-assist-chip-container-shape: var(--md-sys-shape-corner-small);
+  transition: transform var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-emphasized);
+}
+
+md-assist-chip:hover, md-suggestion-chip:hover, md-input-chip:hover {
+  transform: translateY(-1px);
+}
+
+/* Dialog - Frosted glass with subtle glow */
+md-dialog {
+  --md-dialog-container-color: var(--md-sys-color-surface-container-high);
+  --md-dialog-container-shape: var(--md-sys-shape-corner-extra-large);
+}
+
+md-dialog::part(dialog) {
+  backdrop-filter: blur(16px);
+  box-shadow:
+    var(--md-sys-elevation-level3),
+    0 0 60px oklch(0.65 0.15 240 / 0.15);
+}
+
+/* Tabs - Neon indicator */
+md-tabs {
+  --md-primary-tab-active-indicator-color: var(--md-sys-color-primary);
+  --md-primary-tab-active-indicator-height: 3px;
+  --md-primary-tab-active-indicator-shape: var(--md-sys-shape-corner-full) var(--md-sys-shape-corner-full) 0 0;
+}
+
+md-primary-tab[active] {
+  filter: drop-shadow(0 2px 8px var(--neon-glow-primary));
+}
+
+/* List - Subtle hover effects */
+md-list-item {
+  --md-list-item-container-shape: var(--md-sys-shape-corner-medium);
+  transition: background-color var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+}
+
+/* Menu - Elevated with glow */
+md-menu {
+  --md-menu-container-color: var(--md-sys-color-surface-container);
+  --md-menu-container-shape: var(--md-sys-shape-corner-medium);
+}
+
+/* =============================================================================
+   NEON ANIMATION KEYFRAMES
+   ============================================================================= */
+
+@keyframes neon-pulse {
+  0%, 100% {
+    filter: drop-shadow(var(--neon-glow-subtle) var(--neon-glow-primary));
+  }
+  50% {
+    filter: drop-shadow(var(--neon-glow-medium) var(--neon-glow-primary));
+  }
+}
+
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  96% { opacity: 0.9; }
+  97% { opacity: 1; }
+}
+
+@keyframes neon-scan {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 0% 100%;
+  }
+}
+
+@keyframes glow-breathe {
+  0%, 100% {
+    box-shadow: var(--neon-glow-subtle) var(--neon-glow-primary);
+  }
+  50% {
+    box-shadow: var(--neon-glow-strong) var(--neon-glow-primary);
+  }
+}
+
+/* =============================================================================
+   UTILITY CLASSES FOR NEON EFFECTS
+   ============================================================================= */
+
+.neon-glow-primary {
+  box-shadow: var(--neon-glow-medium) var(--neon-glow-primary);
+}
+
+.neon-glow-secondary {
+  box-shadow: var(--neon-glow-medium) var(--neon-glow-secondary);
+}
+
+.neon-glow-success {
+  box-shadow: var(--neon-glow-medium) var(--neon-glow-success);
+}
+
+.neon-glow-error {
+  box-shadow: var(--neon-glow-medium) var(--neon-glow-error);
+}
+
+.neon-text-glow {
+  text-shadow: var(--neon-glow-subtle) var(--neon-glow-primary);
+}
+
+.neon-border {
+  border: 1px solid var(--md-sys-color-primary);
+  box-shadow:
+    inset 0 0 8px var(--neon-glow-primary),
+    var(--neon-glow-subtle) var(--neon-glow-primary);
+}
+
+.neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.neon-flicker {
+  animation: neon-flicker 4s linear infinite;
+}
+
+.glow-breathe {
+  animation: glow-breathe 3s ease-in-out infinite;
+}
+
+/* =============================================================================
+   M3 RIPPLE ENHANCEMENT
+   Better ripple visibility on dark surfaces.
+   ============================================================================= */
+
+md-ripple {
+  --md-ripple-hover-color: var(--md-sys-color-primary);
+  --md-ripple-pressed-color: var(--md-sys-color-primary);
+  --md-ripple-hover-opacity: 0.08;
+  --md-ripple-pressed-opacity: 0.16;
+}
+
+/* =============================================================================
+   REDUCED MOTION SUPPORT
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  md-icon-button,
+  md-filled-button,
+  md-filled-tonal-button,
+  md-outlined-button,
+  md-switch,
+  md-fab,
+  md-filter-chip,
+  md-assist-chip,
+  md-suggestion-chip,
+  md-input-chip {
+    transition: none !important;
+  }
+
+  .neon-pulse,
+  .neon-flicker,
+  .glow-breathe,
+  md-circular-progress[indeterminate] {
+    animation: none !important;
+  }
+}
+
+/* =============================================================================
+   GLASS MORPHISM SYSTEM
+   Premium frosted glass effects with depth and luminosity.
+   ============================================================================= */
+
+:root {
+  /* Glass surface levels */
+  --glass-blur-subtle: 8px;
+  --glass-blur-medium: 16px;
+  --glass-blur-strong: 24px;
+  --glass-blur-intense: 40px;
+
+  /* Glass tint colors (dark mode defaults) */
+  --glass-tint-dark: oklch(0.10 0.015 240 / 0.7);
+  --glass-tint-medium: oklch(0.15 0.015 240 / 0.6);
+  --glass-tint-light: oklch(0.20 0.015 240 / 0.5);
+  --glass-tint-surface: oklch(0.08 0.02 240 / 0.8);
+
+  /* Glass border luminosity (cyan-tinted for cohesive look) */
+  --glass-border-subtle: rgba(0, 255, 255, 0.06);
+  --glass-border-medium: rgba(0, 255, 255, 0.1);
+  --glass-border-bright: rgba(0, 255, 255, 0.15);
+  --glass-border-glow: rgba(0, 255, 255, 0.2);
+
+  /* Inner light gradient (top-left highlight) */
+  --glass-inner-light: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 50%
+  );
+}
+
+:root[data-theme="light"] {
+  --glass-tint-dark: oklch(0.98 0.005 240 / 0.7);
+  --glass-tint-medium: oklch(0.96 0.005 240 / 0.6);
+  --glass-tint-light: oklch(0.94 0.005 240 / 0.5);
+  --glass-tint-surface: oklch(0.99 0.002 240 / 0.8);
+  --glass-border-subtle: rgba(0, 0, 0, 0.04);
+  --glass-border-medium: rgba(0, 0, 0, 0.08);
+  --glass-border-bright: rgba(0, 0, 0, 0.12);
+  --glass-border-glow: rgba(84, 160, 255, 0.15);
+  --glass-inner-light: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    transparent 50%
+  );
+}
+
+/* Glass panel utility classes */
+.glass-panel {
+  background: var(--glass-tint-dark);
+  backdrop-filter: blur(var(--glass-blur-medium));
+  -webkit-backdrop-filter: blur(var(--glass-blur-medium));
+  border: 1px solid var(--glass-border-medium);
+  position: relative;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--glass-inner-light);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.glass-panel-subtle {
+  background: var(--glass-tint-light);
+  backdrop-filter: blur(var(--glass-blur-subtle));
+  -webkit-backdrop-filter: blur(var(--glass-blur-subtle));
+  border: 1px solid var(--glass-border-subtle);
+}
+
+.glass-panel-intense {
+  background: var(--glass-tint-surface);
+  backdrop-filter: blur(var(--glass-blur-intense));
+  -webkit-backdrop-filter: blur(var(--glass-blur-intense));
+  border: 1px solid var(--glass-border-bright);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 var(--glass-border-bright);
+}
+
+.glass-panel-glow {
+  background: var(--glass-tint-dark);
+  backdrop-filter: blur(var(--glass-blur-medium));
+  -webkit-backdrop-filter: blur(var(--glass-blur-medium));
+  border: 1px solid var(--glass-border-glow);
+  box-shadow:
+    0 4px 24px rgba(84, 160, 255, 0.1),
+    inset 0 0 20px rgba(84, 160, 255, 0.05);
+}
+
+/* =============================================================================
+   CYBERPUNK EFFECTS
+   Scanlines, CRT, holographic, and glitch effects.
+   ============================================================================= */
+
+/* Scanline overlay */
+.scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* CRT screen effect */
+.crt-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.crt-effect::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.2) 90%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  pointer-events: none;
+}
+
+.crt-effect::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 1px,
+    rgba(0, 255, 255, 0.03) 1px,
+    rgba(0, 255, 255, 0.03) 2px
+  );
+  animation: crt-scan 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes crt-scan {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+
+/* Holographic shimmer */
+.holo-shimmer {
+  background: linear-gradient(
+    135deg,
+    oklch(0.7 0.15 240) 0%,
+    oklch(0.7 0.12 300) 25%,
+    oklch(0.75 0.15 180) 50%,
+    oklch(0.7 0.12 300) 75%,
+    oklch(0.7 0.15 240) 100%
+  );
+  background-size: 400% 400%;
+  animation: holo-shift 6s ease-in-out infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+@keyframes holo-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Glitch effect for text */
+.glitch-text {
+  position: relative;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.glitch-text::before {
+  color: oklch(0.7 0.15 0);
+  animation: glitch-r 2.5s infinite linear alternate-reverse;
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+}
+
+.glitch-text::after {
+  color: oklch(0.7 0.15 240);
+  animation: glitch-b 3s infinite linear alternate-reverse;
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+}
+
+@keyframes glitch-r {
+  0%, 95% { transform: translate(0); }
+  96% { transform: translate(var(--chroma-offset-r), 0); }
+  97% { transform: translate(calc(var(--chroma-offset-r) * -1), 0); }
+  98% { transform: translate(var(--chroma-offset-r), 0); }
+  99% { transform: translate(0); }
+}
+
+@keyframes glitch-b {
+  0%, 93% { transform: translate(0); }
+  94% { transform: translate(var(--chroma-offset-b), 0); }
+  95% { transform: translate(calc(var(--chroma-offset-b) * -1), 0); }
+  96% { transform: translate(0); }
+  97% { transform: translate(var(--chroma-offset-b), 0); }
+  98% { transform: translate(0); }
+}
+
+/* Data stream effect (vertical falling characters) */
+@keyframes data-fall {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+/* =============================================================================
+   PREMIUM TYPOGRAPHY EFFECTS
+   ============================================================================= */
+
+/* Gradient text presets */
+.gradient-text-primary {
+  background: linear-gradient(
+    135deg,
+    var(--md-sys-color-primary) 0%,
+    oklch(0.75 0.14 260) 50%,
+    var(--md-sys-color-primary) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-shift 4s ease-in-out infinite;
+}
+
+.gradient-text-chromatic {
+  background: linear-gradient(
+    90deg,
+    #54a0ff 0%,
+    #ff6b6b 25%,
+    #feca57 50%,
+    #48dbfb 75%,
+    #54a0ff 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-shift-x 5s linear infinite;
+}
+
+.gradient-text-neon {
+  background: linear-gradient(
+    135deg,
+    oklch(0.7 0.2 190) 0%,
+    oklch(0.75 0.18 280) 50%,
+    oklch(0.7 0.2 190) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 20px oklch(0.7 0.2 190 / 0.5);
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes gradient-shift-x {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 0%; }
+}
+
+/* Text glow levels */
+.text-glow-subtle {
+  text-shadow: 0 0 10px currentColor;
+}
+
+.text-glow-medium {
+  text-shadow:
+    0 0 10px currentColor,
+    0 0 20px currentColor;
+}
+
+.text-glow-strong {
+  text-shadow:
+    0 0 10px currentColor,
+    0 0 20px currentColor,
+    0 0 40px currentColor;
+}
+
+/* =============================================================================
+   MICRO-INTERACTIONS
+   Subtle hover/focus effects using M3 motion tokens.
+   ============================================================================= */
+
+/* Lift on hover */
+.hover-lift {
+  transition:
+    transform var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized),
+    box-shadow var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Scale on hover */
+.hover-scale {
+  transition: transform var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-emphasized);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Glow on hover */
+.hover-glow {
+  transition: filter var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-emphasized);
+}
+
+.hover-glow:hover {
+  filter: drop-shadow(var(--neon-glow-medium) var(--neon-glow-primary));
+}
+
+/* Brightness on hover */
+.hover-bright {
+  transition: filter var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+}
+
+.hover-bright:hover {
+  filter: brightness(1.1);
+}
+
+/* Press effect */
+.press-effect {
+  transition: transform var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard);
+}
+
+.press-effect:active {
+  transform: scale(0.97);
+}
+
+/* Focus ring enhancement */
+.focus-ring-neon:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--md-sys-color-surface),
+    0 0 0 4px var(--md-sys-color-primary),
+    0 0 12px var(--neon-glow-primary);
+}
+
+/* =============================================================================
+   STATUS INDICATOR SYSTEM
+   Consistent status colors with glow variants.
+   ============================================================================= */
+
+:root {
+  --status-ok: oklch(0.65 0.18 145);
+  --status-warn: oklch(0.75 0.16 85);
+  --status-error: oklch(0.60 0.22 25);
+  --status-info: oklch(0.65 0.15 240);
+  --status-idle: oklch(0.50 0.02 240);
+
+  --status-ok-glow: oklch(0.65 0.18 145 / 0.5);
+  --status-warn-glow: oklch(0.75 0.16 85 / 0.5);
+  --status-error-glow: oklch(0.60 0.22 25 / 0.5);
+  --status-info-glow: oklch(0.65 0.15 240 / 0.5);
+}
+
+.status-ok { color: var(--status-ok); }
+.status-warn { color: var(--status-warn); }
+.status-error { color: var(--status-error); }
+.status-info { color: var(--status-info); }
+.status-idle { color: var(--status-idle); }
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.ok {
+  background: var(--status-ok);
+  box-shadow: 0 0 8px var(--status-ok-glow);
+}
+
+.status-dot.warn {
+  background: var(--status-warn);
+  box-shadow: 0 0 8px var(--status-warn-glow);
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.status-dot.error {
+  background: var(--status-error);
+  box-shadow: 0 0 8px var(--status-error-glow);
+  animation: neon-pulse 1s ease-in-out infinite;
+}
+
+.status-dot.info {
+  background: var(--status-info);
+  box-shadow: 0 0 8px var(--status-info-glow);
+}
+
+.status-dot.idle {
+  background: var(--status-idle);
+}

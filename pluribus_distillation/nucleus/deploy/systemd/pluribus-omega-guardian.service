@@ -1,0 +1,19 @@
+[Unit]
+Description=Pluribus Omega Guardian (omega-regular verification)
+After=network.target pluribus-omega-heartbeat.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/pluribus
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=OMEGA_GUARDIAN_INTERVAL_S=10
+Environment=OMEGA_GUARDIAN_WARMUP_S=30
+ExecStart=/usr/bin/python3 /pluribus/nucleus/tools/omega_guardian.py --rules /pluribus/nucleus/specs/omega_guardian_rules.json --bus-dir /pluribus/.pluribus/bus
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

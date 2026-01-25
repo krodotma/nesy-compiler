@@ -1,0 +1,80 @@
+/* =============================================================================
+   LOADING OVERLAY STYLES
+   Append this to global.css
+   ============================================================================= */
+
+/* Loading overlay - covers entire viewport */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  transition: opacity 0.3s ease-out;
+}
+
+/* Hide overlay when hydrated */
+body.hydrated .loading-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Centered content box */
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+/* Animated orb placeholder */
+.loading-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00d4ff, #9b59b6, #e74c3c);
+  background-size: 200% 200%;
+  animation: orb-pulse 2s ease-in-out infinite, orb-gradient 3s ease infinite;
+  box-shadow: 
+    0 0 30px rgba(0, 212, 255, 0.4),
+    0 0 60px rgba(155, 89, 182, 0.3);
+}
+
+@keyframes orb-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes orb-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Progress bar container */
+.loading-progress {
+  width: 200px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* Progress bar fill */
+.loading-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff, #9b59b6);
+  border-radius: 2px;
+  transition: width 0.2s ease-out;
+}
+
+/* Status text */
+.loading-status {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.05em;
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/2023-07-16/schema.json",
+  "spacing": {
+    "2xs": {"$type": "dimension", "$value": "2px"},
+    "xs": {"$type": "dimension", "$value": "4px"},
+    "sm": {"$type": "dimension", "$value": "8px"},
+    "md": {"$type": "dimension", "$value": "12px"},
+    "lg": {"$type": "dimension", "$value": "16px"},
+    "xl": {"$type": "dimension", "$value": "24px"},
+    "2xl": {"$type": "dimension", "$value": "32px"},
+    "3xl": {"$type": "dimension", "$value": "40px"},
+    "4xl": {"$type": "dimension", "$value": "48px"},
+    "5xl": {"$type": "dimension", "$value": "64px"}
+  }
+}

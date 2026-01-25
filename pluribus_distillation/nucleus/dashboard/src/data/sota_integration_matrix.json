@@ -1,0 +1,130 @@
+[
+  {
+    "id": "iso-git",
+    "name": "isomorphic-git",
+    "pattern": "Core Library",
+    "integration_percent": 100,
+    "plan_details": "Fully integrated via nucleus/tools/iso_git.mjs. Powers the Phenotype management.",
+    "status": "active"
+  },
+  {
+    "id": "pbmint",
+    "name": "PBMint",
+    "pattern": "OITERATIVE Operator",
+    "integration_percent": 100,
+    "plan_details": "Implemented as nucleus/tools/pbmint_operator.py with systemd service.",
+    "status": "active"
+  },
+  {
+    "id": "visual-engine",
+    "name": "VisualEngine 2.0",
+    "pattern": "Design System",
+    "integration_percent": 40,
+    "plan_details": "Unified OKLCH Material System with Procedural Shaders. Replaces legacy CSS themes.",
+    "status": "active"
+  },
+  {
+    "id": "tweakcn",
+    "name": "TweakCN",
+    "pattern": "Theme Editor",
+    "integration_percent": 10,
+    "plan_details": "Vendored shadcn-toolkit. Integration with GestaltOverlay pending.",
+    "status": "planned"
+  },
+  {
+    "id": "web-llm",
+    "name": "WebLLM",
+    "pattern": "Browser Engine",
+    "integration_percent": 40,
+    "plan_details": "Basic chat interface active. Pending: Service Worker integration for offline model serving.",
+    "status": "in-progress"
+  },
+  {
+    "id": "graphiti",
+    "name": "Graphiti",
+    "pattern": "Memory Store",
+    "integration_percent": 10,
+    "plan_details": "Selected as primary Temporal KG. Codebase imported. Pending: Event Bus connector.",
+    "status": "planned"
+  },
+  {
+    "id": "mem0",
+    "name": "Mem0",
+    "pattern": "Memory Layer",
+    "integration_percent": 0,
+    "plan_details": "Deprioritized. Overlaps with Graphiti and native sqlite-vec. Avoiding 'Memory Schizophrenia'.",
+    "status": "deprioritized"
+  },
+  {
+    "id": "crush-cli",
+    "name": "Crush CLI",
+    "pattern": "Agentic Editor",
+    "integration_percent": 80,
+    "plan_details": "Basic CLI agent active. Pending: Full TUI integration.",
+    "status": "active"
+  },
+  {
+    "id": "opencode",
+    "name": "OpenCode",
+    "pattern": "Dev TUI",
+    "integration_percent": 10,
+    "plan_details": "Investigating unique strengths vs Crush. OpenCode=Navigation/Read, Crush=Editing/Write. Pending: Skills.md mapping.",
+    "status": "investigating"
+  },
+  {
+    "id": "webmcp",
+    "name": "WebMCP",
+    "pattern": "Tool Protocol",
+    "integration_percent": 20,
+    "plan_details": "Aligned with AuOM. Pending: Standardizing all nucleus/tools as MCP servers.",
+    "status": "planned"
+  },
+  {
+    "id": "unstructured",
+    "name": "Unstructured",
+    "pattern": "ETL Pipeline",
+    "integration_percent": 5,
+    "plan_details": "Essential for RAG ingestion. Low-risk integration.",
+    "status": "planned"
+  },
+  {
+    "id": "cosmopolitan",
+    "name": "Cosmopolitan Libc",
+    "pattern": "Build Artifact",
+    "integration_percent": 0,
+    "plan_details": "Omega-level lever for 'Run Anywhere' (Supersymmetry). High priority for build pipeline.",
+    "status": "planned"
+  },
+  {
+    "id": "mastra",
+    "name": "Mastra",
+    "pattern": "Orchestration",
+    "integration_percent": 0,
+    "plan_details": "Suspect. Likely conflicts with DKIN loop model (similar to Icepick). Audit required.",
+    "status": "investigating"
+  },
+  {
+    "id": "katana-ml",
+    "name": "Katana ML",
+    "pattern": "MLOps",
+    "integration_percent": 0,
+    "plan_details": "Deprioritized. Too heavy/enterprise for local-first substrate.",
+    "status": "deprioritized"
+  },
+  {
+    "id": "hatchet",
+    "name": "Hatchet",
+    "pattern": "Orchestration",
+    "integration_percent": 0,
+    "plan_details": "Under investigation. No active integration.",
+    "status": "deprioritized"
+  },
+  {
+    "id": "icepick",
+    "name": "Icepick",
+    "pattern": "Durable Agent Framework",
+    "integration_percent": 0,
+    "plan_details": "Deprioritized. DKIN v22 (Amber) solves persistence natively via Git loops.",
+    "status": "deprioritized"
+  }
+]

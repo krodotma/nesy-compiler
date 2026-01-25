@@ -1,0 +1,8 @@
+import yaml
+
+# Default configuration for MetaLearner
+buffer_path: meta_learner/data/experience.db
+skill_dir: meta_learner/skills
+model_path: meta_learner/models/model_latest.pt
+batch_size: 64
+learning_rate: 5e-5

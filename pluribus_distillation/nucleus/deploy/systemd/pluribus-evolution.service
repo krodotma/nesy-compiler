@@ -1,0 +1,25 @@
+[Unit]
+Description=Pluribus Evolution Trunk (Observer/Refiner/Synthesizer)
+After=network.target pluribus-bus-bridge.service
+Wants=pluribus-bus-bridge.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/pluribus
+Environment=PYTHONPATH=/pluribus
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=PLURIBUS_ACTOR=pluribus-evolution
+Environment=PLURIBUS_EVOLUTION_INTERVAL_S=1800
+ExecStart=/usr/bin/python3 -m pluribus_evolution.observer.main
+Restart=on-failure
+RestartSec=30s
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=25%
+
+[Install]
+WantedBy=multi-user.target

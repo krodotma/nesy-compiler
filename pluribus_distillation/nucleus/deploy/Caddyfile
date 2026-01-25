@@ -1,0 +1,369 @@
+# Pluribus Dashboard HTTPS Configuration
+# Official domains with Let's Encrypt certificates
+
+# Shared snippet for API proxies - reused across all domains
+(api_proxies) {
+    # WebSocket for bus events - proxy to bus-bridge
+    @ws_bus {
+        path /ws/bus
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @ws_bus 127.0.0.1:9200
+
+    # WebSocket for terminals - proxy to bus-bridge
+    @ws_terminals {
+        path /terminal* /crush* /plurichat*
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @ws_terminals 127.0.0.1:9200
+
+    # REST API - session, agents, io-buffer (port 9201)
+    handle /api/session* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9201
+    }
+    handle /api/agents* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9201
+    }
+    handle /api/io-buffer* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9201
+    }
+    handle /api/bus/* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9201
+    }
+    handle /api/metrics/* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9201
+    }
+    handle /api/dialogos/* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9201
+    }
+
+    # Tools API - git, fs, sota, module (port 9300)
+    handle /api/git/* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9300
+    }
+    handle /api/fs/* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9300
+    }
+    handle /api/sota* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9300
+    }
+    handle /api/metatest* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9300
+    }
+    handle /api/module/* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9300
+    }
+
+    # Browser session daemon API (port 9300)
+    handle /api/browser/* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9300
+    }
+
+    # Emit endpoint - bus-bridge /publish (port 9201)
+    handle /api/emit* {
+        uri strip_prefix /api
+        uri replace /emit /publish
+        reverse_proxy 127.0.0.1:9201
+    }
+
+    # Portal asset ingest endpoint (port 9201)
+    handle /api/portal/assets* {
+        uri strip_prefix /api
+        reverse_proxy 127.0.0.1:9201
+    }
+
+    # Cloud Storage API (port 9400)
+    handle /api/cloud/* {
+        uri strip_prefix /api/cloud
+        reverse_proxy 127.0.0.1:9400
+    }
+
+    # World Router - Unified Gateway (port 8080)
+    # LLM inference endpoints
+    handle /v1/* {
+        reverse_proxy 127.0.0.1:8080
+    }
+    handle /v1beta/* {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    # Computer Use Agent (CUA) endpoints
+    handle /cua/* {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    # Identity Hub endpoints
+    handle /identity/* {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    # A2A Protocol endpoints
+    handle /.well-known/agent.json {
+        reverse_proxy 127.0.0.1:8080
+    }
+    handle /a2a/* {
+        reverse_proxy 127.0.0.1:8080
+    }
+
+    # World Router health check
+    handle /wr/health {
+        rewrite * /health
+        reverse_proxy 127.0.0.1:8080
+    }
+}
+
+# Primary domain - kroma.live
+kroma.live {
+    import api_proxies
+    @iconfix path_regexp iconfix ^/icons/(icon-192\.png|icon-512\.png)/$
+    rewrite @iconfix /icons/{http.regexp.iconfix.1}
+
+    # noVNC UI requests ./package.json relative to /vnc/vnc.html.
+    # The system noVNC web root (/usr/share/novnc) does not ship a top-level
+    # package.json, so serve a minimal one here to avoid a hard 404.
+    handle /vnc/package.json {
+        header Content-Type application/json
+        respond "{\"name\":\"novnc\",\"version\":\"unknown\"}" 200
+    }
+
+    # noVNC - all /vnc/* requests go to websockify (strips /vnc prefix)
+    handle_path /vnc/* {
+        # Allow embedding noVNC inside the dashboard.
+        header -X-Frame-Options
+        # WebSocket upgrade for VNC connection
+        @novnc_ws {
+            header Connection *Upgrade*
+            header Upgrade websocket
+        }
+        header Cross-Origin-Opener-Policy "same-origin"
+        header Cross-Origin-Embedder-Policy "credentialless"
+        reverse_proxy @novnc_ws 127.0.0.1:6080
+
+        # Static files
+        reverse_proxy 127.0.0.1:6080
+    }
+
+    # WebSocket support for Vite HMR
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websockets 127.0.0.1:5173
+
+    # Docs audit preview (temporary - commit 07c43194)
+    handle_path /docs-audit/* {
+        root * /var/www/docs-audit
+        file_server
+    }
+
+    # Main docs - swapped for audit (07c43194 snapshot)
+    handle_path /docs/* {
+        root * /var/www/docs-audit
+        file_server
+    }
+
+    # Default to Vite dev server
+    reverse_proxy 127.0.0.1:5173
+
+    # Logging
+    log {
+        output file /var/log/caddy/kroma.log
+        format json
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "credentialless"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+# Secondary domain - kareem.movie
+kareem.movie {
+    import api_proxies
+
+    # noVNC UI requests ./package.json relative to /vnc/vnc.html.
+    # The system noVNC web root (/usr/share/novnc) does not ship a top-level
+    # package.json, so serve a minimal one here to avoid a hard 404.
+    handle /vnc/package.json {
+        header Content-Type application/json
+        respond "{\"name\":\"novnc\",\"version\":\"unknown\"}" 200
+    }
+
+    # noVNC - all /vnc/* requests go to websockify (strips /vnc prefix)
+    handle_path /vnc/* {
+        # Allow embedding noVNC inside the dashboard.
+        header -X-Frame-Options
+        @novnc_ws {
+            header Connection *Upgrade*
+            header Upgrade websocket
+        }
+        header Cross-Origin-Opener-Policy "same-origin"
+        header Cross-Origin-Embedder-Policy "credentialless"
+        reverse_proxy @novnc_ws 127.0.0.1:6080
+        reverse_proxy 127.0.0.1:6080
+    }
+
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websockets 127.0.0.1:5173
+
+    reverse_proxy 127.0.0.1:5173
+
+    log {
+        output file /var/log/caddy/kareem.log
+        format json
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "credentialless"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+# Keep sslip.io as fallback
+69-169-104-17.sslip.io {
+    import api_proxies
+
+    # noVNC UI requests ./package.json relative to /vnc/vnc.html.
+    # The system noVNC web root (/usr/share/novnc) does not ship a top-level
+    # package.json, so serve a minimal one here to avoid a hard 404.
+    handle /vnc/package.json {
+        header Content-Type application/json
+        respond "{\"name\":\"novnc\",\"version\":\"unknown\"}" 200
+    }
+
+    # noVNC - all /vnc/* requests go to websockify (strips /vnc prefix)
+    handle_path /vnc/* {
+        # Allow embedding noVNC inside the dashboard.
+        header -X-Frame-Options
+        @novnc_ws {
+            header Connection *Upgrade*
+            header Upgrade websocket
+        }
+        header Cross-Origin-Opener-Policy "same-origin"
+        header Cross-Origin-Embedder-Policy "credentialless"
+        reverse_proxy @novnc_ws 127.0.0.1:6080
+        reverse_proxy 127.0.0.1:6080
+    }
+
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websockets 127.0.0.1:5173
+
+    reverse_proxy 127.0.0.1:5173
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "credentialless"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+# Localhost access - direct (no HTTPS needed, secure context by default)
+localhost:80, 127.0.0.1:80 {
+    import api_proxies
+
+    # noVNC UI requests ./package.json relative to /vnc/vnc.html.
+    # The system noVNC web root (/usr/share/novnc) does not ship a top-level
+    # package.json, so serve a minimal one here to avoid a hard 404.
+    handle /vnc/package.json {
+        header Content-Type application/json
+        respond "{\"name\":\"novnc\",\"version\":\"unknown\"}" 200
+    }
+
+    # noVNC - all /vnc/* requests go to websockify (strips /vnc prefix)
+    handle_path /vnc/* {
+        # Allow embedding noVNC inside the dashboard.
+        header -X-Frame-Options
+        @novnc_ws {
+            header Connection *Upgrade*
+            header Upgrade websocket
+        }
+        header Cross-Origin-Opener-Policy "same-origin"
+        header Cross-Origin-Embedder-Policy "credentialless"
+        reverse_proxy @novnc_ws 127.0.0.1:6080
+        reverse_proxy 127.0.0.1:6080
+    }
+
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websockets 127.0.0.1:5173
+
+    reverse_proxy 127.0.0.1:5173
+
+    header {
+        X-Content-Type-Options "nosniff"
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "credentialless"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+# External IP - redirect to primary domain
+69.169.104.17:80 {
+    redir https://kroma.live{uri} permanent
+}
+
+# Distilled Environment - Sidecar Vhost
+distilled.kroma.live {
+    import api_proxies
+
+    # WebSocket support
+    @websockets {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websockets 127.0.0.1:5174
+
+    # Default to Distilled Dashboard (Port 5174)
+    reverse_proxy 127.0.0.1:5174
+
+    # Distinct Logging
+    log {
+        output file /var/log/caddy/distilled.log
+        format json
+    }
+
+    # Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "credentialless"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}

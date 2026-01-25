@@ -1,0 +1,706 @@
+/* =============================================================================
+   LOADING OVERLAY - Modern Premium Design
+   Enhanced with M3 Motion Tokens + Glass System Integration
+   ============================================================================= */
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Use glass aurora background for consistency */
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0f0f1a 100%);
+    backdrop-filter: blur(var(--glass-blur-xl, 32px));
+    -webkit-backdrop-filter: blur(var(--glass-blur-xl, 32px));
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    max-width: 1000px;
+    width: 95%;
+    overflow: visible !important;
+}
+
+/* Animated Orb - Pure CSS */
+.loading-orb {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    /* overflow: visible is critical for the glow */
+    overflow: visible !important;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Box shadow REMOVED to prevent grey muddiness */
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Chromatic Aurora Halo - DOM Element */
+.loading-glow {
+    position: absolute;
+    inset: -30px;
+    z-index: 0;
+    /* Behind canvas (1) */
+    background: conic-gradient(from 0deg, #00ffff, #0984e3, #6c5ce7, #ff00cc, #00ffff);
+    filter: blur(25px);
+    border-radius: 50%;
+    /* Undulating chromatic glow: spin + breathe */
+    animation: chromatic-spin 8s linear infinite, chromatic-breathe 3s ease-in-out infinite;
+    opacity: 0;
+    mix-blend-mode: screen;
+    transition: opacity 1.5s ease-out;
+}
+
+.loading-glow.visible {
+    opacity: 0.65;
+}
+
+/* Glass surface for loading columns */
+.loading-column {
+    /* Inherit glass surface tokens */
+    background: var(--glass-bg-card, rgba(0, 255, 255, 0.02));
+    border: 1px solid var(--glass-border, rgba(0, 255, 255, 0.08));
+    backdrop-filter: blur(var(--glass-blur-sm, 8px));
+    -webkit-backdrop-filter: blur(var(--glass-blur-sm, 8px));
+    transition:
+        background var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+        border-color var(--md-sys-motion-duration-short2, 100ms) var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.loading-column:hover {
+    background: var(--glass-bg-hover, rgba(0, 255, 255, 0.04));
+    border-color: var(--glass-border-hover, rgba(0, 255, 255, 0.18));
+}
+
+@keyframes chromatic-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes chromatic-breathe {
+    0%, 100% {
+        transform: scale(1) rotate(0deg);
+        filter: blur(25px) brightness(1);
+    }
+    50% {
+        transform: scale(1.075) rotate(180deg);
+        filter: blur(28px) brightness(1.2);
+    }
+}
+
+.loading-orb canvas {
+    width: 100%;
+    height: 100%;
+    transform-origin: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    border-radius: 50%;
+    background: transparent !important;
+    /* Lighten blend + contrast boost: hides dark fog, shows only bright torus */
+    mix-blend-mode: lighten;
+    filter: contrast(1.3);
+}
+
+@keyframes orb-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes orb-pulse {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1);
+    }
+
+    50% {
+        transform: scale(1.1) rotate(180deg);
+        filter: brightness(1.2);
+    }
+}
+
+/* Title */
+.loading-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #54a0ff, #ff6b6b, #feca57, #48dbfb);
+    background-size: 300% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: title-shimmer 3s ease-in-out infinite;
+    margin: 0;
+}
+
+@keyframes title-shimmer {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Progress Bar */
+.loading-progress {
+    width: 100%;
+    height: 6px;
+    position: relative;
+}
+
+.loading-progress-track {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: visible;
+    position: relative;
+}
+
+.loading-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #54a0ff, #48dbfb, #ff6b6b);
+    background-size: 200% 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease-out;
+    animation: progress-shimmer 2s linear infinite;
+    box-shadow: 0 0 10px rgba(84, 160, 255, 0.5);
+}
+
+@keyframes progress-shimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+.loading-progress-glow {
+    position: absolute;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, rgba(84, 160, 255, 0.8) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: left 0.3s ease-out;
+}
+
+/* Stats */
+.loading-stats {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+}
+
+.loading-count {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.loading-percent {
+    color: #54a0ff;
+    font-weight: 600;
+}
+
+/* Activity List */
+.loading-activity {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.activity-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 255, 255, 0.03);
+    border-radius: 6px;
+    border-left: 2px solid rgba(0, 255, 255, 0.4);
+    font-size: 0.8rem;
+    animation: row-slide-in 0.3s ease-out;
+}
+
+@keyframes row-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.activity-name {
+    color: rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.activity-time {
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    font-size: 0.75rem;
+}
+
+/* =============================================================================
+   JUICY ANIMATIONS - Enter & Exit
+   ============================================================================= */
+
+/* Base state for juicy elements - start hidden and scaled down */
+.juicy-element {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+    transition:
+        opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition-delay: calc(var(--stagger, 0) * 0.1s);
+}
+
+/* Entered state - animate in with bounce */
+.loading-overlay.entered .juicy-element {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+/* Special orb entrance - more dramatic */
+.loading-overlay.entered .loading-orb.juicy-element {
+    animation: orb-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation-delay: 0s;
+}
+
+@keyframes orb-entrance {
+    0% {
+        opacity: 0;
+        transform: scale(0.3) translateY(50px) rotate(-10deg);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1) translateY(-10px) rotate(5deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0) rotate(0deg);
+    }
+}
+
+/* Exiting state - juicy exit animations */
+.loading-overlay.exiting .juicy-element {
+    animation: juicy-exit 0.7s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+    animation-delay: calc(var(--stagger, 0) * 0.05s);
+}
+
+@keyframes juicy-exit {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: scale(1.05) translateY(-10px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.6) translateY(-80px) rotate(5deg);
+        filter: blur(8px);
+    }
+}
+
+/* Special orb exit - whoosh away */
+.loading-overlay.exiting .loading-orb.juicy-element {
+    animation: orb-exit 0.8s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+
+@keyframes orb-exit {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    20% {
+        opacity: 1;
+        transform: scale(1.15) translateY(-20px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.2) translateY(-150px) rotate(180deg);
+        filter: blur(20px);
+    }
+}
+
+/* Overlay fade */
+.loading-overlay {
+    transition: background 0.5s ease-out, backdrop-filter 0.5s ease-out;
+}
+
+.loading-overlay.exiting {
+    background: transparent;
+    backdrop-filter: blur(0px);
+}
+
+/* Loading glow follows orb animation */
+/* Loading glow follows orb animation - synced with orb exit */
+.loading-overlay.exiting .loading-glow {
+    opacity: 0 !important;
+    transition: opacity 0.4s ease-out;
+}
+
+/* Progress bar special exit - slides and fades */
+.loading-overlay.exiting .loading-progress.juicy-element {
+    animation: progress-exit 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+    animation-delay: 0.1s;
+}
+
+@keyframes progress-exit {
+    0% {
+        opacity: 1;
+        transform: scaleX(1) translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scaleX(0.5) translateY(-40px);
+    }
+}
+
+/* Activity rows cascade out */
+.loading-overlay.exiting .activity-row {
+    animation: row-exit 0.4s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+    animation-delay: calc(var(--row-index, 0) * 0.03s);
+}
+
+@keyframes row-exit {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+}/* Override: Make juicy elements visible immediately on load */
+.loading-overlay .juicy-element {
+    opacity: 1 !important;
+    transform: scale(1) translateY(0) !important;
+}
+/* Early loading animation - runs before hydration via CSS only */
+
+/* Animated placeholder for shader canvas during pre-hydration */
+.loading-orb::before {
+    display: none !important;
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%,
+            rgba(100, 200, 255, 0.4) 0%,
+            rgba(80, 100, 200, 0.3) 30%,
+            rgba(60, 40, 150, 0.2) 60%,
+            transparent 70%);
+    display: none;
+    z-index: 0;
+}
+
+/* Hide placeholder when real shader loads */
+.loading-orb canvas + *,
+.loading-orb:has(canvas)::before,
+[data-qwik-ready="1"] .loading-orb::before {
+    display: none !important;
+    display: none;
+}
+
+@keyframes orb-placeholder-spin {
+    from {
+        transform: rotate(0deg) scale(0.95);
+    }
+
+    50% {
+        transform: rotate(180deg) scale(1.05);
+    }
+
+    to {
+        transform: rotate(360deg) scale(0.95);
+    }
+}
+
+@keyframes orb-placeholder-pulse {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Simulated progress bar animation before hydration */
+.loading-progress-fill {
+    /* CSS animation fallback - pulses the bar to show activity */
+    display: none;
+}
+
+@keyframes progress-simulate {
+    0% {
+        width: 2%;
+    }
+
+    10% {
+        width: 8%;
+    }
+
+    30% {
+        width: 15%;
+    }
+
+    50% {
+        width: 22%;
+    }
+
+    70% {
+        width: 28%;
+    }
+
+    90% {
+        width: 32%;
+    }
+
+    100% {
+        width: 35%;
+    }
+}
+
+/* Animated "loading" text for the count before hydration */
+.loading-count::after {
+    content: '...';
+    display: none;
+}
+
+@keyframes loading-dots {
+    0% {
+        content: '.';
+    }
+
+    33% {
+        content: '..';
+    }
+
+    66% {
+        content: '...';
+    }
+}
+
+/* Once hydrated, remove the simulated animations */
+[data-qwik-ready="1"] .loading-progress-fill {
+    display: none;
+    transition: width 0.3s ease-out;
+}
+
+[data-qwik-ready="1"] .loading-count::after {
+    content: none;
+}
+
+/* =============================================================================
+   BOOT MATRIX - Three-Column Status Display
+   ============================================================================= */
+
+.loading-matrix {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 900px;
+    margin-top: 1rem;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    font-size: 0.7rem;
+}
+
+@media (max-width: 768px) {
+    .loading-matrix {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+.loading-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    background: rgba(0, 255, 255, 0.02);
+    border: 1px solid rgba(0, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.75rem;
+    backdrop-filter: blur(8px);
+}
+
+.column-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(0, 255, 255, 0.6);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.12);
+}
+
+/* Boot Line - Each row in the matrix */
+.boot-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+    color: rgba(255, 255, 255, 0.7);
+    transition: background 0.15s ease;
+    border-radius: 3px;
+}
+
+.boot-line:hover {
+    background: rgba(0, 255, 255, 0.03);
+}
+
+/* Status indicator */
+.boot-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.boot-status.ok {
+    background: rgba(46, 213, 115, 0.15);
+    color: #2ed573;
+    border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.boot-status.warn {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.boot-status.wait {
+    background: rgba(84, 160, 255, 0.15);
+    color: #54a0ff;
+    border: 1px solid rgba(84, 160, 255, 0.3);
+    animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+.boot-status.fail {
+    background: rgba(255, 71, 87, 0.15);
+    color: #ff4757;
+    border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
+@keyframes status-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+/* Label - the main text */
+.boot-label {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+/* Meta - secondary info */
+.boot-meta {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    text-align: right;
+}
+
+/* Row status coloring */
+.boot-line.ok {
+    border-left: 2px solid rgba(46, 213, 115, 0.5);
+}
+
+.boot-line.warn {
+    border-left: 2px solid rgba(255, 193, 7, 0.5);
+}
+
+.boot-line.wait {
+    border-left: 2px solid rgba(84, 160, 255, 0.5);
+}
+
+.boot-line.fail {
+    border-left: 2px solid rgba(255, 71, 87, 0.5);
+}
+
+/* M3 Progress Bar Styling */
+.loading-progress-m3 {
+    width: 100%;
+    --md-linear-progress-track-color: rgba(0, 255, 255, 0.1);
+    --md-linear-progress-active-indicator-color: linear-gradient(90deg, #54a0ff, #48dbfb, #ff6b6b);
+    --md-linear-progress-track-height: 6px;
+    --md-linear-progress-active-indicator-height: 6px;
+    --md-linear-progress-track-shape: 3px;
+}
+
+.loading-progress-glow-m3 {
+    position: absolute;
+    top: 50%;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, rgba(84, 160, 255, 0.8) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: left 0.3s ease-out;
+}
+
+/* M3 Elevation for overlay */
+.loading-overlay-elevation {
+    position: absolute;
+    inset: 0;
+    --md-elevation-level: 5;
+    pointer-events: none;
+}

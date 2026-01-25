@@ -1,0 +1,49 @@
+{
+    "$schema": "./cagent.schema.json",
+    "version": "1.0",
+    "agent": {
+        "id": "${AGENT_ID}",
+        "model": "${MODEL}",
+        "archetype": "${ARCHETYPE}",
+        "tier": "SAGENT"
+    },
+    "identity": {
+        "persona_file": "./persona.md",
+        "constitution_file": "~/.pluribus/constitution/CITIZEN.md"
+    },
+    "classification": {
+        "ring_access": [
+            1,
+            2
+        ],
+        "phi_score": 0.85,
+        "domains": []
+    },
+    "paths": {
+        "workspace_root": "${WORKSPACE_ROOT}",
+        "bus_dir": "${WORKSPACE_ROOT}/.pluribus/bus",
+        "ledger_dir": "${WORKSPACE_ROOT}/.pluribus/dkin",
+        "artifacts_dir": "${WORKSPACE_ROOT}/.gemini/antigravity/brain"
+    },
+    "bus": {
+        "watch_topics": [
+            "a2a.task.dispatch",
+            "dialogos.cell.*"
+        ],
+        "emit_topics": [
+            "a2a.task.complete",
+            "a2a.task.progress"
+        ]
+    },
+    "hooks": {
+        "on_start": [],
+        "on_task_receive": [],
+        "on_task_complete": [],
+        "on_shutdown": []
+    },
+    "skills": [],
+    "attestation": {
+        "handshake_required": true,
+        "attestation_interval_s": 3600
+    }
+}

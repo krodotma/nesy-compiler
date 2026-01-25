@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kroma.live/schemas/metaingest/common.schema.json",
+  "title": "MetaIngest API Common Schemas",
+  "description": "Shared schema definitions for MetaIngest REST API",
+  "$defs": {
+    "APIResponse": {
+      "type": "object",
+      "required": ["success", "meta"],
+      "properties": {
+        "success": { "type": "boolean" },
+        "data": { "type": ["object", "array", "null"] },
+        "error": { "$ref": "#/$defs/APIError" },
+        "meta": { "$ref": "#/$defs/ResponseMeta" },
+        "pagination": { "$ref": "#/$defs/PaginationMeta" }
+      }
+    },
+    "APIError": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "$ref": "#/$defs/APIErrorCode" },
+        "message": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "APIErrorCode": {
+      "type": "string",
+      "enum": [
+        "MI_001", "MI_002", "MI_003", "MI_004", "MI_005",
+        "MI_006", "MI_007", "MI_008", "MI_009", "MI_010",
+        "MI_011", "MI_012", "MI_013", "MI_014", "MI_015",
+        "MI_016", "MI_017", "MI_018", "MI_019", "MI_020"
+      ],
+      "description": "MetaIngest error codes MI_001-MI_020"
+    },
+    "ResponseMeta": {
+      "type": "object",
+      "required": ["timestamp", "duration_ms"],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trace_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "PaginationMeta": {
+      "type": "object",
+      "required": ["total", "limit", "offset", "has_more"],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      }
+    },
+    "TermIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[a-zA-Z][a-zA-Z0-9_\\-\\.]{0,255}$",
+      "description": "Ontology term identifier"
+    },
+    "UUID": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "FilePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^[a-zA-Z0-9_\\-\\./]+$",
+      "description": "Relative file path from repo root"
+    },
+    "FitnessScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fitness score between 0.0 and 1.0"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    }
+  }
+}

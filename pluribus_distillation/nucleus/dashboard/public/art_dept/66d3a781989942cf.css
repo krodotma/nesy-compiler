@@ -1,0 +1,8 @@
+
+/* Simulated CSS 1765993979 */
+/* Based on: A CSS theme that makes everything look like a retro terminal */
+:root {
+    --art-simulated: 1765993979;
+    --art-primary: #ff50aa;
+}
+body { background: #000; color: #fff; }

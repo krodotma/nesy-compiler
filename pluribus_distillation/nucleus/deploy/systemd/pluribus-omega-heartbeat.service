@@ -1,0 +1,18 @@
+[Unit]
+Description=Pluribus Omega Heartbeat (bus liveness + queue metrics)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/pluribus
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=OMEGA_INTERVAL_S=10
+ExecStart=/usr/bin/python3 /pluribus/nucleus/tools/omega_heartbeat.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

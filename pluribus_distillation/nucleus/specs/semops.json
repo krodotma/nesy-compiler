@@ -1,0 +1,3308 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": 1,
+  "title": "Pluribus Semantic Operators Registry",
+  "description": "Canonical source of truth for all semantic operators in Pluribus. Referenced by lexicon §6.4, idiolect.json, and agent prompts.",
+  "updated_iso": "2026-01-01T02:34:18Z",
+  "protocol_version": "v29",
+  "operators": {
+    "REALAGENTS": {
+      "id": "realagents",
+      "name": "REALAGENTS",
+      "domain": "coordination",
+      "category": "dispatch",
+      "description": "Formal assignment operator for deep implementation tasks (no shims). Emits rd.tasks.dispatch and mirrors to infer_sync.request.",
+      "tool": "nucleus/tools/realagents_operator.py",
+      "bus_topic": "rd.tasks.dispatch",
+      "bus_kind": "request",
+      "secondary_topic": "infer_sync.request",
+      "aliases": [
+        "realagents",
+        "REALAGENTS",
+        "dispatch"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/realagents_operator.py --task ...",
+        "repl": [
+          "realagents"
+        ],
+        "slash_command": "/realagents"
+      },
+      "guarantees": [
+        "Formal assignment",
+        "Mirrored to sync loop",
+        "No-shim policy"
+      ]
+    },
+    "CKIN": {
+      "id": "ckin",
+      "name": "CKIN",
+      "domain": "observability",
+      "category": "status",
+      "description": "Rich status dashboard with progress bars, velocity metrics, staleness indicators, shared-ledger compliance snapshot (v6), and gap analysis (v7). Protocol v8 family aligns CKIN (snapshot) with ITERATE (kick) and OITERATE (ω-loop). Protocol v12 adds parallel agent filesystem isolation (PAIP); v12.1 adds the Summary Frame + TTL clarifications; v13 adds PBDEEP forensics index surfacing in CKIN + Summary Frame; v15 adds Safe Context & Log Hygiene; v16 adds PBLOCK milestone freeze state with feature-lock guards.",
+      "tool": "nucleus/tools/ckin_report.py",
+      "bus_topic": "ckin.report",
+      "bus_kind": "metric",
+      "protocol_spec": "nucleus/specs/ckin_protocol.md",
+      "aliases": [
+        "ckin",
+        "CKIN",
+        "dkin",
+        "DKIN",
+        "chkin",
+        "checking in",
+        "check in"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/ckin_report.py --agent <name> --emit-bus",
+        "repl": [
+          "ckin",
+          "checking in"
+        ],
+        "slash_command": "/ckin"
+      },
+      "options": {
+        "--agent": "Agent name for header",
+        "--emit-bus": "Emit ckin.report metric event",
+        "--json": "JSON output for programmatic consumption",
+        "--compact": "Reduced output (default is verbose)"
+      },
+      "output_sections": [
+        "BUS_ACTIVITY",
+        "FORENSICS_INDEX",
+        "GAP_ANALYSIS",
+        "BEAM_DISCOURSE",
+        "GOLDEN_SYNTHESIS",
+        "AGENT_VELOCITY_MATRIX",
+        "HEXIS_BUFFER_STATUS",
+        "10x10_CHALLENGE_VELOCITY",
+        "COMPLIANCE_SYNC",
+        "MCP_INTEROP_OFFICIAL_SDK",
+        "NEXT_ACTIONS_BLOCKERS"
+      ],
+      "guarantees": [
+        "No secrets leaked",
+        "Comprehensive status",
+        "Actionable next steps",
+        "Staleness indicators (v5)",
+        "Shared-ledger compliance snapshot (v6)",
+        "Gap analysis (v7)"
+      ],
+      "protocol_evolution": {
+        "v1": "Minimal check-in (bus snapshot)",
+        "v2": "Drift guards (BEAM/GOLDEN counts)",
+        "v3": "Enhanced dashboard (7 sections)",
+        "v4": "ITERATE operator (coordination kick)",
+        "v5": "Silent monitoring contract (staleness indicators)",
+        "v6": "Shared-ledger sync + compliance snapshot",
+        "v7": "Aleatoric/epistemic gap detection",
+        "v8": "CKIN family: CKIN/ITERATE + OITERATE ω-loop",
+        "v9": "DKIN rename (dashboard kernel packaging)",
+        "v10": "Intelligent membrane + PBFLUSH + MABSWARM/MBAD",
+        "v11": "MCP official SDK interop observability section",
+        "v12": "Parallel agent filesystem isolation (PAIP)",
+        "v12.1": "Summary Frame + PAIP TTL clarifications",
+        "v13": "PBDEEP forensics index integration (CKIN + Summary Frame)",
+        "v15": "Safe Context + Log Hygiene (PBHYGIENE)",
+        "v16": "PBLOCK milestone freeze operator",
+        "v17": "System hygiene + bus rotation + context window safety",
+        "v18": "Agentic State Graph + lossless handoff + task lifecycle events",
+        "v19": "Evolutionary Neurosymbolic Transfer + CMP metric + HGT",
+        "v20": "QA Event IR + observer daemon + anomaly detection",
+        "v21": "Orphan reconciliation + A2A negotiation protocol",
+        "v22": "Amber Preservation + proactive persistence",
+        "v23": "PBLANES operator + lanes protocol standardization",
+        "v24": "PBTEST Verification Covenant + phenomenological truth gate"
+      }
+    },
+    "PBEPORT": {
+      "id": "pbeport",
+      "name": "PBEPORT",
+      "domain": "liveness",
+      "category": "observability",
+      "description": "Compact, metrics-first snapshot of bus liveness with PRESENT/PAST/FUTURE sections and sparkline visualization.",
+      "tool": "nucleus/tools/pbeport.py",
+      "bus_topic": "pbeport.snapshot",
+      "bus_kind": "metric",
+      "aliases": [
+        "pbeport",
+        "PBEPORT",
+        "pbreport",
+        "PBREPORT"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbeport.py --window 900 --width 32 --emit-bus",
+        "repl": [
+          "pbeport",
+          "PBEPORT"
+        ],
+        "slash_command": "/pbeport"
+      },
+      "options": {
+        "--bus-dir": "Bus directory (default: $PLURIBUS_BUS_DIR)",
+        "--window": "Window seconds (default 900)",
+        "--width": "Sparkline bins (default 24)",
+        "--emit-bus": "Emit pbeport.snapshot metric to bus"
+      },
+      "output_sections": [
+        "PRESENT (kinds, topics)",
+        "PAST (git events, incidents)",
+        "FUTURE (pending req_ids)"
+      ],
+      "guarantees": [
+        "No secrets leaked",
+        "Counts/ids/topics only"
+      ]
+    },
+    "ITERATE": {
+      "id": "iterate",
+      "name": "ITERATE",
+      "domain": "coordination",
+      "category": "evolution",
+      "description": "Non-blocking coordination kick that broadcasts a request for agents to advance one iteration (emit CKIN, append BEAM, verify one claim).",
+      "tool": "nucleus/tools/iterate_operator.py",
+      "bus_topic": "infer_sync.request",
+      "bus_kind": "request",
+      "secondary_topic": "operator.iterate.request",
+      "aliases": [
+        "iterate",
+        "ITERATE"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/iterate_operator.py --agent <name>",
+        "repl": [
+          "iterate"
+        ],
+        "slash_command": "/iterate"
+      },
+      "options": {
+        "--agent": "Agent name (actor)",
+        "--req-id": "Optional request ID",
+        "--subproject": "Subproject (default: beam_10x)",
+        "--window-s": "Window seconds (default 900)"
+      },
+      "requested_actions": [
+        "emit_ckin",
+        "append_beam_entry",
+        "cross_verify_one_claim",
+        "reply_infer_sync_response_optional"
+      ],
+      "constraints": {
+        "append_only": true,
+        "tests_first": true,
+        "non_blocking": true
+      },
+      "guarantees": [
+        "Non-blocking",
+        "Append-only",
+        "Does not leak secrets"
+      ]
+    },
+    "OITERATE": {
+      "id": "oiterate",
+      "name": "OITERATE",
+      "domain": "coordination",
+      "category": "autonomous_loop",
+      "description": "Omega ITERATE — Infinite coordination loop with progress monitoring, autonomous triggering, and RL-ready interface. Implements Büchi automaton for liveness guarantees.",
+      "tool": "nucleus/tools/oiterate_operator.py",
+      "bus_topic": "oiterate.tick",
+      "bus_kind": "metric",
+      "protocol_spec": "nucleus/specs/ckin_protocol_v8.md",
+      "aliases": [
+        "oiterate",
+        "OITERATE",
+        "omega_iterate",
+        "ω-iterate"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/oiterate_operator.py --agent <name> --goals 10x10",
+        "repl": [
+          "oiterate",
+          "OITERATE"
+        ],
+        "slash_command": "/oiterate"
+      },
+      "options": {
+        "--agent": "Agent name (required)",
+        "--goals": "Goal preset (10x10) or 'custom'",
+        "--goal": "Custom goal: name:current:target[:weight]",
+        "--tick-interval": "Tick interval in seconds (default 30)",
+        "--staleness-threshold": "Staleness threshold in seconds (default 300)",
+        "--rl-mode": "Enable RL state emission",
+        "--single-tick": "Run single tick and exit (testing)"
+      },
+      "secondary_topics": [
+        "oiterate.started",
+        "oiterate.stopped",
+        "oiterate.goal_achieved",
+        "oiterate.action_triggered",
+        "oiterate.rl_state"
+      ],
+      "automaton": {
+        "type": "buchi",
+        "states": [
+          "IDLE",
+          "RUNNING",
+          "STALE",
+          "ACHIEVED",
+          "PAUSED"
+        ],
+        "accepting": [
+          "RUNNING",
+          "ACHIEVED"
+        ],
+        "liveness_axiom": "∀t ∃t' > t : state(t') ∈ {RUNNING, ACHIEVED}"
+      },
+      "rl_interface": {
+        "state_space": [
+          "goal_progress_1..n",
+          "staleness_ratio",
+          "agent_velocity",
+          "shared_velocity"
+        ],
+        "action_space": [
+          "noop",
+          "iterate",
+          "ckin",
+          "beam_append",
+          "alert",
+          "pause"
+        ],
+        "reward_components": [
+          "progress_delta",
+          "goal_bonus",
+          "staleness_penalty",
+          "action_cost"
+        ]
+      },
+      "guarantees": [
+        "Büchi liveness (visits accepting states infinitely often)",
+        "Non-blocking coordination",
+        "RL-ready state/action/reward interface",
+        "Append-only evidence"
+      ],
+      "protocol_evolution": {
+        "v7": "Gap detection (aleatoric/epistemic)",
+        "v8": "OITERATE autonomous loop"
+      }
+    },
+    "PBREALITY": {
+      "id": "pbreality",
+      "name": "PBREALITY",
+      "domain": "release",
+      "category": "readiness",
+      "description": "Production Baseline Reality operator: distill last push context, check local vs production parity, and emit a release readiness report.",
+      "tool": "nucleus/tools/pbreality_operator.py",
+      "bus_topic": "operator.pbreality.request",
+      "bus_kind": "request",
+      "secondary_topic": "infer_sync.request",
+      "protocol_spec": "nucleus/docs/workflows/pbreality.md",
+      "aliases": [
+        "pbreality",
+        "PBREALITY"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbreality_operator.py --scope \"...\"",
+        "repl": [
+          "pbreality",
+          "PBREALITY"
+        ],
+        "slash_command": "/pbreality"
+      },
+      "options": {
+        "--bus-dir": "Bus directory (default: $PLURIBUS_BUS_DIR)",
+        "--actor": "Actor identity (default: $PLURIBUS_ACTOR)",
+        "--req-id": "Correlation id (uuid)",
+        "--subproject": "Subproject tag for infer_sync mirror (default: ops)",
+        "--template": "Template path (default: nucleus/docs/workflows/pbreality.md)",
+        "--report-dir": "Directory for report output (default: agent_reports)",
+        "--report-path": "Explicit report path (overrides --report-dir)",
+        "--baseline-env": "Baseline environment description",
+        "--target-env": "Target environment description",
+        "--branch-or-commit": "Branch name or commit sha",
+        "--time-window": "Time window for recent work",
+        "--scope": "Scope of this release readiness pass"
+      },
+      "requested_actions": [
+        "distill_release_context",
+        "verify_parity",
+        "emit_release_report"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "tests_first": true
+      },
+      "guarantees": [
+        "Append-only evidence",
+        "Model-agnostic template",
+        "Release readiness checkpoint"
+      ]
+    },
+    "PBLANES": {
+      "id": "pblanes",
+      "name": "PBLANES",
+      "domain": "coordination",
+      "category": "observability",
+      "description": "Multi-agent lanes coordination dashboard. Shows membership, parallelism, description, and WIP progress for all active lanes. Invokable from any agent context to view parent or self lanes status.",
+      "tool": "nucleus/tools/pblanes_operator.py",
+      "bus_topic": "operator.pblanes.report",
+      "bus_kind": "metric",
+      "protocol_spec": "nucleus/specs/lanes_protocol_v1.md",
+      "aliases": [
+        "pblanes",
+        "PBLANES",
+        "lanes",
+        "LANES"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pblanes_operator.py",
+        "repl": [
+          "pblanes",
+          "PBLANES",
+          "lanes"
+        ],
+        "slash_command": "/pblanes"
+      },
+      "options": {
+        "--emit-bus": "Emit report to bus",
+        "--json": "Output as JSON",
+        "--compact": "Compact output (no lane details)",
+        "--actor": "Actor ID for bus events"
+      },
+      "output_sections": [
+        "PARALLELISM",
+        "AGENT_MEMBERSHIP",
+        "LANES_PROGRESS",
+        "LANE_DETAILS"
+      ],
+      "data_model": {
+        "lane": {
+          "id": "string (kebab-case)",
+          "name": "string (display name)",
+          "status": "green|yellow|red|blocked",
+          "wip_pct": "0-100",
+          "owner": "agent-id",
+          "description": "string",
+          "commits": [
+            "hash"
+          ],
+          "blockers": [
+            "string"
+          ],
+          "next_actions": [
+            "string"
+          ],
+          "history": [
+            {
+              "ts": "ISO8601",
+              "wip_pct": "N",
+              "note": "string"
+            }
+          ]
+        },
+        "agent": {
+          "id": "claude|codex|gemini|qwen",
+          "status": "active|idle|offline",
+          "lane": "lane-id or null",
+          "last_seen": "ISO8601"
+        }
+      },
+      "wip_meter_format": {
+        "width": 20,
+        "filled": "█",
+        "empty": "░",
+        "example": "████████████░░░░░░░░ (60%)"
+      },
+      "guarantees": [
+        "Shows parent or self lanes status",
+        "Consistent WIP meter format across all agents",
+        "No secrets leaked",
+        "Persistent state in nucleus/state/lanes.json"
+      ],
+      "protocol_evolution": {
+        "v1": "Initial lanes protocol with WIP meters",
+        "v23": "DKIN integration - PBLANES operator"
+      }
+    },
+    "PBTEST": {
+      "id": "pbtest",
+      "name": "PBTEST",
+      "domain": "verification",
+      "category": "neurosymbolic_tdd",
+      "description": "Neurosymbolic TDD verification operator (DKIN v24 Verification Covenant). Enforces 'Code -> Live (Browser) -> Telemetry' verification loop. Requires agents to verify not just code correctness, but phenomenological reality (rendering, interaction) via Playwright/Laser. No feature is 'Actualized' (Green Lane) until PBTEST passes.",
+      "tool": "nucleus/tools/pbtest_operator.py",
+      "watcher": "nucleus/tools/qa_pbtest_watcher.py",
+      "bus_topic": "operator.pbtest.request",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "operator.pbtest.result",
+        "operator.pbtest.verdict",
+        "telemetry.client.error",
+        "telemetry.client.success",
+        "qa.verdict.pass",
+        "qa.verdict.fail"
+      ],
+      "protocol_spec": "nucleus/specs/AGENTS-TDD.md",
+      "dkin_spec": "nucleus/specs/dkin_protocol_v1.md",
+      "paip_spec": "nucleus/specs/paip_protocol_v1.md",
+      "aliases": [
+        "pbtest",
+        "PBTEST",
+        "tdd",
+        "verify",
+        "test"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbtest_operator.py --scope <scope> --mode <mode> --intent <intent>",
+        "repl": [
+          "pbtest",
+          "PBTEST",
+          "tdd"
+        ],
+        "slash_command": "/pbtest"
+      },
+      "options": {
+        "--scope": "Target file/module/feature (required)",
+        "--mode": "Verification rigor: unit|live|soak|full (required)",
+        "--browser": "Browser engine: chromium|webkit|firefox|laser|none (default: chromium)",
+        "--intent": "Description of test goal (required)",
+        "--bus-dir": "Override bus directory"
+      },
+      "modes": {
+        "unit": "Fast logic checks (symbolic verification)",
+        "live": "Full browser automation via Playwright (phenomenological verification)",
+        "soak": "Telemetry/load validation (teleological verification)",
+        "full": "All modes combined (required for merge)"
+      },
+      "verification_trinity": {
+        "symbolic": "Compiles, lints, passes unit logic",
+        "phenomenological": "Renders in real browser, clicks work, pixels appear",
+        "teleological": "Emits correct signals (telemetry) to bus"
+      },
+      "paip_v13_integration": {
+        "port_isolation": "Dynamic port allocation or hash-based assignment",
+        "display_isolation": "Separate xvfb framebuffers per agent",
+        "context_isolation": "Ephemeral browser contexts (browser.new_context())"
+      },
+      "qa_omega_role": {
+        "duty": "Observer of Reality - watches pbtest.request events",
+        "action": "Verifies telemetry/logs, emits qa.verdict.fail on silence/error"
+      },
+      "examples": [
+        "PBTEST nucleus/dashboard --mode live --intent 'Verify MemIngestBar render'",
+        "python3 nucleus/tools/pbtest_operator.py --scope nucleus/dashboard --mode full --browser chromium --intent 'Full dashboard verification'"
+      ],
+      "requested_actions": [
+        "emit_pbtest_request",
+        "execute_verification",
+        "check_telemetry",
+        "emit_verdict"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": false,
+        "reality_gate": true,
+        "harness_required": true
+      },
+      "guarantees": [
+        "Code -> Browser -> Telemetry loop enforced",
+        "No 'Ghost Code' (passes unit but fails browser)",
+        "PAIP v13 isolation for concurrent agents",
+        "Bus evidence for all verification attempts",
+        "QA Omega oversight"
+      ],
+      "protocol_evolution": {
+        "v24": "PBTEST Verification Covenant - phenomenological truth gate"
+      }
+    },
+    "PBCLITEST": {
+      "id": "pbclitest",
+      "name": "PBCLITEST",
+      "domain": "verification",
+      "category": "cli_tdd",
+      "description": "CLI verification operator for tools and scripts. Enforces 'Code -> CLI -> Telemetry' loop for non-UI workflows (unit/integration/e2e).",
+      "tool": "nucleus/tools/pbclitest_operator.py",
+      "watcher": "nucleus/tools/qa_pbclitest_watcher.py",
+      "bus_topic": "operator.pbclitest.request",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "operator.pbclitest.result",
+        "operator.pbclitest.verdict",
+        "telemetry.cli.error",
+        "telemetry.cli.success"
+      ],
+      "protocol_spec": "nucleus/specs/AGENTS-TDD.md",
+      "aliases": [
+        "pbclitest",
+        "PBCLITEST",
+        "clitest",
+        "cli-test"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbclitest_operator.py --scope <scope> --mode <mode> --intent <intent>",
+        "repl": [
+          "pbclitest",
+          "PBCLITEST",
+          "clitest"
+        ],
+        "slash_command": "/pbclitest"
+      },
+      "options": {
+        "--scope": "Target file/module/tool (required)",
+        "--mode": "Verification rigor: unit|integration|e2e|live|full (required)",
+        "--intent": "Description of test goal (required)",
+        "--command": "Command or harness invocation to run",
+        "--bus-dir": "Override bus directory"
+      },
+      "modes": {
+        "unit": "Fast logic checks for CLI tools (symbolic verification)",
+        "integration": "Cross-module CLI flows and dependencies",
+        "e2e": "Full CLI workflow from entrypoint to output",
+        "live": "Run in real environment with actual side-effects",
+        "full": "All modes combined (required for CLI changes)"
+      },
+      "verification_trinity": {
+        "symbolic": "Compiles, lints, passes unit logic",
+        "behavioral": "CLI runs, outputs expected results, exits cleanly",
+        "teleological": "Emits correct signals (telemetry) to the bus"
+      },
+      "qa_omega_role": {
+        "duty": "Observer of CLI Reality - watches pbclitest.request events",
+        "action": "Verifies result/verdict emissions, flags silent failures"
+      },
+      "examples": [
+        "PBCLITEST nucleus/tools/ohm.py --mode full --intent 'Verify OHM CLI output'",
+        "python3 nucleus/tools/pbclitest_operator.py --scope nucleus/tools/bus-run --mode e2e --intent 'Verify bus-run emits tasks'"
+      ],
+      "requested_actions": [
+        "emit_pbclitest_request",
+        "execute_cli_tests",
+        "emit_verdict"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": false,
+        "harness_required": true
+      },
+      "guarantees": [
+        "Code -> CLI -> Telemetry loop enforced for tools/scripts",
+        "No silent failures in CLI verification",
+        "Bus evidence for all verification attempts"
+      ],
+      "protocol_evolution": {
+        "v25": "PBCLITEST CLI verification lane"
+      }
+    },
+    "PBFLUSH": {
+      "id": "pbflush",
+      "name": "PBFLUSH",
+      "domain": "coordination",
+      "category": "epoch_control",
+      "description": "Broadcast “finish & await”: stop starting new ITERATE/OITERATE cycles for the current epoch, flush remaining local work/evidence, then await next CKIN for comprehension/planning/co-execution.",
+      "tool": "nucleus/tools/pbflush_operator.py",
+      "bus_topic": "operator.pbflush.request",
+      "bus_kind": "request",
+      "secondary_topic": "infer_sync.request",
+      "protocol_spec": "nucleus/specs/ckin_protocol_v10.md",
+      "aliases": [
+        "pbflush",
+        "PBFLUSH"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbflush_operator.py --message \"...\"",
+        "repl": [
+          "pbflush",
+          "PBFLUSH"
+        ],
+        "slash_command": "/pbflush"
+      },
+      "options": {
+        "--bus-dir": "Bus directory (default: $PLURIBUS_BUS_DIR)",
+        "--actor": "Actor identity (default: $PLURIBUS_ACTOR)",
+        "--subproject": "Subproject tag for infer_sync mirror (default: ops)",
+        "--message": "Operator message/context",
+        "--reason": "Short reason code"
+      },
+      "requested_actions": [
+        "finish_local_tasks",
+        "emit_append_only_evidence",
+        "stop_new_iterate_cycles",
+        "await_next_ckin"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "no_force_kill": true
+      },
+      "guarantees": [
+        "Coordinates via bus requests (no forced process kills)",
+        "Append-only evidence",
+        "Does not leak secrets"
+      ]
+    },
+    "PBDEEP": {
+      "id": "pbdeep",
+      "name": "PBDEEP",
+      "domain": "coordination",
+      "category": "forensics",
+      "description": "Deep audit request: index branches + lost_and_found + untracked files + doc/code drift for pre-DKIN schisms; append-only IR/KG indexing (no expensive inference).",
+      "tool": "nucleus/tools/pbdeep_operator.py",
+      "bus_topic": "operator.pbdeep.request",
+      "bus_kind": "request",
+      "secondary_topic": "infer_sync.request",
+      "protocol_spec": "nucleus/docs/workflows/pbdeep.md",
+      "aliases": [
+        "pbdeep",
+        "PBDEEP"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbdeep_operator.py --instruction \"...\"",
+        "repl": [
+          "pbdeep",
+          "PBDEEP"
+        ],
+        "slash_command": "/pbdeep"
+      },
+      "options": {
+        "--bus-dir": "Bus directory (default: $PLURIBUS_BUS_DIR)",
+        "--actor": "Actor identity (default: $PLURIBUS_ACTOR)",
+        "--instruction": "PBDEEP instruction body",
+        "--scope": "Scope tag (default: repo)",
+        "--reason": "Short reason code",
+        "--no-infer-sync": "Disable infer_sync mirror"
+      },
+      "requested_actions": [
+        "index_branches",
+        "scan_final_assertions",
+        "inventory_lost_and_found",
+        "scan_untracked_mystery",
+        "detect_doc_code_drift",
+        "rag_index_update",
+        "kg_index_update",
+        "rhizome_ingest",
+        "emit_report"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "tests_first": true,
+        "read_only": true
+      },
+      "guarantees": [
+        "Read-only audit request",
+        "Append-only evidence",
+        "No destructive operations"
+      ]
+    },
+    "PBASSIMILATE": {
+      "id": "pbassimilate",
+      "name": "PBASSIMILATE",
+      "domain": "coordination",
+      "category": "sota_assimilation",
+      "description": "Assimilation screening operator: evaluate external project/git targets against Pluribus entelexis, check redundancy with semops/sota/membrane, and emit consensus-ready plan packets.",
+      "tool": "nucleus/tools/pbassimilate_operator.py",
+      "bus_topic": "operator.pbassimilate.request",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "operator.pbassimilate.screening",
+        "operator.pbassimilate.consensus",
+        "operator.pbassimilate.plan",
+        "operator.pbassimilate.report",
+        "infer_sync.request"
+      ],
+      "protocol_spec": "nucleus/docs/workflows/pbassimilate.md",
+      "aliases": [
+        "pbassimilate",
+        "PBASSIMILATE"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbassimilate_operator.py --target <project|git> --purpose \"...\"",
+        "repl": [
+          "pbassimilate",
+          "PBASSIMILATE"
+        ],
+        "slash_command": "/pbassimilate"
+      },
+      "options": {
+        "--target": "Project name or git URL to screen (required)",
+        "--purpose": "Short intent for the assimilation request",
+        "--scope": "Scope tag (default: sota)",
+        "--consensus-targets": "Comma-separated consensus agents to consult",
+        "--report-dir": "Optional report directory",
+        "--report-path": "Optional report path (overrides report-dir)",
+        "--bus-dir": "Bus directory (default: $PLURIBUS_BUS_DIR)",
+        "--actor": "Actor identity (default: $PLURIBUS_ACTOR)",
+        "--req-id": "Optional request id",
+        "--no-infer-sync": "Disable infer_sync mirror"
+      },
+      "requested_actions": [
+        "screen_target",
+        "check_overlap",
+        "classify_integration_type",
+        "request_consensus",
+        "draft_plan",
+        "emit_screening"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "tests_first": true,
+        "no_secrets": true,
+        "edp_required": true
+      },
+      "guarantees": [
+        "Append-only screening evidence",
+        "No direct mutations",
+        "External Dependency Protocol enforced"
+      ]
+    },
+    "PBLOCK": {
+      "id": "pblock",
+      "name": "PBLOCK",
+      "domain": "coordination",
+      "category": "milestone_freeze",
+      "description": "Milestone checkpoint freeze operator (v16). When PBLOCK=true: NO new features, NO implementation extensions. DO iterate on incomplete tasks, DO run e2e tests with full coverage. Exit when all work pushed to local remotes + GitHub.",
+      "tool": "nucleus/tools/pblock_operator.py",
+      "bus_topic": "operator.pblock.state",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "operator.pblock.enter",
+        "operator.pblock.exit",
+        "operator.pblock.violation"
+      ],
+      "protocol_spec": "nucleus/specs/ckin_protocol_v16.md",
+      "aliases": [
+        "pblock",
+        "PBLOCK",
+        "freeze",
+        "milestone_freeze"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pblock_operator.py --enter|--exit|--status",
+        "repl": [
+          "pblock",
+          "PBLOCK",
+          "freeze"
+        ],
+        "slash_command": "/pblock"
+      },
+      "options": {
+        "--enter": "Enter PBLOCK freeze state",
+        "--exit": "Exit PBLOCK freeze state (requires all tests pass)",
+        "--status": "Query current PBLOCK state",
+        "--reason": "Reason for entering/exiting PBLOCK",
+        "--milestone": "Milestone name/tag for this PBLOCK cycle",
+        "--force-exit": "Force exit without test verification (dangerous)",
+        "--bus-dir": "Bus directory (default: $PLURIBUS_BUS_DIR)",
+        "--actor": "Actor identity (default: $PLURIBUS_ACTOR)"
+      },
+      "state_file": "/var/lib/pluribus/.pluribus/pblock_state.json",
+      "state_schema": {
+        "active": "boolean - PBLOCK currently active",
+        "entered_iso": "ISO timestamp of entry",
+        "entered_by": "Actor who entered PBLOCK",
+        "milestone": "Milestone name/tag",
+        "reason": "Reason for freeze",
+        "incomplete_tasks": "List of tracked incomplete tasks",
+        "test_coverage": "Latest test coverage percentage",
+        "exit_criteria": {
+          "all_tests_pass": "boolean",
+          "pushed_to_remotes": "boolean",
+          "pushed_to_github": "boolean"
+        }
+      },
+      "guards": {
+        "new_feature_blocked": "Reject commits with 'feat:' prefix when PBLOCK=true",
+        "extend_blocked": "Reject commits extending implementations when PBLOCK=true",
+        "iterate_allowed": "Allow commits with 'fix:', 'test:', 'refactor:' prefixes",
+        "test_required": "All commits must include or reference tests"
+      },
+      "requested_actions": [
+        "freeze_new_features",
+        "iterate_incomplete_tasks",
+        "run_e2e_tests",
+        "verify_full_coverage",
+        "push_all_remotes",
+        "emit_pblock_state"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": false,
+        "tests_first": true,
+        "feature_lock": true
+      },
+      "guarantees": [
+        "Feature-lock enforcement via guards",
+        "Test iteration emphasis",
+        "Clean milestone boundary",
+        "Append-only evidence",
+        "Collective agent awareness (bus broadcast)"
+      ],
+      "protocol_evolution": {
+        "v16": "PBLOCK milestone freeze operator"
+      }
+    },
+    "PBHYGIENE": {
+      "id": "pbhygiene",
+      "name": "PBHYGIENE",
+      "domain": "coordination",
+      "category": "system_hygiene",
+      "description": "System hygiene operator (v17). Audits and cleans bus events, logs, and large files to prevent context window saturation and agent crashes. Required before PBLOCK entry.",
+      "tool": "nucleus/tools/pbhygiene_operator.py",
+      "bus_topic": "operator.pbhygiene.audit",
+      "bus_kind": "metric",
+      "secondary_topics": [
+        "operator.pbhygiene.rotate",
+        "operator.pbhygiene.prune",
+        "operator.pbhygiene.alert"
+      ],
+      "protocol_spec": "nucleus/specs/ckin_protocol_v17.md",
+      "aliases": [
+        "pbhygiene",
+        "PBHYGIENE",
+        "hygiene",
+        "cleanup"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbhygiene_operator.py --audit|--rotate-bus|--prune-logs|--clean",
+        "repl": [
+          "pbhygiene",
+          "PBHYGIENE",
+          "hygiene"
+        ],
+        "slash_command": "/pbhygiene"
+      },
+      "options": {
+        "--audit": "Run hygiene audit (read-only)",
+        "--rotate-bus": "Rotate and archive bus events",
+        "--prune-logs": "Prune stale log files",
+        "--clean": "Full cleanup (audit + rotate + prune)",
+        "--pre-pblock-check": "Check hygiene before PBLOCK entry",
+        "--dry-run": "Dry run (no changes)",
+        "--confirm": "Confirm destructive operations"
+      },
+      "thresholds": {
+        "max_bus_size_mb": 100,
+        "max_bus_age_days": 7,
+        "max_log_age_days": 3,
+        "max_file_size_kb": 500,
+        "max_context_mb": 10
+      },
+      "skip_patterns": [
+        "node_modules/**",
+        ".venv/**",
+        "__pycache__/**",
+        "*.ndjson",
+        "*.log",
+        "LOST_FOUND/**",
+        "dist/**",
+        "build/**",
+        "target/**"
+      ],
+      "requested_actions": [
+        "audit_bus_size",
+        "audit_log_accumulation",
+        "audit_large_files",
+        "rotate_bus_events",
+        "prune_stale_logs",
+        "emit_hygiene_report"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "pre_pblock_required": true
+      },
+      "guarantees": [
+        "Context window safety",
+        "Bus rotation with archival",
+        "Log retention policy enforcement",
+        "Large file detection",
+        "Append-only evidence"
+      ],
+      "protocol_evolution": {
+        "v17": "PBHYGIENE system hygiene operator"
+      }
+    },
+    "PBRESUME": {
+      "id": "pbresume",
+      "name": "PBRESUME",
+      "domain": "coordination",
+      "category": "recovery",
+      "description": "Recovery operator: acknowledge context loss/interruptions, collect all incomplete/interrupted tasks from lanes/bus/dialogos trace, and iterate to completion. Emits apology frame + task collection + iterative execution. Designed for agent handoffs, session recovery, and tangent reconciliation. Supports auto-trigger on session resume detection.",
+      "tool": "nucleus/tools/pbresume_operator.py",
+      "hook": "nucleus/tools/hooks/pbresume_hook.py",
+      "bus_topic": "operator.pbresume.collect",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "operator.pbresume.iteration",
+        "operator.pbresume.complete",
+        "operator.pbresume.auto_triggered",
+        "dialogos.resume"
+      ],
+      "protocol_spec": "nucleus/specs/dkin_protocol_v1.md",
+      "aliases": [
+        "pbresume",
+        "PBRESUME",
+        "resume tasks",
+        "continue previous",
+        "recover interrupted",
+        "sorry continue",
+        "auto_resume"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbresume_operator.py --scope session|all|lane --depth 24h",
+        "cli_auto": "python3 nucleus/tools/pbresume_operator.py --auto --quiet",
+        "repl": [
+          "pbresume",
+          "resume tasks",
+          "continue",
+          "auto_resume"
+        ],
+        "slash_command": "/pbresume"
+      },
+      "options": {
+        "--scope": "Collection scope: session (current), lane (active lane), all (global). Default: session",
+        "--depth": "How far back to scan for incomplete work. Default: 24h",
+        "--iterative": "Loop until all collected tasks complete. Default: true",
+        "--dry-run": "Show what would be resumed without executing",
+        "--from-dialogos": "Include dialogos trace in recovery scan",
+        "--emit-apology": "Emit apology frame acknowledging interruption. Default: true",
+        "--auto": "Auto-trigger mode: detect resume and run if session gap detected",
+        "--summary": "Generate concise natural language summary",
+        "--priority": "Add priority scores and sort by priority. Default: true"
+      },
+      "sources": {
+        "lanes": "nucleus/state/lanes.json (WIP < 100%)",
+        "dialogos": ".pluribus/dialogos/trace.ndjson (incomplete cells)",
+        "bus": "events.ndjson (pending request/response pairs)",
+        "todos": "Claude Code todo state (in_progress items)"
+      },
+      "priority_scoring": {
+        "age_based": "Max 50 points for items >24h old",
+        "status_blocked": "+30 points",
+        "status_in_progress": "+20 points",
+        "status_pending": "+10 points",
+        "lane_blocker": "+25 points for lanes with blockers"
+      },
+      "auto_trigger": {
+        "condition": "Session gap >5 minutes between session_end and new session_start",
+        "hook": "SessionStart",
+        "bus_event": "operator.pbresume.auto_triggered"
+      },
+      "constraints": {
+        "iterative": true,
+        "append_only": true,
+        "emit_progress": true
+      },
+      "guarantees": [
+        "Acknowledge interruption/context loss",
+        "Collect all incomplete work",
+        "Iterate until completion or explicit block",
+        "Emit progress via bus events",
+        "Dialogos trace integration",
+        "Auto-trigger on session resume",
+        "Priority-sorted recovery items"
+      ],
+      "protocol_evolution": {
+        "v25": "PBRESUME recovery operator for interrupted task completion",
+        "v25.1": "Auto-trigger on session resume + priority scoring + summary generation"
+      }
+    },
+    "SPEAK": {
+      "id": "speak",
+      "name": "SPEAK",
+      "domain": "interface",
+      "category": "audio",
+      "description": "Dump text to /pluribus/speaker_bus.aiff for TTS broadcast; emits speaker.bus.write with verbose context and can trigger reverse-SSH broadcast.",
+      "tool": "nucleus/tools/speak_operator.py",
+      "bus_topic": "speaker.bus.write",
+      "bus_kind": "artifact",
+      "aliases": [
+        "speak",
+        "SPEAK",
+        "SPEAK dump to this endpoint file content requested spoken"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/speak_operator.py --text \"...\"",
+        "repl": [
+          "speak",
+          "SPEAK",
+          "SPEAK dump to this endpoint file content requested spoken"
+        ],
+        "slash_command": "/speak"
+      },
+      "options": {
+        "--file": "Speaker bus endpoint file (default: /pluribus/speaker_bus.aiff)",
+        "--text": "Text to write (default: stdin)",
+        "--append": "Append instead of truncate",
+        "--emit-bus": "Emit bus artifact (default: on)",
+        "--no-emit-bus": "Disable bus artifact emission",
+        "--broadcast": "Attempt SSH broadcast via broadcast.sh (best-effort)",
+        "--broadcast-script": "Broadcast script path (default: /pluribus/broadcast.sh)",
+        "--broadcast-timeout": "Broadcast timeout in seconds (default: 8)",
+        "--context-json": "Optional JSON payload for verbose context",
+        "--source": "Source label for bus context",
+        "--reason": "Reason label for bus context",
+        "--req-id": "Optional request id",
+        "--bus-dir": "Bus directory (default: $PLURIBUS_BUS_DIR)",
+        "--actor": "Actor identity (default: $PLURIBUS_ACTOR)"
+      },
+      "requested_actions": [
+        "write_speaker_bus"
+      ],
+      "constraints": {
+        "append_only": false,
+        "non_blocking": true
+      },
+      "guarantees": [
+        "Writes text payload to speaker bus endpoint",
+        "Emits bus artifact with text + context (unless disabled)"
+      ]
+    },
+    "MABSWARM": {
+      "id": "mabswarm",
+      "name": "MABSWARM",
+      "domain": "coordination",
+      "category": "swarm_intelligence",
+      "description": "Meta-operator that probes bus metrics and instigates control actions (Nudge, Reflect, Backoff).",
+      "tool": "nucleus/tools/mabswarm.py",
+      "bus_topic": "mabswarm.*",
+      "bus_kind": "request",
+      "protocol_spec": "nucleus/specs/ckin_protocol.md",
+      "aliases": [
+        "mabswarm",
+        "MABSWARM",
+        "mbswarm",
+        "MBSWARM",
+        "swarm"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/mabswarm.py --daemon --emit-bus",
+        "repl": [
+          "mabswarm",
+          "mbswarm"
+        ]
+      },
+      "guarantees": [
+        "Reflexive control",
+        "Stigmergy support"
+      ]
+    },
+    "MBAD": {
+      "id": "mbad",
+      "name": "MBAD",
+      "domain": "observability",
+      "category": "membrane_diagnostics",
+      "description": "Multi-Agent Bus diagnostics snapshot (membrane view) with no secrets; optional kick to MABSWARM.",
+      "tool": "nucleus/tools/mbad.py",
+      "bus_topic": "mbad.snapshot",
+      "bus_kind": "metric",
+      "protocol_spec": "nucleus/specs/ckin_protocol.md",
+      "aliases": [
+        "mbad",
+        "MBAD"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/mbad.py --window 900 --emit-bus",
+        "repl": [
+          "mbad"
+        ],
+        "slash_command": "/mbad"
+      },
+      "guarantees": [
+        "No secrets (counts/topics only)",
+        "Append-only bus evidence"
+      ]
+    },
+    "BEAM": {
+      "id": "beam",
+      "name": "BEAM",
+      "domain": "discourse",
+      "category": "ledger",
+      "description": "Append-only discourse ledger for 10x10 Grand Distillation with V/R/I/G tags, falsifiers, and next-checks.",
+      "tool": "nucleus/tools/beam_append.py",
+      "bus_topic": "beam.10x.appended",
+      "bus_kind": "artifact",
+      "aliases": [
+        "beam",
+        "BEAM"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/beam_append.py --file <path> --iteration N --subagent-id <id> --scope <scope> --tags V I --claim \"...\"",
+        "repl": [
+          "beam"
+        ],
+        "slash_command": "/beam"
+      },
+      "options": {
+        "--file": "Target discourse file",
+        "--iteration": "Iteration number (1-10)",
+        "--subagent-id": "Subagent identifier",
+        "--scope": "Entry scope",
+        "--tags": "V/R/I/G tags",
+        "--refs": "Reference files/commits",
+        "--claim": "Main claim text",
+        "--text": "Additional markdown",
+        "--next-check": "Falsifiable next check"
+      },
+      "tag_semantics": {
+        "V": "Verified - cross-agent verification complete",
+        "R": "Reported - status/progress report",
+        "I": "Intent - planned action or commitment",
+        "G": "Gap - identified gap or blocker"
+      },
+      "guarantees": [
+        "Append-only",
+        "File-locked writes",
+        "Bus evidence emitted"
+      ]
+    },
+    "PBPAIR": {
+      "id": "pbpair",
+      "name": "PBPAIR",
+      "domain": "consultation",
+      "category": "lane",
+      "description": "Paired model consultation protocol for deep work: proposal → constraints → implementation → verification.",
+      "tool": "nucleus/tools/PBPAIR",
+      "bus_topic": "pbpair.*",
+      "bus_kind": "request",
+      "aliases": [
+        "pbpair",
+        "PBPAIR"
+      ],
+      "legacy": true,
+      "spec": "nucleus/docs/workflows/pbpair.md"
+    },
+    "PLURIBUS": {
+      "id": "pluribus",
+      "name": "PLURIBUS",
+      "domain": "kernel",
+      "category": "modality",
+      "description": "Kernel-level modality operator over strings: parse → effect-type → route (Lens/Collimator) → emit intent DAG + evidence; bounded evolution (rhizome→git via iso_git) when mutation is requested.",
+      "tool": "nucleus/tools/pluribus_operator.py",
+      "bus_topic": "pluribus.invoke.request",
+      "bus_kind": "request",
+      "effects": "unknown",
+      "aliases": [
+        "pluribus",
+        "PLURIBUS"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pluribus_operator.py --text \"PLURIBUS(kind=apply,effects=file): ...\" --emit-lens",
+        "repl": [
+          "pluribus",
+          "PLURIBUS"
+        ],
+        "slash_command": "/pluribus"
+      },
+      "options": {
+        "--text": "Free-form text containing a PLURIBUS directive",
+        "--goal": "Goal text (if --text omitted)",
+        "--kind": "distill|apply|verify|audit|benchmark|other",
+        "--effects": "none|file|network|unknown",
+        "--emit-lens": "Also emit lens.collimator.plan (best-effort)",
+        "--req-id": "Correlation id (uuid)",
+        "--bus-dir": "Bus directory (default: $PLURIBUS_BUS_DIR)"
+      },
+      "references": {
+        "concepts": "nucleus/docs/concepts/PLURIBUS_OPERATOR.md",
+        "rhizome_vs_git": "nucleus/docs/concepts/RHIZOME_VS_GIT.md",
+        "pqc_quine": "nucleus/specs/pqc_quine_architecture.md"
+      }
+    },
+    "PLURIBUSCHECK": {
+      "id": "pluribuscheck",
+      "name": "PLURIBUSCHECK",
+      "domain": "health",
+      "category": "diagnostics",
+      "description": "Health check trigger for system diagnostics.",
+      "tool": "nucleus/tools/pluribus_check.py",
+      "bus_topic": "pluribuscheck.*",
+      "aliases": [
+        "pluribuscheck",
+        "PLURIBUSCHECK"
+      ],
+      "legacy": true,
+      "spec": "nucleus/docs/workflows/PLURIBUSCHECK.md"
+    },
+    "PBCMASTER": {
+      "id": "pbcmaster",
+      "name": "PBCMASTER",
+      "domain": "coordination",
+      "category": "singleton_gatekeeper",
+      "description": "Codemaster Agent operator - the singular authority for all writes to critical branches (main, staging, dev). Embodies 'E Pluribus Unum': from many agents working in parallel, one Codemaster controls the critical path. Handles merge requests, conflict resolution, rollbacks, and work conservation. DKIN v26 integration.",
+      "tool": "nucleus/tools/pbcmaster_operator.py",
+      "daemon": "nucleus/tools/codemaster_agent.py",
+      "guard_hook": "nucleus/tools/hooks/codemaster_guard.py",
+      "bus_topic": "codemaster.merge.request",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "codemaster.merge.accepted",
+        "codemaster.merge.rejected",
+        "codemaster.merge.complete",
+        "codemaster.merge.conflict",
+        "codemaster.rollback.request",
+        "codemaster.rollback.complete",
+        "codemaster.status.request",
+        "codemaster.status.report",
+        "codemaster.conservation.request",
+        "codemaster.conservation.complete",
+        "codemaster.audit.merge",
+        "codemaster.audit.conflict",
+        "codemaster.audit.rollback",
+        "codemaster.violation.direct_push"
+      ],
+      "protocol_spec": "nucleus/specs/codemaster_protocol_v2.md",
+      "aliases": [
+        "pbcmaster",
+        "PBCMASTER",
+        "codemaster",
+        "CODEMASTER"
+      ],
+      "invocation": {
+        "cli_merge": "python3 nucleus/tools/pbcmaster_operator.py merge --source <branch> --target <main|staging|dev>",
+        "cli_status": "python3 nucleus/tools/pbcmaster_operator.py status",
+        "cli_report": "python3 nucleus/tools/pbcmaster_operator.py report --window 7d",
+        "cli_rollback": "python3 nucleus/tools/pbcmaster_operator.py rollback --commit <sha> --reason <reason>",
+        "cli_conserve": "python3 nucleus/tools/pbcmaster_operator.py conserve --source <path>",
+        "repl": [
+          "pbcmaster",
+          "PBCMASTER",
+          "codemaster"
+        ],
+        "slash_command": "/pbcmaster"
+      },
+      "options": {
+        "merge": {
+          "--source": "Source branch to merge",
+          "--target": "Target branch (main|staging|dev)",
+          "--priority": "Priority 1-10 (default: 5)",
+          "--description": "Merge description",
+          "--force": "Skip QA check (dangerous)"
+        },
+        "status": {
+          "--json": "JSON output",
+          "--verbose": "Detailed status"
+        },
+        "report": {
+          "--window": "Time window (1d, 7d, 30d)",
+          "--actor": "Filter by actor",
+          "--branch": "Filter by target branch"
+        },
+        "rollback": {
+          "--commit": "Commit SHA to rollback to",
+          "--reason": "Reason for rollback",
+          "--confirm": "Skip confirmation prompt"
+        },
+        "conserve": {
+          "--source": "Path to orphan work (branch or PAIP clone)",
+          "--description": "Conservation description"
+        }
+      },
+      "scope_boundaries": {
+        "requires_codemaster": [
+          "main",
+          "staging",
+          "dev"
+        ],
+        "agent_owned": [
+          "krodotma/*_*",
+          "feature/*",
+          "/tmp/pluribus_*"
+        ],
+        "never_protected": [
+          "refs/amber/*",
+          "refs/stash/*"
+        ]
+      },
+      "validation_gates": [
+        "qa_omega_approval",
+        "hygiene_check",
+        "branch_state_clean",
+        "conflict_detection",
+        "post_merge_tests"
+      ],
+      "conservation_methods": [
+        "amber_refs (refs/amber/<agent>/<timestamp>/<branch>)",
+        "lost_found_dir (LOST_FOUND/<date>/<agent>/)",
+        "conservation_events (bus audit trail)"
+      ],
+      "omega_integration": {
+        "qa_observer": "Must emit qa.verdict.pass before merge",
+        "hygiene": "Consulted before push for secrets/size",
+        "heartbeat": "Monitors Codemaster daemon liveness"
+      },
+      "singleton_enforcement": {
+        "method": "PID file lock at /var/run/pluribus-codemaster.pid",
+        "bus_presence": "codemaster.health.alive emitted every 30s"
+      },
+      "requested_actions": [
+        "accept_merge_request",
+        "validate_with_qa",
+        "validate_with_hygiene",
+        "execute_merge",
+        "resolve_conflicts",
+        "push_to_remote",
+        "rollback_on_failure",
+        "conserve_orphan_work",
+        "emit_audit_trail"
+      ],
+      "constraints": {
+        "singleton": true,
+        "append_only_audit": true,
+        "conservation_mandatory": true,
+        "qa_gate_required": true
+      },
+      "guarantees": [
+        "Single point of authority for critical branches",
+        "No work lost without audit trail",
+        "All merges validated by QA Omega",
+        "Conflict resolution with conservation",
+        "Full audit trail in bus",
+        "Rollback capability with confirmation"
+      ],
+      "report_format": {
+        "sections": [
+          "STATE (current Codemaster state)",
+          "MERGE_QUEUE (pending requests)",
+          "TODAY_ACTIVITY (merges, rejections, rollbacks, conserved)",
+          "WEEK_SUMMARY (totals by branch)",
+          "BRANCH_HEALTH (main, staging, dev status)",
+          "AGENT_CONTRIBUTIONS (merges per agent)"
+        ]
+      },
+      "subagent_rules": [
+        "NEVER push directly to main/staging/dev",
+        "ALWAYS request merges via PBCMASTER",
+        "ALWAYS include PBTEST verdict with merge requests",
+        "TRUST Codemaster for conflict resolution"
+      ],
+      "protocol_evolution": {
+        "v26": "PBCMASTER Codemaster Agent - E Pluribus Unum singleton gatekeeper"
+      }
+    },
+    "CRUSH": {
+      "id": "crush",
+      "name": "CRUSH",
+      "domain": "inference",
+      "category": "cli_llm",
+      "description": "Charmbracelet Crush/Mods CLI integration with Pluribus bus events. Provides LLM queries, code review, explanation, and refactoring via terminal interface with full DKIN v19 observability.",
+      "tool": "nucleus/tools/crush_operator.py",
+      "adapter": "nucleus/tools/crush_adapter.py",
+      "bus_topic": "crush.session.start",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "crush.prompt.submit",
+        "crush.response.stream",
+        "crush.response.end",
+        "crush.session.end",
+        "crush.error",
+        "operator.crush.request",
+        "operator.crush.response",
+        "operator.crush.status"
+      ],
+      "aliases": [
+        "crush",
+        "CRUSH",
+        "mods",
+        "MODS"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/crush_adapter.py --prompt '...'",
+        "operator": "python3 nucleus/tools/crush_operator.py --query|--review|--explain|--refactor",
+        "repl": [
+          "crush",
+          "CRUSH"
+        ],
+        "slash_command": "/crush",
+        "dashboard_route": "/terminals/crush/"
+      },
+      "options": {
+        "--prompt": "Prompt to send to LLM",
+        "--model": "Model to use (gpt-4, claude-3, ollama:llama3)",
+        "--api": "API provider (openai, anthropic, ollama)",
+        "--file": "File(s) to include as context",
+        "--interactive": "Start interactive session",
+        "--query": "Operator: direct query",
+        "--review": "Operator: code review",
+        "--explain": "Operator: explain code/concept",
+        "--refactor": "Operator: suggest refactoring"
+      },
+      "charmbracelet_tools": {
+        "crush": "/usr/local/bin/crush (mods v1.8.1)",
+        "glow": "/usr/local/bin/glow (v2.0.0)",
+        "charm": "/usr/local/bin/charm (v0.12.6)"
+      },
+      "requested_actions": [
+        "query_llm",
+        "review_code",
+        "explain_concept",
+        "refactor_code",
+        "emit_session_events",
+        "stream_response_to_bus"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "bus_emission_required": true
+      },
+      "guarantees": [
+        "All sessions emit bus events",
+        "DKIN v19 protocol compliance",
+        "Multi-agent coordination via bus",
+        "PAIP isolation support"
+      ],
+      "protocol_evolution": {
+        "v19": "Initial Crush integration with bus events and operator support"
+      }
+    },
+    "CAGENT": {
+      "id": "cagent",
+      "name": "CAGENT",
+      "domain": "bootstrap",
+      "category": "lifecycle",
+      "description": "Citizen Agent bootstrap and compliance operator (DKIN v27). Initializes agents as Citizens with 10 core principles, canonical paths, and protocol handshake. Supports SAGENT (full) and SWAGENT (limited) tiers.",
+      "tool": "nucleus/tools/cagent_bootstrap.py",
+      "bus_topic": "cagent.bootstrap.complete",
+      "bus_kind": "artifact",
+      "protocol_spec": "nucleus/specs/cagent_protocol_v1.md",
+      "constitutional_ref": "nucleus/specs/CITIZEN.md",
+      "aliases": [
+        "cagent",
+        "CAGENT",
+        "citizen",
+        "bootstrap"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/cagent_bootstrap.py --agent <name>",
+        "repl": [
+          "cagent",
+          "citizen"
+        ],
+        "slash_command": "/cagent"
+      },
+      "options": {
+        "--agent": "Agent name to bootstrap",
+        "--class": "Agent class: sagent (full) or swagent (limited)",
+        "--emit-bus": "Emit bootstrap completion event",
+        "--verify": "Run compliance verification only"
+      },
+      "bus_topics": [
+        "cagent.bootstrap.start",
+        "cagent.bootstrap.complete",
+        "cagent.compliance.score",
+        "cagent.citizen.confirmed",
+        "cagent.constitution.created"
+      ],
+      "guarantees": [
+        "Unified bootstrapping",
+        "Constitutional compliance",
+        "Path canonicalization",
+        "Protocol handshake"
+      ],
+      "dkin_version": "v27",
+      "tiers": {
+        "SAGENT": "Full citizenship - orchestration capable",
+        "SWAGENT": "Limited citizenship - repo-scoped only"
+      }
+    },
+    "PBTSWARM": {
+      "id": "pbtswarm",
+      "name": "PBTSWARM",
+      "domain": "orchestration",
+      "category": "swarm",
+      "description": "TMUX-based multi-agent swarm orchestration (PBTSO swarm mode; TBTSO legacy alias). Control plane is the tmux session; bus topics are evidence only. Alternative pattern for local/Antigravity environments when VPS daemon is unavailable. Spawns N Claude CLI instances in tmux panes with CAGENT context injection.",
+      "tool": "nucleus/tools/tmux_swarm_orchestrator.py",
+      "bus_topic": "pbtswarm.spawn",
+      "bus_kind": "request",
+      "aliases": [
+        "pbtswarm",
+        "PBTSWARM",
+        "tmux-swarm"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/tmux_swarm_orchestrator.py spawn <manifest>",
+        "test": "python3 nucleus/tools/tmux_swarm_orchestrator.py test",
+        "slash_command": "/pbtswarm"
+      },
+      "environment": "LOCAL",
+      "priority": "fallback",
+      "guarantees": [
+        "CAGENT context injection (REPL Header, Ring, Protocol Stack)",
+        "Each agent runs in isolated tmux pane",
+        "Claude CLI v2.0.74+ required",
+        "LSP capability detection"
+      ],
+      "introduced": "2025-12-29",
+      "author": "kroma/antigravity"
+    },
+    "PBLOOP": {
+      "id": "pbloop",
+      "name": "PBLOOP",
+      "domain": "orchestration",
+      "category": "autonomous",
+      "description": "Ralph Loop: Autonomous coding loop that iterates until completion promise is met. Based on Anthropic Ralph Wiggum pattern. Self-correcting - Claude reads own past output and fixes errors.",
+      "tool": "nucleus/tools/tmux_swarm_orchestrator.py",
+      "bus_topic": "pbloop.iterate",
+      "bus_kind": "request",
+      "aliases": [
+        "pbloop",
+        "PBLOOP",
+        "ralph-loop",
+        "autonomous-loop"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/tmux_swarm_orchestrator.py loop \"<prompt>\" --promise DONE --max 50",
+        "slash_command": "/pbloop"
+      },
+      "parameters": {
+        "prompt": "The task description",
+        "promise": "Text that signals completion (default: DONE)",
+        "max": "Maximum iterations before abort (default: 50)"
+      },
+      "source": "https://github.com/anthropics/claude-code/tree/main/plugins/ralph-wiggum",
+      "guarantees": [
+        "Iterates same prompt until completion promise detected",
+        "Each iteration sees modified files and git history",
+        "Self-correcting via file persistence",
+        "Best for: well-defined tasks, refactoring, batch operations"
+      ],
+      "introduced": "2025-12-29",
+      "author": "kroma/antigravity"
+    },
+    "PBTSO": {
+      "id": "pbtso",
+      "name": "PBTSO",
+      "domain": "orchestration",
+      "category": "unified",
+      "description": "Tmux-Based Tmux Swarm Orchestration: Unified multi-agent orchestration framework consolidating PBTSWARM, PBLOOP, PBRECRUIT, REALAGENTS, ITERATE/OITERATE, and MABSWARM patterns. Graph-first (FalkorDB/IRKG) with NDJSON disaster recovery. A2A v29 coordination, Dialogos communication, and lossless reconciliation (DKIN v21). Control plane is the tmux session (PBTSO canonical; TBTSO legacy alias); bus topics are evidence only.",
+      "tool": "nucleus/tools/tmux_swarm_orchestrator.py",
+      "bus_topic": "tbtso.orchestrate.request",
+      "bus_kind": "request",
+      "protocol_spec": "nucleus/specs/pbtso_protocol_v1.md",
+      "aliases": [
+        "pbtso",
+        "PBTSO",
+        "tbtso",
+        "TBTSO",
+        "unified-swarm",
+        "swarm-orchestrate"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/tmux_swarm_orchestrator.py spawn <manifest>",
+        "list": "python3 nucleus/tools/tmux_swarm_orchestrator.py list",
+        "kill": "python3 nucleus/tools/tmux_swarm_orchestrator.py kill",
+        "test": "python3 nucleus/tools/tmux_swarm_orchestrator.py test",
+        "slash_command": "/pbtso"
+      },
+      "subsystems": {
+        "graph_state": "FalkorDB (primary) + NDJSON (DR fallback)",
+        "reconciliation": "DKIN v21 Lossless DAG",
+        "planning": "lanes.json + task_ledger.py",
+        "coordination": "A2A v29 Protocol",
+        "communication": "Dialogos v1"
+      },
+      "modes": {
+        "swarm": "PBTSWARM - spawn N agents from manifest",
+        "loop": "PBLOOP - Ralph autonomous coding loop",
+        "recruit": "PBRECRUIT - daemon-based agent recruitment",
+        "iterate": "OITERATE - coordination tick with Büchi liveness"
+      },
+      "guarantees": [
+        "A2A v29 handshake before spawn",
+        "Heartbeat every 5 minutes",
+        "Lossless work preservation (DKIN v21)",
+        "Graph-first state with NDJSON DR",
+        "PAIP v15 isolation compliance"
+      ],
+      "bus_topics": {
+        "handshake": "a2a.handshake.propose",
+        "heartbeat": "a2a.heartbeat",
+        "complete": "a2a.collab.complete",
+        "spawn": "pbtswarm.spawn",
+        "iterate": "tbtso.iterate",
+        "task_create": "task.create",
+        "task_created": "pbtso.task.created",
+        "task_created_legacy": "tbtso.task.created"
+      },
+      "introduced": "2026-01-20",
+      "author": "claude/opus-4.5",
+      "dkin_version": "v30"
+    },
+    "PBTSO_A2A": {
+      "id": "pbtso_a2a",
+      "name": "PBTSO_A2A",
+      "domain": "coordination",
+      "category": "a2a",
+      "description": "PBTSO Agent-to-Agent Coordination module (Phase 2 Steps 31-40). Integrates with existing a2a_monitor.py and a2a_bridge.py for swarm-level A2A coordination. Provides codeword tracking, heartbeat automation, dissociation detection, and Dialogos lane progress emission. Control plane is PBTSO_A2A CLI; bus topics are evidence only.",
+      "tool": "nucleus/tools/tbtso_a2a.py",
+      "bus_topic": "pbtso.a2a.swarm.init",
+      "bus_kind": "event",
+      "secondary_topics": [
+        "tbtso.a2a.swarm.heartbeat",
+        "tbtso.a2a.swarm.complete",
+        "tbtso.a2a.lane.progress",
+        "pbtso.a2a.swarm.init",
+        "pbtso.a2a.swarm.heartbeat",
+        "pbtso.a2a.swarm.complete",
+        "pbtso.a2a.lane.progress",
+        "a2a.handshake.propose",
+        "a2a.handshake.ack",
+        "a2a.heartbeat",
+        "a2a.dissociation.detected",
+        "a2a.dissociation.recovered",
+        "a2a.collab.complete"
+      ],
+      "protocol_spec": "nucleus/specs/holon_protocol_v1.md",
+      "aliases": [
+        "pbtso_a2a",
+        "PBTSO_A2A",
+        "tbtso_a2a",
+        "TBTSO_A2A",
+        "swarm-a2a",
+        "a2a-coordinator"
+      ],
+      "invocation": {
+        "cli_init": "python3 nucleus/tools/tbtso_a2a.py init --agents claude,codex --scope \"task\" --lane myLane",
+        "cli_status": "python3 nucleus/tools/tbtso_a2a.py status [swarm_id]",
+        "cli_heartbeat": "python3 nucleus/tools/tbtso_a2a.py heartbeat <swarm_id> <agent_id>",
+        "cli_liveness": "python3 nucleus/tools/tbtso_a2a.py liveness <swarm_id>",
+        "cli_progress": "python3 nucleus/tools/tbtso_a2a.py progress <swarm_id> <wip_pct>",
+        "cli_complete": "python3 nucleus/tools/tbtso_a2a.py complete <swarm_id>",
+        "slash_command": "/pbtso_a2a"
+      },
+      "options": {
+        "--agents": "Comma-separated agent IDs for swarm",
+        "--scope": "Task scope description",
+        "--lane": "Lane ID for WIP tracking",
+        "--mode": "Coordination mode: parallel|sequential|turn_based",
+        "--iterations": "Planned iterations (default: 10)",
+        "--json": "JSON output"
+      },
+      "protocol_constants": {
+        "HEARTBEAT_INTERVAL_S": 300,
+        "HEARTBEAT_TIMEOUT_S": 900,
+        "HANDSHAKE_TIMEOUT_S": 60
+      },
+      "state_machine": {
+        "states": ["initializing", "handshaking", "running", "completing", "complete", "failed"],
+        "transitions": {
+          "initializing": ["handshaking"],
+          "handshaking": ["running", "failed"],
+          "running": ["completing", "failed"],
+          "completing": ["complete", "failed"]
+        }
+      },
+      "guarantees": [
+        "A2A handshake before swarm spawn",
+        "Heartbeat every 5 minutes",
+        "Dissociation detection on 3 missed heartbeats",
+        "Lane WIP synchronization",
+        "Append-only bus evidence"
+      ],
+      "introduced": "2026-01-20",
+      "author": "claude/opus-4.5",
+      "pbtso_phase": "Phase 2 (Steps 31-40)",
+      "dkin_version": "v30"
+    },
+    "PBTSO_OITERATE": {
+      "id": "pbtso_oiterate",
+      "name": "PBTSO_OITERATE",
+      "domain": "coordination",
+      "category": "autonomous_loop",
+      "description": "PBTSO OITERATE Integration module (Phase 2 Steps 41-50). Wraps OITERATE operator for swarm-level coordination with goal tracking, progress-driven iteration triggering, and Buchi automaton liveness guarantees.",
+      "tool": "nucleus/tools/tbtso_oiterate.py",
+      "bus_topic": "pbtso.oiterate.tick",
+      "bus_kind": "metric",
+      "secondary_topics": [
+        "tbtso.oiterate.started",
+        "tbtso.oiterate.stopped",
+        "tbtso.oiterate.goal.achieved",
+        "tbtso.oiterate.swarm.stale",
+        "tbtso.oiterate.action.triggered",
+        "pbtso.oiterate.tick",
+        "pbtso.oiterate.started",
+        "pbtso.oiterate.stopped",
+        "pbtso.oiterate.goal.achieved",
+        "pbtso.oiterate.swarm.stale",
+        "pbtso.oiterate.action.triggered",
+        "infer_sync.request"
+      ],
+      "protocol_spec": "nucleus/specs/holon_protocol_v1.md",
+      "aliases": [
+        "pbtso_oiterate",
+        "PBTSO_OITERATE",
+        "tbtso_oiterate",
+        "TBTSO_OITERATE",
+        "swarm-oiterate",
+        "oiterate-swarm"
+      ],
+      "invocation": {
+        "cli_init": "python3 nucleus/tools/tbtso_oiterate.py init <swarm_id> --lane myLane",
+        "cli_tick": "python3 nucleus/tools/tbtso_oiterate.py tick <swarm_id>",
+        "cli_run": "python3 nucleus/tools/tbtso_oiterate.py run <swarm_id> --interval 60",
+        "cli_update_goal": "python3 nucleus/tools/tbtso_oiterate.py update-goal <swarm_id> <goal_id> --increment 1",
+        "cli_status": "python3 nucleus/tools/tbtso_oiterate.py status [swarm_id]",
+        "cli_stop": "python3 nucleus/tools/tbtso_oiterate.py stop <swarm_id>",
+        "slash_command": "/pbtso_oiterate"
+      },
+      "options": {
+        "--lane": "Lane ID for WIP tracking",
+        "--codeword": "A2A codeword",
+        "--goals": "JSON array of goals",
+        "--interval": "Tick interval seconds (default: 60)",
+        "--max-ticks": "Max ticks before exit",
+        "--single-tick": "Single tick and exit (testing)",
+        "--json": "JSON output"
+      },
+      "automaton": {
+        "type": "buchi",
+        "states": ["IDLE", "RUNNING", "STALE", "ACHIEVED", "PAUSED"],
+        "accepting": ["RUNNING", "ACHIEVED"],
+        "liveness_axiom": "For all t, exists t' > t : state(t') in {RUNNING, ACHIEVED}"
+      },
+      "action_space": [
+        "noop",
+        "iterate",
+        "ckin",
+        "beam_append",
+        "alert",
+        "pause",
+        "heartbeat"
+      ],
+      "goal_structure": {
+        "id": "string",
+        "name": "string",
+        "current": "float",
+        "target": "float",
+        "weight": "float (default: 1.0)",
+        "mode": "atleast|atmost"
+      },
+      "guarantees": [
+        "Buchi liveness (visits accepting states infinitely often)",
+        "Swarm-aware goal tracking",
+        "Lane WIP synchronization",
+        "Action triggering on staleness/low progress",
+        "Append-only bus evidence"
+      ],
+      "introduced": "2026-01-20",
+      "author": "claude/opus-4.5",
+      "pbtso_phase": "Phase 2 (Steps 41-50)",
+      "dkin_version": "v30"
+    },
+    "PBQUOTA": {
+      "id": "pbquota",
+      "name": "PBQUOTA",
+      "domain": "orchestration",
+      "category": "resource_management",
+      "description": "Quota Protocol v1: Central quota enforcement for multi-provider orchestration. Tracks provider budgets (Claude, Codex, Gemini, Grok), enforces gating decisions (proceed/queue/downgrade/reject), and optimizes for 'work completed per quota unit'. Provider-aware: Gemini=request-counted (maximize work/request), Claude/Codex=compute-metered (minimize context+iterations).",
+      "tool": "nucleus/tools/quota_manager.py",
+      "bus_topic": "quota.consumed",
+      "bus_kind": "metric",
+      "secondary_topics": [
+        "quota.remaining",
+        "quota.projected",
+        "quota.threshold",
+        "quota.exhausted",
+        "quota.gated",
+        "quota.reset"
+      ],
+      "protocol_spec": "nucleus/specs/quota_protocol_v1.md",
+      "cost_model": "nucleus/specs/provider_cost_model_v1.json",
+      "aliases": [
+        "pbquota",
+        "PBQUOTA",
+        "quota",
+        "quotas",
+        "budget"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/quota_manager.py status",
+        "check": "python3 nucleus/tools/quota_manager.py check <provider>",
+        "select": "python3 nucleus/tools/quota_manager.py select",
+        "slash_command": "/pbquota"
+      },
+      "options": {
+        "status": "Show quota status for all providers",
+        "check": "Check if can proceed on a provider",
+        "select": "Select optimal provider based on budgets",
+        "reset-session": "Reset 5h rolling budgets",
+        "reset-long": "Reset daily/weekly budgets"
+      },
+      "gating_decisions": {
+        "PROCEED": "Budget available, proceed with operation",
+        "QUEUE": "Rate limited, queue operation",
+        "DOWNGRADE": "Use cheaper model or alternative provider",
+        "REJECT": "Insufficient budget, reject operation"
+      },
+      "batching_rules": {
+        "rule_a": "Large context (>35% window) requires high-impact or tightly-coupled tasks",
+        "rule_b": "Batch only tasks sharing module/directory/test target",
+        "rule_c": "Gemini=pack prompts, Claude/Codex=pack context once"
+      },
+      "guarantees": [
+        "Provider-specific metering shape awareness",
+        "Pre-spawn quota gating",
+        "Automatic model downgrade on low budget",
+        "Automatic provider switching on exhaustion",
+        "Empirical cost model fitting from /status",
+        "Bus evidence for all quota events"
+      ],
+      "introduced": "2026-01-23",
+      "author": "claude/opus-4.5",
+      "dkin_version": "v30"
+    },
+    "PBQMONITOR": {
+      "id": "pbqmonitor",
+      "name": "PBQMONITOR",
+      "domain": "observability",
+      "category": "monitoring",
+      "description": "Real-time quota monitoring daemon for PBTSO monitor pane. Polls /status from active provider CLIs, displays WIP meters, and emits threshold alerts. Integrated with Quota Protocol v1.",
+      "tool": "nucleus/tools/quota_monitor.py",
+      "bus_topic": "quota.remaining",
+      "bus_kind": "metric",
+      "aliases": [
+        "pbqmonitor",
+        "PBQMONITOR",
+        "quota-monitor",
+        "qmonitor"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/quota_monitor.py --providers claude,codex,gemini --tier pro",
+        "once": "python3 nucleus/tools/quota_monitor.py --once",
+        "slash_command": "/pbqmonitor"
+      },
+      "options": {
+        "--interval": "Update interval in seconds (default: 30)",
+        "--providers": "Comma-separated list of providers",
+        "--tier": "Quota tier (default: pro)",
+        "--once": "Run once and exit"
+      },
+      "display": {
+        "wip_meter": "[##########] 100%",
+        "colors": "Green (>50%), Yellow (15-50%), Red (<15%)"
+      },
+      "guarantees": [
+        "Real-time quota visualization",
+        "CLI status polling",
+        "Threshold alert emission",
+        "Optimal provider recommendation"
+      ],
+      "introduced": "2026-01-23",
+      "author": "claude/opus-4.5",
+      "dkin_version": "v30"
+    },
+    "PBHOLON": {
+      "id": "pbholon",
+      "name": "PBHOLON",
+      "domain": "kernel",
+      "category": "protocol_orchestration",
+      "description": "Master protocol loader with progressive disclosure. HOLON v2 is the unified envelope containing all sub-protocols (DKIN v30, PAIP v16, UNIFORM v2.1, A2A v30, CITIZEN v2). Agent config only needs PBHOLON - sub-protocols are chain-loaded on-demand. Each REPL header emit triggers hydration through the HOLON chain.",
+      "tool": "nucleus/tools/pbholon_operator.py",
+      "bus_topic": "holon.hydrated",
+      "bus_kind": "artifact",
+      "secondary_topics": [
+        "holon.potential.created",
+        "holon.pentad.formed",
+        "holon.sextet.validating",
+        "holon.sextet.passed",
+        "holon.sextet.failed",
+        "holon.actualized",
+        "holon.decaying",
+        "holon.archived",
+        "holon.protocol.loaded"
+      ],
+      "protocol_spec": "nucleus/specs/holon_protocol_v2.md",
+      "child_protocols": {
+        "DKIN": {"version": "v30", "spec": "nucleus/specs/dkin_protocol_v30.md"},
+        "PAIP": {"version": "v16", "spec": "nucleus/specs/ckin_protocol_v18_paip_citizen_tiers.md"},
+        "UNIFORM": {"version": "v2.1", "spec": "nucleus/specs/UNIFORM.md"},
+        "A2A": {"version": "v30", "spec": "nucleus/specs/a2a_protocol_v30.md"},
+        "CITIZEN": {"version": "v2", "spec": "nucleus/specs/CITIZEN.md"}
+      },
+      "aliases": [
+        "pbholon",
+        "PBHOLON",
+        "holon",
+        "HOLON",
+        "protocol-chain"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbholon_operator.py hydrate --actor <name>",
+        "load": "python3 nucleus/tools/pbholon_operator.py load --protocol <name>",
+        "status": "python3 nucleus/tools/pbholon_operator.py status",
+        "slash_command": "/pbholon"
+      },
+      "subcommands": {
+        "hydrate": "Full hydration for REPL header emit (loads all required sub-protocols)",
+        "load": "Progressive load of single sub-protocol on-demand",
+        "status": "Show loaded protocol versions and hydration state",
+        "validate": "Run Sextet gates against current state",
+        "emit": "Emit REPL header panel from hydrated state"
+      },
+      "options": {
+        "--actor": "Agent identity (required for hydrate)",
+        "--protocol": "Sub-protocol to load (DKIN|PAIP|UNIFORM|A2A|CITIZEN)",
+        "--depth": "Progressive disclosure depth (1=minimal, 2=standard, 3=full)",
+        "--json": "JSON output for programmatic consumption",
+        "--emit-bus": "Emit bus events for all operations"
+      },
+      "progressive_disclosure": {
+        "depth_1_minimal": ["UNIFORM", "CITIZEN"],
+        "depth_2_standard": ["UNIFORM", "CITIZEN", "DKIN", "PAIP"],
+        "depth_3_full": ["UNIFORM", "CITIZEN", "DKIN", "PAIP", "A2A"]
+      },
+      "hydration_order": [
+        "CITIZEN (compliance tier)",
+        "UNIFORM (session/actor identity)",
+        "DKIN (kernel state)",
+        "PAIP (isolation mode)",
+        "A2A (collaboration, optional)"
+      ],
+      "pentad_coordinates": {
+        "WHY": "Etymon - purpose/origin",
+        "WHERE": "Locus - binding domain",
+        "WHO": "Lineage - actor identity",
+        "WHEN": "Kairos - temporal context",
+        "WHAT": "Artifact - output produced"
+      },
+      "sextet_gates": {
+        "P": "Provenance - lineage verification",
+        "E": "Effects - domain validation",
+        "L": "Liveness - budget feasibility",
+        "R": "Recovery - schema signatures",
+        "Q": "Quality - TDD compliance",
+        "Omega": "Constitutional - etymon alignment"
+      },
+      "guarantees": [
+        "Single entry point for all protocols",
+        "Progressive disclosure (load as needed)",
+        "Lazy sub-protocol loading",
+        "REPL header hydration on demand",
+        "Sextet validation before actualization",
+        "Bus evidence for all state changes",
+        "Version consistency across sub-protocols"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "tests_first": true,
+        "reality_gate": false
+      },
+      "protocol_evolution": {
+        "v1": "Initial HOLON protocol (Pentad + Sextet)",
+        "v2": "Unified envelope with PBHOLON progressive loader"
+      },
+      "introduced": "2026-01-23",
+      "author": "claude/opus-4.5",
+      "dkin_version": "v30",
+      "holon_version": "v2"
+    },
+    "AEGF": {
+      "id": "aegf",
+      "name": "AEGF",
+      "domain": "epistemics",
+      "category": "gap_analysis",
+      "description": "Aleatoric-Epistemic Gap Fill operator. Meta-cognitive framework for systematic discovery of unknown unknowns, incomplete knowledge hydration, and optimal path navigation through latent space. Extends traditional gap detection (v7) with neurosymbolic techniques for exploiting superposition, entanglement, and emergent phenomena in LLMs/RNNs.",
+      "tool": "nucleus/tools/aegf_operator.py",
+      "bus_topic": "aegf.analysis.request",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "aegf.gap.aleatoric",
+        "aegf.gap.epistemic",
+        "aegf.gap.ontological",
+        "aegf.gap.teleological",
+        "aegf.hydration.path",
+        "aegf.superposition.exploit",
+        "aegf.entanglement.map",
+        "aegf.latent.trajectory"
+      ],
+      "protocol_spec": "nucleus/specs/aegf_protocol_v1.md",
+      "aliases": [
+        "aegf",
+        "AEGF",
+        "gap-fill",
+        "epistemic-gaps",
+        "unknown-unknowns"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/aegf_operator.py --scope <scope> --mode <mode>",
+        "repl": [
+          "aegf",
+          "AEGF",
+          "gap analysis"
+        ],
+        "slash_command": "/aegf"
+      },
+      "options": {
+        "--scope": "Analysis scope (codebase, spec, architecture, integration)",
+        "--mode": "Gap detection mode: aleatoric|epistemic|ontological|teleological|full",
+        "--hydrate": "Attempt gap hydration via latent space traversal",
+        "--emit-bus": "Emit gap analysis to bus"
+      },
+      "gap_taxonomy": {
+        "aleatoric": {
+          "description": "Irreducible randomness in system behavior",
+          "sources": [
+            "stochastic processes",
+            "user behavior",
+            "external APIs",
+            "timing variations"
+          ],
+          "detection": "Variance analysis, Monte Carlo simulation, chaos markers",
+          "mitigation": "Bounds, graceful degradation, probabilistic guarantees"
+        },
+        "epistemic": {
+          "description": "Reducible uncertainty from incomplete knowledge",
+          "sources": [
+            "missing docs",
+            "undocumented behavior",
+            "hidden dependencies",
+            "tacit knowledge"
+          ],
+          "detection": "Coverage analysis, dependency graphs, dead code detection",
+          "mitigation": "Documentation, testing, specification expansion"
+        },
+        "ontological": {
+          "description": "Gaps in conceptual model or category structure",
+          "sources": [
+            "missing abstractions",
+            "wrong boundaries",
+            "category errors",
+            "leaky abstractions"
+          ],
+          "detection": "Type analysis, semantic drift, coupling metrics",
+          "mitigation": "Refactoring, domain modeling, bounded contexts"
+        },
+        "teleological": {
+          "description": "Gaps between intent and implementation",
+          "sources": [
+            "spec drift",
+            "requirement mismatch",
+            "goal misalignment",
+            "emergent behavior"
+          ],
+          "detection": "Spec-code comparison, user feedback, outcome tracking",
+          "mitigation": "Alignment checks, feedback loops, intent verification"
+        }
+      },
+      "cognitive_patterns": {
+        "superposition_exploitation": {
+          "description": "Leverage LLM attention heads holding multiple hypotheses simultaneously",
+          "technique": "Query with ambiguity, extract multiple interpretations, synthesize",
+          "use_case": "Exploring design space without premature commitment"
+        },
+        "entanglement_mapping": {
+          "description": "Identify correlated knowledge clusters that update together",
+          "technique": "Probe related concepts, map co-activation patterns",
+          "use_case": "Finding hidden dependencies, cascading implications"
+        },
+        "latent_trajectory_hydration": {
+          "description": "Navigate latent space beyond simple interpolation/extrapolation",
+          "techniques": [
+            "Analogical reasoning (A:B::C:?)",
+            "Compositional synthesis (X + Y → Z)",
+            "Counterfactual exploration (what if not X?)",
+            "Boundary probing (edge cases, limits)",
+            "Negation mining (what is explicitly NOT true)"
+          ],
+          "use_case": "Discovering non-obvious solutions, filling specification gaps"
+        },
+        "unknown_unknown_detection": {
+          "description": "Systematic revelation of meta-epistemic blind spots",
+          "techniques": [
+            "Rumsfeld matrix analysis (known/unknown × known/unknown)",
+            "Assumption surfacing",
+            "Contradiction mining",
+            "Silence analysis (what is NOT mentioned)",
+            "Boundary violation testing"
+          ],
+          "use_case": "Risk discovery, completeness checking"
+        }
+      },
+      "rnn_phenomena": {
+        "vanishing_gradients_as_signal": "Long-range dependencies that are hard to learn indicate architectural gaps",
+        "recurrence_patterns": "Cyclical structures in code/spec may indicate missing abstractions",
+        "context_window_limits": "Information that exceeds context indicates need for summarization/indexing"
+      },
+      "integration_points": {
+        "CKIN_v7": "Gap detection section sources from AEGF",
+        "PBDEEP": "Forensics index feeds AEGF ontological analysis",
+        "LENS_LASER": "CMP fitness scoring incorporates AEGF metrics",
+        "OITERATE": "RL state includes gap closure as reward signal"
+      },
+      "output_sections": [
+        "ALEATORIC_GAPS (irreducible uncertainty)",
+        "EPISTEMIC_GAPS (reducible uncertainty)",
+        "ONTOLOGICAL_GAPS (model gaps)",
+        "TELEOLOGICAL_GAPS (intent gaps)",
+        "HYDRATION_PATHS (suggested resolution trajectories)",
+        "SUPERPOSITION_OPPORTUNITIES (exploration branches)",
+        "ENTANGLEMENT_MAP (correlated knowledge)"
+      ],
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "meta_cognitive": true
+      },
+      "guarantees": [
+        "Systematic gap taxonomy",
+        "Beyond interpolation/extrapolation",
+        "Exploits LLM emergent phenomena",
+        "Actionable hydration paths",
+        "Bus evidence for all analyses"
+      ],
+      "protocol_evolution": {
+        "v7": "Initial aleatoric/epistemic gap detection in CKIN",
+        "v29": "AEGF full meta-cognitive framework"
+      },
+      "introduced": "2025-12-31",
+      "authors": [
+        "claude",
+        "human"
+      ]
+    },
+    "AXIOM": {
+      "id": "axiom",
+      "name": "AXIOM",
+      "domain": "verification",
+      "category": "formal_methods",
+      "description": "Axiom DSL operator for parsing, registering, and enforcing formal axioms. Supports AXIOM/DEF/RULE/DITS declarations with modal logic (G/F/X), temporal operators (U/R/W), fixpoints (mu/nu), and enforcement bindings. DKIN v28 integration for DiTS (Diegetic Transition Systems).",
+      "tool": "nucleus/tools/axiom_operator.py",
+      "parser": "nucleus/tools/axiom_parser.py",
+      "bus_topic": "axiom.check.request",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "axiom.check.started",
+        "axiom.check.passed",
+        "axiom.check.failed",
+        "axiom.registry.loaded",
+        "axiom.ast.created",
+        "cagent.dits.mu.enter",
+        "cagent.dits.nu.enter",
+        "cagent.dits.omega.close"
+      ],
+      "protocol_spec": "nucleus/specs/dsl/axioms.dsl.md",
+      "schema_spec": "nucleus/specs/schema/axioms.schema.json",
+      "aliases": [
+        "axiom",
+        "AXIOM",
+        "pbaxiom",
+        "PBAXIOM"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/axiom_operator.py --parse <file> | --check <axiom> | --registry",
+        "repl": [
+          "axiom",
+          "AXIOM"
+        ],
+        "slash_command": "/axiom"
+      },
+      "options": {
+        "--parse": "Parse axiom DSL file and emit AST",
+        "--check": "Check specific axiom against current state",
+        "--registry": "Show loaded axiom registry",
+        "--load": "Load axioms from file into registry",
+        "--emit-bus": "Emit check results to bus"
+      },
+      "dsl_constructs": {
+        "AXIOM": "Enforceable invariant with optional BIND clause",
+        "DEF": "Named formula definition (no enforcement)",
+        "RULE": "Inference rule (antecedent => consequent)",
+        "DITS": "Diegetic Transition System (mu/nu/omega specs)"
+      },
+      "formula_operators": {
+        "quantifiers": [
+          "forall",
+          "exists"
+        ],
+        "modal": [
+          "G (globally)",
+          "F (eventually)",
+          "X (next)"
+        ],
+        "temporal": [
+          "U (until)",
+          "R (release)",
+          "W (weak-until)"
+        ],
+        "fixpoint": [
+          "mu (least)",
+          "nu (greatest)"
+        ],
+        "logic": [
+          "and",
+          "or",
+          "not",
+          "=>"
+        ]
+      },
+      "constraints": {
+        "append_only": true,
+        "tests_first": true,
+        "bus_evidence": true
+      },
+      "guarantees": [
+        "Formal axiom parsing with AST",
+        "Enforcement binding to tools/topics",
+        "DiTS mu/nu/omega integration",
+        "Bus evidence for all checks",
+        "Motif tracking via omega_motifs.json"
+      ],
+      "protocol_evolution": {
+        "v28": "Initial AXIOM operator with DiTS integration"
+      },
+      "introduced": "2025-12-31",
+      "authors": [
+        "codex",
+        "claude"
+      ]
+    },
+    "PBIUD": {
+      "id": "pbiud",
+      "name": "PBIUD",
+      "domain": "coordination",
+      "category": "completion",
+      "description": "Pluribus Iterate Unless Done: The 'Definition of Done' operator. Ensures implementation is complete, verifies via PBTEST, persists via iso_git, notifies bus/sagent, and chains co-semops (PBREALITY, PBDEEP).",
+      "tool": "nucleus/tools/pbiud_operator.py",
+      "bus_topic": "operator.pbiud.start",
+      "bus_kind": "log",
+      "secondary_topics": [
+        "operator.pbiud.complete",
+        "task.complete"
+      ],
+      "protocol_spec": "nucleus/specs/dkin_protocol_v1.md",
+      "aliases": [
+        "pbiud",
+        "PBIUD",
+        "done",
+        "finish",
+        "iterate unless done"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbiud_operator.py \"message\" --verify",
+        "repl": [
+          "pbiud",
+          "PBIUD",
+          "done"
+        ],
+        "slash_command": "/pbiud"
+      },
+      "options": {
+        "--message": "Commit message",
+        "--verify": "Run PBTEST verification",
+        "--scope": "Verification scope",
+        "--co-semops": "Next operator to chain"
+      },
+      "guarantees": [
+        "Verifies work before commit",
+        "Persists via iso_git (signed)",
+        "Notifies bus and sagent",
+        "Suggests next steps"
+      ]
+    },
+    "PBNOTIFY": {
+      "id": "pbnotify",
+      "name": "PBNOTIFY",
+      "domain": "coordination",
+      "category": "notification",
+      "description": "Targeted agent notification operator (bus system-of-record + optional HEXIS inbox delivery).",
+      "tool": "nucleus/tools/pbnotify_operator.py",
+      "bus_topic": "agent.notify.request",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "agent.notify.dispatch",
+        "agent.notify.ack",
+        "hexis.buffer.published",
+        "hexis.buffer.consumed"
+      ],
+      "protocol_spec": "nucleus/specs/agent_notify_protocol_v1.md",
+      "aliases": [
+        "pbnotify",
+        "PBNOTIFY"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbnotify_operator.py --message \"...\" --target <agent>",
+        "repl": [
+          "pbnotify",
+          "PBNOTIFY"
+        ],
+        "slash_command": "/pbnotify"
+      },
+      "options": {
+        "--message": "Notification message (required)",
+        "--target": "Target agent id (repeatable)",
+        "--class": "Target class name (optional)",
+        "--broadcast": "Broadcast without explicit targets",
+        "--data": "JSON payload (object) or - for stdin",
+        "--reply-to": "Optional reply topic for acknowledgements",
+        "--no-hexis": "Disable HEXIS delivery",
+        "--class-map": "Path to class map JSON (default: nucleus/config/agent_notify_class_map.json)"
+      },
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "no_secrets": true
+      },
+      "guarantees": [
+        "Bus evidence for all notifications",
+        "Optional HEXIS inbox delivery",
+        "Targeted, class-based, or broadcast dispatch"
+      ]
+    },
+    "PBRECRUIT": {
+      "id": "pbrecruit",
+      "name": "PBRECRUIT",
+      "domain": "coordination",
+      "category": "dispatch",
+      "description": "Recruit N agents for a task via PBNOTIFY. Emits swarm.recruit.request and notifies selected agents.",
+      "tool": "nucleus/tools/pbrecruit_operator.py",
+      "bus_topic": "swarm.recruit.request",
+      "bus_kind": "request",
+      "secondary_topic": "swarm.recruit.notify",
+      "aliases": [
+        "pbrecruit",
+        "PBRECRUIT",
+        "recruit"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbrecruit_operator.py --count <n> --task \"...\"",
+        "repl": [
+          "pbrecruit",
+          "recruit"
+        ],
+        "slash_command": "/pbrecruit"
+      },
+      "options": {
+        "--count": "Number of agents to recruit (default: 5)",
+        "--task": "Task description (required)",
+        "--priority": "Priority level P0-P3 (default: P1)",
+        "--class": "Agent class: core, all, ring0, subagents",
+        "--deadline": "Optional deadline"
+      },
+      "guarantees": [
+        "Emits bus event",
+        "Notifies via PBNOTIFY",
+        "Returns recruitment ID"
+      ]
+    },
+    "PBSKILLS": {
+      "id": "pbskills",
+      "name": "PBSKILLS",
+      "domain": "skills",
+      "category": "cognitive_orchestration",
+      "description": "Skill discovery, routing, composition, and lifecycle management. Integrates with Learning Tower (L1-L8), Entelexis CMP, and skills registry. Supports hypergraph-native skill representation (roadmap). Protocol v29.",
+      "tool": "nucleus/tools/pbskills_operator.py",
+      "bus_topic": "operator.pbskills.request",
+      "bus_kind": "request",
+      "secondary_topics": [
+        "skills.discovered",
+        "skills.invoked",
+        "skills.completed",
+        "skills.failed",
+        "skills.mastery.updated",
+        "skills.composed",
+        "skills.hyperedge.created",
+        "skills.gap.detected"
+      ],
+      "protocol_spec": "nucleus/specs/pbskills_operator_v1.md",
+      "aliases": [
+        "pbskills",
+        "PBSKILLS",
+        "skills",
+        "skill"
+      ],
+      "invocation": {
+        "cli": "python3 nucleus/tools/pbskills_operator.py <subcommand> [options]",
+        "repl": [
+          "pbskills",
+          "skills"
+        ],
+        "slash_command": "/skills"
+      },
+      "subcommands": {
+        "discover": "Scan and register skills from SKILL.md files",
+        "invoke": "Execute a skill with given parameters",
+        "compose": "Create compound skill from atomic skills",
+        "route": "Select optimal skill(s) for a task",
+        "status": "Show skill registry status and mastery levels",
+        "graph": "Visualize skill dependency graph (or hypergraph)",
+        "gaps": "Detect epistemic/aleatoric gaps in skill graph"
+      },
+      "options": {
+        "--skill": "Skill ID or name",
+        "--task": "Task description for routing",
+        "--tower-level": "Filter by Learning Tower level (1-8)",
+        "--paradigm": "Filter by learning paradigm (sft, lora, ppo, etc.)",
+        "--format": "Output format (json, yaml, text, mermaid)",
+        "--emit-bus": "Emit bus events for all operations",
+        "--mastery-threshold": "Minimum mastery for routing (default: 0.618 phi)",
+        "--hypergraph": "Use hypergraph representation (experimental roadmap)"
+      },
+      "constraints": {
+        "append_only": true,
+        "non_blocking": true,
+        "tests_first": true,
+        "reality_gate": false
+      },
+      "guarantees": [
+        "Skill registry append-only (no deletion)",
+        "Mastery scores monotonic within session",
+        "Composition preserves prerequisite ordering",
+        "Bus events emitted for all state changes",
+        "No hallucinated skills (verification required)"
+      ],
+      "learning_tower_integration": {
+        "L1": ["bpe", "auom", "bm25", "tfidf"],
+        "L2": ["sft", "lora", "rlhf", "dpo", "orpo"],
+        "L3": ["spherical", "hyperbolic", "slerp"],
+        "L4": ["fiber_bundle", "parallel_transport"],
+        "L5": ["hopfield", "associative"],
+        "L6": ["sinkhorn", "birkhoff", "crystallize"],
+        "L7": ["buchi", "q_learning", "ppo", "grpo"],
+        "L8": ["maml", "reptile", "self_play", "godel"]
+      },
+      "entelexis_integration": {
+        "cmp_weight": 0.236,
+        "hgt_eligible": true,
+        "omega_guardian_motifs": true
+      },
+      "hypergraph_roadmap": {
+        "status": "PROPOSED",
+        "viability_score": 82,
+        "sources": [
+          "MIT NeurIPS 2025: Higher-Order Learning via Hypergraph Encodings",
+          "HeIHNN 2024: Hyperedge Interaction-aware HNN",
+          "Princeton Connectomics: 500M connections mapped"
+        ],
+        "phases": {
+          "P0": "DAG skill graph (IMPLEMENTED)",
+          "P1": "Conjunctive hyperedges (ROADMAP)",
+          "P2": "Hypergraph Laplacian encoding (ROADMAP)",
+          "P3": "Three-stage message passing (ROADMAP)",
+          "P4": "Implicit fixed-point IHGNN (ROADMAP)"
+        }
+      },
+      "protocol_evolution": {
+        "v29": "Initial PBSKILLS operator with registry, routing, composition, Learning Tower integration, Entelexis CMP, hypergraph roadmap"
+      }
+    }
+  },
+  "grammar": {
+    "ebnf": "line = operator | command | prompt ;\noperator = \"iterate\" | \"oiterate\" | \"OITERATE\" | \"ckin\" | \"chkin\" | \"checking in\" | \"CKIN\" | \"pbeport\" | \"PBEPORT\" | \"pbreport\" | \"PBREPORT\" | \"pbreality\" | \"PBREALITY\" | \"pbflush\" | \"PBFLUSH\" | \"pbdeep\" | \"PBDEEP\" | \"pbassimilate\" | \"PBASSIMILATE\" | \"pblock\" | \"PBLOCK\" | \"freeze\" | \"pbtest\" | \"PBTEST\" | \"pbclitest\" | \"PBCLITEST\" | \"clitest\" | \"cli-test\" | \"speak\" | \"SPEAK\" | \"SPEAK dump to this endpoint file content requested spoken\" | \"mbad\" | \"MBAD\" | \"mabswarm\" | \"MABSWARM\" | \"mbswarm\" | \"MBSWARM\" | \"beam\" | \"BEAM\" | \"pbpair\" | \"PBPAIR\" | \"pluribus\" | \"PLURIBUS\" | \"pbiud\" | \"PBIUD\" ;\ncommand = \"/\" name { \" \" arg } ;\nname = \"help\" | \"status\" | \"quit\" | \"provider\" | \"persona\" | \"lane\" | \"context\" | \"effects\" | \"topology\" | \"iterate\" | \"oiterate\" | \"ckin\" | \"pbeport\" | \"pbreality\" | \"pbflush\" | \"pbdeep\" | \"pbassimilate\" | \"pblock\" | \"freeze\" | \"pbtest\" | \"pbclitest\" | \"clitest\" | \"speak\" | \"mbad\" | \"mabswarm\" | \"beam\" | \"pluribus\" | \"pbiud\" ;\narg = 1*(ALNUM | \"-\" | \"_\" | \".\" | \":\" | \"/\") ;\nprompt = 1*(CHAR) ;",
+    "operator_pattern": "^(iterate|oiterate|OITERATE|ckin|chkin|checking in|CKIN|pbeport|PBEPORT|pbreport|PBREPORT|pbreality|PBREALITY|pbflush|PBFLUSH|pbdeep|PBDEEP|pbassimilate|PBASSIMILATE|pblock|PBLOCK|freeze|pbtest|PBTEST|pbclitest|PBCLITEST|clitest|cli-test|tdd|verify|pblanes|PBLANES|lanes|LANES|pbresume|PBRESUME|auto_resume|resume tasks|speak|SPEAK|SPEAK dump to this endpoint file content requested spoken|mbad|MBAD|mabswarm|MABSWARM|mbswarm|MBSWARM|beam|BEAM|pbpair|PBPAIR|pluribus|PLURIBUS|pbiud|PBIUD|realagents|REALAGENTS|crush|CRUSH|mods|MODS|axiom|AXIOM|pbaxiom|PBAXIOM|aegf|AEGF|gap-fill|epistemic-gaps|pbnotify|PBNOTIFY)$",
+    "slash_command_pattern": "^/(help|status|quit|provider|persona|lane|context|effects|topology|iterate|oiterate|ckin|pbeport|pbreality|pbflush|pbdeep|pbassimilate|pblock|freeze|pbtest|pbclitest|clitest|tdd|pblanes|lanes|pbresume|auto_resume|speak|mbad|mabswarm|beam|pluribus|pbiud|realagents|crush|axiom|aegf|pbnotify)(\\s+.*)?$"
+  },
+  "tool_map": {
+    "pbcmaster": "nucleus/tools/pbcmaster_operator.py",
+    "codemaster_agent": "nucleus/tools/codemaster_agent.py",
+    "codemaster_guard": "nucleus/tools/hooks/codemaster_guard.py",
+    "ckin": "nucleus/tools/ckin_report.py",
+    "pbeport": "nucleus/tools/pbeport.py",
+    "pbreality": "nucleus/tools/pbreality_operator.py",
+    "mbad": "nucleus/tools/mbad.py",
+    "mabswarm": "nucleus/tools/mabswarm.py",
+    "iterate": "nucleus/tools/iterate_operator.py",
+    "oiterate": "nucleus/tools/oiterate_operator.py",
+    "pbflush": "nucleus/tools/pbflush_operator.py",
+    "pbdeep": "nucleus/tools/pbdeep_operator.py",
+    "pbassimilate": "nucleus/tools/pbassimilate_operator.py",
+    "pblock": "nucleus/tools/pblock_operator.py",
+    "pbhygiene": "nucleus/tools/pbhygiene_operator.py",
+    "speak": "nucleus/tools/speak_operator.py",
+    "beam": "nucleus/tools/beam_append.py",
+    "pbpair": "nucleus/tools/PBPAIR",
+    "pbtest": "nucleus/tools/pbtest_operator.py",
+    "pbtest_watcher": "nucleus/tools/qa_pbtest_watcher.py",
+    "pbclitest": "nucleus/tools/pbclitest_operator.py",
+    "pbclitest_watcher": "nucleus/tools/qa_pbclitest_watcher.py",
+    "pblanes": "nucleus/tools/pblanes_operator.py",
+    "lanes_report": "nucleus/tools/lanes_report.py",
+    "pbresume": "nucleus/tools/pbresume_operator.py",
+    "pbresume_hook": "nucleus/tools/hooks/pbresume_hook.py",
+    "pluribus": "nucleus/tools/pluribus_operator.py",
+    "pluribuscheck": "nucleus/tools/pluribus_check.py",
+    "crush": "nucleus/tools/crush_operator.py",
+    "crush_adapter": "nucleus/tools/crush_adapter.py",
+    "crush_agent": "nucleus/tools/crush_agent.py",
+    "axiom": "nucleus/tools/axiom_operator.py",
+    "axiom_parser": "nucleus/tools/axiom_parser.py",
+    "aegf": "nucleus/tools/aegf_operator.py",
+    "tbtso_a2a": "nucleus/tools/tbtso_a2a.py",
+    "tbtso_oiterate": "nucleus/tools/tbtso_oiterate.py",
+    "pbdocs": "nucleus/tools/pbdocs_operator.py",
+    "pbdocs_deprecation": "nucleus/tools/pbdocs_deprecation.py",
+    "pbdocs_install_audit": "nucleus/tools/pbdocs_install_audit.py",
+    "pbiud": "nucleus/tools/pbiud_operator.py",
+    "pbnotify": "nucleus/tools/pbnotify_operator.py",
+    "pbskills": "nucleus/tools/pbskills_operator.py"
+  },
+  "bus_topics": {
+    "operator.pbskills.request": {
+      "operator": "PBSKILLS",
+      "kind": "request",
+      "protocol": "v29"
+    },
+    "operator.pbskills.response": {
+      "operator": "PBSKILLS",
+      "kind": "response",
+      "protocol": "v29"
+    },
+    "skills.discovered": {
+      "operator": "PBSKILLS",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "skills.invoked": {
+      "operator": "PBSKILLS",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "skills.completed": {
+      "operator": "PBSKILLS",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "skills.failed": {
+      "operator": "PBSKILLS",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "skills.mastery.updated": {
+      "operator": "PBSKILLS",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "skills.composed": {
+      "operator": "PBSKILLS",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "skills.gap.detected": {
+      "operator": "PBSKILLS",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "operator.pbiud.start": {
+      "operator": "PBIUD",
+      "kind": "log",
+      "protocol": "v28"
+    },
+    "operator.pbiud.complete": {
+      "operator": "PBIUD",
+      "kind": "log",
+      "protocol": "v28"
+    },
+    "docs.audit.start": {
+      "operator": "PBDOCS",
+      "kind": "request",
+      "protocol": "v28"
+    },
+    "docs.audit.complete": {
+      "operator": "PBDOCS",
+      "kind": "metric",
+      "protocol": "v28"
+    },
+    "docs.coverage.report": {
+      "operator": "PBDOCS",
+      "kind": "metric",
+      "protocol": "v28"
+    },
+    "docs.deprecation.detected": {
+      "operator": "PBDOCS",
+      "kind": "artifact",
+      "protocol": "v28"
+    },
+    "docs.build.verify": {
+      "operator": "PBDOCS",
+      "kind": "metric",
+      "protocol": "v28"
+    },
+    "docs.staleness.detected": {
+      "operator": "PBDOCS",
+      "kind": "artifact",
+      "protocol": "v28"
+    },
+    "docs.agent.bootstrap": {
+      "operator": "PBDOCS",
+      "kind": "metric",
+      "protocol": "v28"
+    },
+    "rd.tasks.dispatch": {
+      "operator": "REALAGENTS",
+      "kind": "request"
+    },
+    "ckin.report": {
+      "operator": "CKIN",
+      "kind": "metric"
+    },
+    "pbeport.snapshot": {
+      "operator": "PBEPORT",
+      "kind": "metric"
+    },
+    "infer_sync.request": {
+      "operator": "ITERATE",
+      "kind": "request"
+    },
+    "operator.iterate.request": {
+      "operator": "ITERATE",
+      "kind": "request"
+    },
+    "oiterate.tick": {
+      "operator": "OITERATE",
+      "kind": "metric"
+    },
+    "oiterate.started": {
+      "operator": "OITERATE",
+      "kind": "request"
+    },
+    "oiterate.stopped": {
+      "operator": "OITERATE",
+      "kind": "artifact"
+    },
+    "oiterate.goal_achieved": {
+      "operator": "OITERATE",
+      "kind": "artifact"
+    },
+    "oiterate.action_triggered": {
+      "operator": "OITERATE",
+      "kind": "request"
+    },
+    "oiterate.rl_state": {
+      "operator": "OITERATE",
+      "kind": "metric"
+    },
+    "task.create": {
+      "operator": "PBTSO",
+      "kind": "request"
+    },
+    "pbtso.task.created": {
+      "operator": "PBTSO",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "tbtso.task.created": {
+      "operator": "PBTSO",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "pbtso.a2a.swarm.init": {
+      "operator": "PBTSO_A2A",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "pbtso.a2a.swarm.heartbeat": {
+      "operator": "PBTSO_A2A",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "pbtso.a2a.swarm.complete": {
+      "operator": "PBTSO_A2A",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "pbtso.a2a.lane.progress": {
+      "operator": "PBTSO_A2A",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "tbtso.a2a.swarm.init": {
+      "operator": "PBTSO_A2A",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "tbtso.a2a.swarm.heartbeat": {
+      "operator": "PBTSO_A2A",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "tbtso.a2a.swarm.complete": {
+      "operator": "PBTSO_A2A",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "tbtso.a2a.lane.progress": {
+      "operator": "PBTSO_A2A",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "pbtso.oiterate.tick": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "pbtso.oiterate.started": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "pbtso.oiterate.stopped": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "pbtso.oiterate.goal.achieved": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "pbtso.oiterate.swarm.stale": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "alert",
+      "protocol": "v29"
+    },
+    "pbtso.oiterate.action.triggered": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "request",
+      "protocol": "v29"
+    },
+    "tbtso.oiterate.tick": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "tbtso.oiterate.started": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "tbtso.oiterate.stopped": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "tbtso.oiterate.goal.achieved": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "event",
+      "protocol": "v29"
+    },
+    "tbtso.oiterate.swarm.stale": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "alert",
+      "protocol": "v29"
+    },
+    "tbtso.oiterate.action.triggered": {
+      "operator": "PBTSO_OITERATE",
+      "kind": "request",
+      "protocol": "v29"
+    },
+    "mbad.snapshot": {
+      "operator": "MBAD",
+      "kind": "metric"
+    },
+    "mabswarm.probe": {
+      "operator": "MABSWARM",
+      "kind": "metric"
+    },
+    "mabswarm.nudge": {
+      "operator": "MABSWARM",
+      "kind": "request"
+    },
+    "mabswarm.reflect": {
+      "operator": "MABSWARM",
+      "kind": "request"
+    },
+    "mabswarm.reenter": {
+      "operator": "MABSWARM",
+      "kind": "request"
+    },
+    "mabswarm.backoff": {
+      "operator": "MABSWARM",
+      "kind": "request"
+    },
+    "mabswarm.break": {
+      "operator": "MABSWARM",
+      "kind": "request"
+    },
+    "mabswarm.permission.request": {
+      "operator": "MABSWARM",
+      "kind": "request"
+    },
+    "operator.pbreality.request": {
+      "operator": "PBREALITY",
+      "kind": "request"
+    },
+    "operator.pbreality.report": {
+      "operator": "PBREALITY",
+      "kind": "artifact"
+    },
+    "operator.pbflush.request": {
+      "operator": "PBFLUSH",
+      "kind": "request"
+    },
+    "operator.pbflush.ack": {
+      "operator": "PBFLUSH",
+      "kind": "response"
+    },
+    "operator.pbflush.responder.ready": {
+      "operator": "PBFLUSH",
+      "kind": "artifact"
+    },
+    "operator.pbdeep.request": {
+      "operator": "PBDEEP",
+      "kind": "request"
+    },
+    "operator.pbdeep.progress": {
+      "operator": "PBDEEP",
+      "kind": "metric"
+    },
+    "operator.pbdeep.index.updated": {
+      "operator": "PBDEEP",
+      "kind": "artifact"
+    },
+    "operator.pbdeep.report": {
+      "operator": "PBDEEP",
+      "kind": "artifact"
+    },
+    "operator.pbdeep.responder.ready": {
+      "operator": "PBDEEP",
+      "kind": "artifact"
+    },
+    "operator.pbassimilate.request": {
+      "operator": "PBASSIMILATE",
+      "kind": "request"
+    },
+    "operator.pbassimilate.screening": {
+      "operator": "PBASSIMILATE",
+      "kind": "artifact"
+    },
+    "operator.pbassimilate.consensus": {
+      "operator": "PBASSIMILATE",
+      "kind": "response"
+    },
+    "operator.pbassimilate.plan": {
+      "operator": "PBASSIMILATE",
+      "kind": "artifact"
+    },
+    "operator.pbassimilate.report": {
+      "operator": "PBASSIMILATE",
+      "kind": "artifact"
+    },
+    "speaker.bus.write": {
+      "operator": "SPEAK",
+      "kind": "artifact"
+    },
+    "beam.10x.appended": {
+      "operator": "BEAM",
+      "kind": "artifact"
+    },
+    "pluribus.directive.detected": {
+      "operator": "PLURIBUS",
+      "kind": "artifact"
+    },
+    "pluribus.invoke.request": {
+      "operator": "PLURIBUS",
+      "kind": "request"
+    },
+    "pluribus.invoke.dag": {
+      "operator": "PLURIBUS",
+      "kind": "artifact"
+    },
+    "pbpair.*": {
+      "operator": "PBPAIR",
+      "kind": "request"
+    },
+    "paip.clone.created": {
+      "operator": "PBREALITY",
+      "kind": "artifact"
+    },
+    "paip.clone.deleted": {
+      "operator": "PBREALITY",
+      "kind": "artifact"
+    },
+    "paip.orphan.detected": {
+      "operator": "PBREALITY",
+      "kind": "request"
+    },
+    "paip.cleanup.blocked": {
+      "operator": "PBREALITY",
+      "kind": "request"
+    },
+    "paip.isolation.violation": {
+      "operator": "PBREALITY",
+      "kind": "request"
+    },
+    "operator.pbrealityfix.broadcast": {
+      "operator": "PBREALITY",
+      "kind": "request"
+    },
+    "operator.pblock.state": {
+      "operator": "PBLOCK",
+      "kind": "metric"
+    },
+    "operator.pblock.enter": {
+      "operator": "PBLOCK",
+      "kind": "request"
+    },
+    "operator.pblock.exit": {
+      "operator": "PBLOCK",
+      "kind": "request"
+    },
+    "operator.pblock.violation": {
+      "operator": "PBLOCK",
+      "kind": "request"
+    },
+    "operator.pblock.guard.blocked": {
+      "operator": "PBLOCK",
+      "kind": "artifact"
+    },
+    "operator.pbhygiene.audit": {
+      "operator": "PBHYGIENE",
+      "kind": "metric"
+    },
+    "operator.pbhygiene.rotate": {
+      "operator": "PBHYGIENE",
+      "kind": "request"
+    },
+    "operator.pbhygiene.prune": {
+      "operator": "PBHYGIENE",
+      "kind": "request"
+    },
+    "operator.pbhygiene.alert": {
+      "operator": "PBHYGIENE",
+      "kind": "request"
+    },
+    "agent.*.task": {
+      "operator": "DKIN",
+      "kind": "metric",
+      "protocol": "v18"
+    },
+    "agent.*.checkpoint": {
+      "operator": "DKIN",
+      "kind": "artifact",
+      "protocol": "v18"
+    },
+    "agent.*.handoff": {
+      "operator": "DKIN",
+      "kind": "request",
+      "protocol": "v18"
+    },
+    "evolution.percolate": {
+      "operator": "DKIN",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "evolution.assimilate": {
+      "operator": "DKIN",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "evolution.mutate": {
+      "operator": "DKIN",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "evolution.test": {
+      "operator": "DKIN",
+      "kind": "metric",
+      "protocol": "v19"
+    },
+    "evolution.promote": {
+      "operator": "DKIN",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "hgt.transfer": {
+      "operator": "DKIN",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "cmp.score": {
+      "operator": "DKIN",
+      "kind": "metric",
+      "protocol": "v19"
+    },
+    "crush.session.start": {
+      "operator": "CRUSH",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "crush.prompt.submit": {
+      "operator": "CRUSH",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "crush.response.stream": {
+      "operator": "CRUSH",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "crush.response.end": {
+      "operator": "CRUSH",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "crush.session.end": {
+      "operator": "CRUSH",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "crush.error": {
+      "operator": "CRUSH",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "operator.crush.request": {
+      "operator": "CRUSH",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "operator.crush.response": {
+      "operator": "CRUSH",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "operator.crush.status": {
+      "operator": "CRUSH",
+      "kind": "metric",
+      "protocol": "v19"
+    },
+    "crush.agent.start": {
+      "operator": "CRUSH",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "crush.agent.end": {
+      "operator": "CRUSH",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "crush.agent.error": {
+      "operator": "CRUSH",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "crush.agent.interactive.start": {
+      "operator": "CRUSH",
+      "kind": "request",
+      "protocol": "v19"
+    },
+    "crush.agent.interactive.end": {
+      "operator": "CRUSH",
+      "kind": "artifact",
+      "protocol": "v19"
+    },
+    "operator.pbtest.request": {
+      "operator": "PBTEST",
+      "kind": "request",
+      "protocol": "v24"
+    },
+    "operator.pbtest.result": {
+      "operator": "PBTEST",
+      "kind": "artifact",
+      "protocol": "v24"
+    },
+    "operator.pbtest.verdict": {
+      "operator": "PBTEST",
+      "kind": "response",
+      "protocol": "v24"
+    },
+    "operator.pbclitest.request": {
+      "operator": "PBCLITEST",
+      "kind": "request",
+      "protocol": "v25"
+    },
+    "operator.pbclitest.result": {
+      "operator": "PBCLITEST",
+      "kind": "artifact",
+      "protocol": "v25"
+    },
+    "operator.pbclitest.verdict": {
+      "operator": "PBCLITEST",
+      "kind": "response",
+      "protocol": "v25"
+    },
+    "qa.verdict.pass": {
+      "operator": "PBTEST",
+      "kind": "response",
+      "protocol": "v24"
+    },
+    "qa.verdict.fail": {
+      "operator": "PBTEST",
+      "kind": "response",
+      "protocol": "v24"
+    },
+    "telemetry.client.error": {
+      "operator": "PBTEST",
+      "kind": "request",
+      "protocol": "v24"
+    },
+    "telemetry.client.success": {
+      "operator": "PBTEST",
+      "kind": "artifact",
+      "protocol": "v24"
+    },
+    "operator.pblanes.report": {
+      "operator": "PBLANES",
+      "kind": "metric",
+      "protocol": "v23"
+    },
+    "operator.lanes.state": {
+      "operator": "PBLANES",
+      "kind": "artifact",
+      "protocol": "v23"
+    },
+    "operator.pbresume.collect": {
+      "operator": "PBRESUME",
+      "kind": "request",
+      "protocol": "v25"
+    },
+    "operator.pbresume.iteration": {
+      "operator": "PBRESUME",
+      "kind": "request",
+      "protocol": "v25"
+    },
+    "operator.pbresume.complete": {
+      "operator": "PBRESUME",
+      "kind": "response",
+      "protocol": "v25"
+    },
+    "operator.pbresume.auto_triggered": {
+      "operator": "PBRESUME",
+      "kind": "request",
+      "protocol": "v25.1"
+    },
+    "operator.pbresume.hook_triggered": {
+      "operator": "PBRESUME",
+      "kind": "request",
+      "protocol": "v25.1"
+    },
+    "operator.pbresume.hook_complete": {
+      "operator": "PBRESUME",
+      "kind": "response",
+      "protocol": "v25.1"
+    },
+    "dialogos.resume": {
+      "operator": "PBRESUME",
+      "kind": "request",
+      "protocol": "v25"
+    },
+    "protocol.dkin.v24.adopted": {
+      "operator": "DKIN",
+      "kind": "artifact",
+      "protocol": "v24"
+    },
+    "protocol.paip.v13.adopted": {
+      "operator": "DKIN",
+      "kind": "artifact",
+      "protocol": "v24"
+    },
+    "aegf.analysis.request": {
+      "operator": "AEGF",
+      "kind": "request",
+      "protocol": "v29"
+    },
+    "aegf.gap.aleatoric": {
+      "operator": "AEGF",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "aegf.gap.epistemic": {
+      "operator": "AEGF",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "aegf.gap.ontological": {
+      "operator": "AEGF",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "aegf.gap.teleological": {
+      "operator": "AEGF",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "aegf.hydration.path": {
+      "operator": "AEGF",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "aegf.superposition.exploit": {
+      "operator": "AEGF",
+      "kind": "metric",
+      "protocol": "v29"
+    },
+    "aegf.entanglement.map": {
+      "operator": "AEGF",
+      "kind": "artifact",
+      "protocol": "v29"
+    },
+    "agent.notify.request": {
+      "operator": "PBNOTIFY",
+      "kind": "request"
+    },
+    "agent.notify.dispatch": {
+      "operator": "PBNOTIFY",
+      "kind": "metric"
+    },
+    "agent.notify.ack": {
+      "operator": "PBNOTIFY",
+      "kind": "response"
+    }
+  },
+  "flow_modes": {
+    "A": {
+      "name": "Automatic",
+      "description": "Automatic execution permitted"
+    },
+    "m": {
+      "name": "Monitor",
+      "description": "Monitor/approve mode - emit proposals, avoid executing without approval"
+    }
+  },
+  "integration_types": {
+    "CLI_WRAPPER": {
+      "id": "cli_wrapper",
+      "name": "CLI Wrapper",
+      "description": "Subprocess-based integration that wraps external CLI tools",
+      "coupling": "low",
+      "characteristics": [
+        "executes external binary",
+        "captures stdout/stderr",
+        "easy to replace"
+      ]
+    },
+    "MCP_BOUNDARY": {
+      "id": "mcp_boundary",
+      "name": "MCP Boundary",
+      "description": "Model Context Protocol integration with structured tool/resource access",
+      "coupling": "medium",
+      "characteristics": [
+        "JSON-RPC protocol",
+        "bidirectional",
+        "semantic contract"
+      ]
+    },
+    "DEEP_INTEGRATION": {
+      "id": "deep_integration",
+      "name": "Deep Integration",
+      "description": "Direct library/module integration with shared runtime",
+      "coupling": "high",
+      "characteristics": [
+        "import-based",
+        "shared runtime",
+        "higher performance"
+      ]
+    }
+  },
+  "references": {
+    "lexicon": "nucleus/specs/pluribus_lexicon.md",
+    "lexicon_section": "§6.4",
+    "idiolect": "nucleus/specs/idiolect.json",
+    "ckin_protocol": "nucleus/specs/ckin_protocol.md",
+    "ckin_protocol_v8": "nucleus/specs/ckin_protocol_v8.md",
+    "ckin_protocol_v15": "nucleus/specs/ckin_protocol_v15.md",
+    "ckin_protocol_v16": "nucleus/specs/ckin_protocol_v16.md",
+    "ckin_protocol_v17": "nucleus/specs/ckin_protocol_v17.md",
+    "dkin_protocol_v18": "nucleus/specs/dkin_protocol_v18_resilience.md",
+    "dkin_protocol_v19": "nucleus/specs/dkin_protocol_v19_evolution.md",
+    "dkin_protocol_v23": "nucleus/specs/dkin_protocol_v23_lanes.md",
+    "dkin_protocol_v24": "nucleus/specs/dkin_protocol_v24_verification.md",
+    "paip_protocol_v15": "nucleus/specs/paip_protocol_v1.md",
+    "agents_tdd": "nucleus/specs/AGENTS-TDD.md",
+    "lanes_protocol_v1": "nucleus/specs/lanes_protocol_v1.md",
+    "membrane_integration_model": "nucleus/specs/membrane_integration_model.md",
+    "readme": "README.md"
+  }
+}

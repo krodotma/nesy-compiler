@@ -1,0 +1,26 @@
+[Unit]
+Description=Pluribus Dashboard (Qwik SSR Production Server)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/pluribus/nucleus/dashboard
+Environment=PLURIBUS_ROOT=/pluribus
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=CI=1
+Environment=PORT=5173
+Environment=NODE_OPTIONS=--max-old-space-size=1536
+# Production server - node SSR (fast)
+ExecStart=/usr/bin/npm run serve
+Restart=on-failure
+RestartSec=5
+MemoryMax=2G
+MemoryHigh=1536M
+MemorySwapMax=512M
+OOMScoreAdjust=100
+
+[Install]
+WantedBy=multi-user.target

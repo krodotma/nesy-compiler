@@ -1,0 +1,28 @@
+[Unit]
+Description=Pluribus Bus Bridge (WS 9200, API 9201)
+After=network.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/pluribus/nucleus/dashboard
+Environment=PLURIBUS_ROOT=/pluribus
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=BUS_BRIDGE_WS_PORT=9200
+Environment=BUS_BRIDGE_API_PORT=9201
+Environment=BUS_BRIDGE_MAX_CHUNK_BYTES=1048576
+Environment=NODE_OPTIONS=--max-old-space-size=768
+ExecStart=/pluribus/nucleus/dashboard/node_modules/.bin/tsx /pluribus/nucleus/dashboard/src/lib/bus/bus-bridge.ts
+Restart=on-failure
+RestartSec=5
+MemoryMax=1G
+MemoryHigh=896M
+MemorySwapMax=256M
+OOMScoreAdjust=-100
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,56 @@
+{
+    "topics": {
+        "task.dispatch": {
+            "description": "Task assignments from Dispatcher to Agents",
+            "schema": "TaskPayload"
+        },
+        "agent.status": {
+            "description": "Heartbeat and status updates from Agents",
+            "schema": "StatusPayload"
+        },
+        "system.alert": {
+            "description": "High-priority system notifications",
+            "schema": "AlertPayload"
+        },
+        "work.result": {
+            "description": "Completed artifacts or outcomes",
+            "schema": "ResultPayload"
+        },
+        "agent.comm": {
+            "description": "Direct agent-to-agent instructions",
+            "schema": "CommPayload"
+        },
+        "a2a.negotiate.request": {
+            "description": "Agent negotiation initiation",
+            "schema": "NegotiatePayload"
+        },
+        "a2a.negotiate.response": {
+            "description": "Agent negotiation reply",
+            "schema": "NegotiateResponsePayload"
+        },
+        "rd.tasks.response": {
+            "description": "Task completion report",
+            "schema": "TaskResponsePayload"
+        },
+        "ark.commit.mitosis": {
+            "description": "Successful ARK commit (Mitosis phase)",
+            "schema": "CommitPayload"
+        },
+        "ark.commit.g1_passed": {
+            "description": "Passed G1 (Availability/Hysteresis) check",
+            "schema": "GatePayload"
+        },
+        "ark.commit.g2_passed": {
+            "description": "Passed G2 (Safety/Verification) check",
+            "schema": "GatePayload"
+        },
+        "ark.gate.reject": {
+            "description": "ARK Gate rejection event",
+            "schema": "RejectPayload"
+        },
+        "ark.cmp.score": {
+            "description": "Complexity-Maturity-Potential score update",
+            "schema": "ScorePayload"
+        }
+    }
+}

@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kroma.live/schemas/metaingest/sota.schema.json",
+  "title": "MetaIngest SOTA Schemas",
+  "description": "Schema definitions for SOTA Pattern Management API endpoints",
+  "$defs": {
+    "TechniqueType": {
+      "type": "string",
+      "enum": ["algorithm", "architecture", "optimization", "technique"],
+      "description": "Type of SOTA technique"
+    },
+    "MutationType": {
+      "type": "string",
+      "enum": ["enhancement", "optimization", "refactor", "pattern", "algorithm", "architecture"],
+      "description": "Type of code mutation"
+    },
+    "MutationStatus": {
+      "type": "string",
+      "enum": ["proposed", "validated", "applied", "rejected", "reverted"],
+      "description": "Current status of mutation candidate"
+    },
+    "SOTAPattern": {
+      "type": "object",
+      "required": ["pattern_id", "name", "source", "technique_type", "description", "key_insights", "applicability", "confidence", "timestamp"],
+      "properties": {
+        "pattern_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Source paper/article/URL"
+        },
+        "technique_type": {
+          "$ref": "#/$defs/TechniqueType"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "key_insights": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 20
+        },
+        "applicability": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 20
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MutationCandidate": {
+      "type": "object",
+      "required": ["mutation_id", "pattern_id", "target_file", "mutation_type", "description", "original_code", "proposed_code", "rationale", "status", "confidence", "lineage_attestation", "timestamp"],
+      "properties": {
+        "mutation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "pattern_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "target_file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "target_function": {
+          "type": ["string", "null"],
+          "maxLength": 256
+        },
+        "mutation_type": {
+          "$ref": "#/$defs/MutationType"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "original_code": {
+          "type": "string",
+          "maxLength": 100000
+        },
+        "proposed_code": {
+          "type": "string",
+          "maxLength": 100000
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "status": {
+          "$ref": "#/$defs/MutationStatus"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "lineage_attestation": {
+          "type": "string",
+          "description": "Hash-linked attestation of mutation origin"
+        },
+        "validation_results": {
+          "$ref": "#/$defs/ValidationResult"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ValidationResult": {
+      "type": "object",
+      "required": ["valid", "syntax_ok", "tests_pass", "safety_check", "notes", "timestamp"],
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "syntax_ok": {
+          "type": "boolean"
+        },
+        "tests_pass": {
+          "type": ["boolean", "null"],
+          "description": "null if tests not run"
+        },
+        "safety_check": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ListPatternsRequest": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/TechniqueType",
+          "description": "Filter by technique type"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "ListPatternsResponse": {
+      "type": "object",
+      "required": ["patterns", "total_count", "by_type"],
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SOTAPattern"
+          }
+        },
+        "total_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "by_type": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "IngestPatternRequest": {
+      "type": "object",
+      "required": ["name", "description", "source"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9\\s_\\-\\.]{0,255}$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 50000
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      },
+      "additionalProperties": false
+    },
+    "IngestPatternResponse": {
+      "type": "object",
+      "required": ["pattern", "insights_extracted"],
+      "properties": {
+        "pattern": {
+          "$ref": "#/$defs/SOTAPattern"
+        },
+        "insights_extracted": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "GenerateMutationRequest": {
+      "type": "object",
+      "required": ["pattern_id", "target_file"],
+      "properties": {
+        "pattern_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "target_file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "pattern": "^[a-zA-Z0-9_\\-\\./]+$"
+        },
+        "target_function": {
+          "type": "string",
+          "maxLength": 256,
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "GenerateMutationResponse": {
+      "type": "object",
+      "required": ["success"],
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "mutation": {
+          "$ref": "#/$defs/MutationCandidate"
+        },
+        "error": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ValidateMutationRequest": {
+      "type": "object",
+      "required": ["mutation_id"],
+      "properties": {
+        "mutation_id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ValidateMutationResponse": {
+      "type": "object",
+      "required": ["mutation_id", "result", "new_status"],
+      "properties": {
+        "mutation_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "result": {
+          "$ref": "#/$defs/ValidationResult"
+        },
+        "new_status": {
+          "$ref": "#/$defs/MutationStatus"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

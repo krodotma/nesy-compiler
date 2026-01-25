@@ -1,0 +1,65 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/2023-07-16/schema.json",
+  "typography": {
+    "display-large": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter, system-ui, sans-serif",
+        "fontWeight": "400",
+        "fontSize": "57px",
+        "lineHeight": "64px",
+        "letterSpacing": "-0.25px"
+      }
+    },
+    "headline-medium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter, system-ui, sans-serif",
+        "fontWeight": "400",
+        "fontSize": "28px",
+        "lineHeight": "36px",
+        "letterSpacing": "0px"
+      }
+    },
+    "title-large": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter, system-ui, sans-serif",
+        "fontWeight": "500",
+        "fontSize": "22px",
+        "lineHeight": "28px",
+        "letterSpacing": "0px"
+      }
+    },
+    "body-medium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter, system-ui, sans-serif",
+        "fontWeight": "400",
+        "fontSize": "14px",
+        "lineHeight": "20px",
+        "letterSpacing": "0.25px"
+      }
+    },
+    "label-medium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Inter, system-ui, sans-serif",
+        "fontWeight": "500",
+        "fontSize": "12px",
+        "lineHeight": "16px",
+        "letterSpacing": "0.5px"
+      }
+    },
+    "code-small": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "JetBrains Mono, monospace",
+        "fontWeight": "400",
+        "fontSize": "12px",
+        "lineHeight": "16px",
+        "letterSpacing": "0px"
+      }
+    }
+  }
+}

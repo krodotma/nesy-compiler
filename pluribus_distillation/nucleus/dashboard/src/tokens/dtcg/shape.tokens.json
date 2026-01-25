@@ -1,0 +1,14 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/2023-07-16/schema.json",
+  "shape": {
+    "corner": {
+      "none": {"$type": "dimension", "$value": "0px"},
+      "extra-small": {"$type": "dimension", "$value": "4px"},
+      "small": {"$type": "dimension", "$value": "8px"},
+      "medium": {"$type": "dimension", "$value": "12px"},
+      "large": {"$type": "dimension", "$value": "16px"},
+      "extra-large": {"$type": "dimension", "$value": "28px"},
+      "full": {"$type": "dimension", "$value": "9999px"}
+    }
+  }
+}

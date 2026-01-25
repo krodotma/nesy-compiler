@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kroma.live/schemas/metaingest/ontology.schema.json",
+  "title": "MetaIngest Ontology Schemas",
+  "description": "Schema definitions for Ontology API endpoints",
+  "$defs": {
+    "OntologyTermStatus": {
+      "type": "string",
+      "enum": ["active", "superseded"]
+    },
+    "EvolutionType": {
+      "type": "string",
+      "enum": ["mutation", "hgt", "fusion", "speciation", "extinction"]
+    },
+    "FitnessMetrics": {
+      "type": "object",
+      "required": ["usage_frequency", "semantic_coherence", "context_breadth", "evolution_stability", "overall"],
+      "properties": {
+        "usage_frequency": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "semantic_coherence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "context_breadth": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evolution_stability": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "overall": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "OntologyTermSummary": {
+      "type": "object",
+      "required": ["term", "fitness", "status"],
+      "properties": {
+        "term": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "fitness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "status": {
+          "$ref": "#/$defs/OntologyTermStatus"
+        }
+      },
+      "additionalProperties": false
+    },
+    "OntologyTermDetail": {
+      "type": "object",
+      "required": ["term", "status", "created_at", "updated_at", "fitness", "usage_count", "contexts", "avg_drift", "lineage", "evolution_count"],
+      "properties": {
+        "term": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "status": {
+          "$ref": "#/$defs/OntologyTermStatus"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "fitness": {
+          "$ref": "#/$defs/FitnessMetrics"
+        },
+        "usage_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contexts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 100
+        },
+        "avg_drift": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "lineage": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evolution_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "evolved_from": {
+          "type": ["string", "null"]
+        },
+        "superseded_by": {
+          "type": ["string", "null"]
+        },
+        "hgt_donor": {
+          "type": ["string", "null"]
+        },
+        "traits_from_donor": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "EvolutionRecord": {
+      "type": "object",
+      "required": ["evolution_id", "evolution_type", "source_term", "target_term", "fitness_before", "fitness_after", "context", "lineage_attestation", "timestamp"],
+      "properties": {
+        "evolution_id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "evolution_type": {
+          "$ref": "#/$defs/EvolutionType"
+        },
+        "source_term": {
+          "type": "string"
+        },
+        "target_term": {
+          "type": "string"
+        },
+        "donor_term": {
+          "type": ["string", "null"]
+        },
+        "fitness_before": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fitness_after": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "context": {
+          "type": "string"
+        },
+        "lineage_attestation": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "LineageNode": {
+      "type": "object",
+      "required": ["term"],
+      "properties": {
+        "term": {
+          "type": "string"
+        },
+        "evolution_type": {
+          "$ref": "#/$defs/EvolutionType"
+        },
+        "fitness_at_evolution": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ListOntologyRequest": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["active", "superseded", "all"],
+          "default": "all"
+        },
+        "min_fitness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "ListOntologyResponse": {
+      "type": "object",
+      "required": ["terms", "total_terms", "active_terms", "superseded_terms"],
+      "properties": {
+        "terms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/OntologyTermSummary"
+          }
+        },
+        "total_terms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_terms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "superseded_terms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "EvolveTermRequest": {
+      "type": "object",
+      "required": ["context"],
+      "properties": {
+        "context": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 10000,
+          "description": "Evolution justification context"
+        },
+        "force": {
+          "type": "boolean",
+          "default": false,
+          "description": "Force evolution even if fitness threshold not met"
+        }
+      },
+      "additionalProperties": false
+    },
+    "EvolveTermResponse": {
+      "type": "object",
+      "required": ["evolved"],
+      "properties": {
+        "evolved": {
+          "type": "boolean"
+        },
+        "record": {
+          "$ref": "#/$defs/EvolutionRecord"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason if evolution was skipped"
+        }
+      },
+      "additionalProperties": false
+    },
+    "GetLineageResponse": {
+      "type": "object",
+      "required": ["term", "lineage", "lineage_details", "depth", "root_term"],
+      "properties": {
+        "term": {
+          "type": "string"
+        },
+        "lineage": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lineage_details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LineageNode"
+          }
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "root_term": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
