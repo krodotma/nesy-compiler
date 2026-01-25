@@ -16,6 +16,21 @@ from .evolution import (
     ProgramSynthesis,
     create_program_synthesis,
 )
+from .pipeline import (
+    SynthesisMethod,
+    SynthesisRequest,
+    SynthesisTracking,
+    SynthesisPipelineIntegrator,
+    create_synthesis_pipeline_integrator,
+)
+from .distillation import (
+    TeacherModel,
+    TeacherOutput,
+    DistillationBatch,
+    DistillationResult,
+    VLMDistiller,
+    create_vlm_distiller,
+)
 
 __all__ = [
     "GenotypeType",
@@ -26,4 +41,15 @@ __all__ = [
     "EGGPEvolver",
     "ProgramSynthesis",
     "create_program_synthesis",
+    "SynthesisMethod",
+    "SynthesisRequest",
+    "SynthesisTracking",
+    "SynthesisPipelineIntegrator",
+    "create_synthesis_pipeline_integrator",
+    "TeacherModel",
+    "TeacherOutput",
+    "DistillationBatch",
+    "DistillationResult",
+    "VLMDistiller",
+    "create_vlm_distiller",
 ]
