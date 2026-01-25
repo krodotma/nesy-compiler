@@ -1,0 +1,368 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-25T17:22:33.640666+00:00",
+  "config": {
+    "size": "small",
+    "iterations": 3,
+    "warmup_iterations": 2
+  },
+  "results": [
+    {
+      "name": "parser_tokenize",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:31.424380+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 2.1644520456902683,
+        "max_time_ms": 2.9880990041419864,
+        "mean_time_ms": 2.48659000499174,
+        "median_time_ms": 2.3072189651429653,
+        "std_dev_ms": 0.4401466295384012,
+        "iterations": 3,
+        "peak_memory_mb": 0.006731986999511719,
+        "memory_delta_mb": 0.0015106201171875,
+        "cpu_time_ms": 2.4394320000000005,
+        "wall_time_ms": 2.48659000499174
+      }
+    },
+    {
+      "name": "parser_parse_simple",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:31.479455+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 3.3181790495291352,
+        "max_time_ms": 4.423153994139284,
+        "mean_time_ms": 3.73840801573048,
+        "median_time_ms": 3.473891003523022,
+        "std_dev_ms": 0.5980964340007561,
+        "iterations": 3,
+        "peak_memory_mb": 0.01865673065185547,
+        "memory_delta_mb": 0.0072021484375,
+        "cpu_time_ms": 3.6647633333333576,
+        "wall_time_ms": 3.73840801573048
+      }
+    },
+    {
+      "name": "parser_parse_complex",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:31.588953+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 15.86202101316303,
+        "max_time_ms": 19.45561298634857,
+        "mean_time_ms": 17.06609333632514,
+        "median_time_ms": 15.880646009463817,
+        "std_dev_ms": 2.069405673377715,
+        "iterations": 3,
+        "peak_memory_mb": 0.05733966827392578,
+        "memory_delta_mb": 0.0108795166015625,
+        "cpu_time_ms": 16.065603000000003,
+        "wall_time_ms": 17.06609333632514
+      }
+    },
+    {
+      "name": "parser_cache_hit",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:31.637868+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.05082000279799104,
+        "max_time_ms": 0.062211998738348484,
+        "mean_time_ms": 0.05765866565828522,
+        "median_time_ms": 0.05994399543851614,
+        "std_dev_ms": 0.006030044944242776,
+        "iterations": 3,
+        "peak_memory_mb": 0.0020599365234375,
+        "memory_delta_mb": 0.00034332275390625,
+        "cpu_time_ms": 0.041635666666669145,
+        "wall_time_ms": 0.05765866565828522
+      }
+    },
+    {
+      "name": "cgp_genome_create",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:31.715619+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 7.579588040243834,
+        "max_time_ms": 9.927109989803284,
+        "mean_time_ms": 8.626300686349472,
+        "median_time_ms": 8.372204029001296,
+        "std_dev_ms": 1.1942104753235452,
+        "iterations": 3,
+        "peak_memory_mb": 0.0066986083984375,
+        "memory_delta_mb": 0.00485992431640625,
+        "cpu_time_ms": 8.277225999999988,
+        "wall_time_ms": 8.626300686349472
+      }
+    },
+    {
+      "name": "cgp_genome_evaluate",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:31.788344+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 5.467877024784684,
+        "max_time_ms": 6.7333109909668565,
+        "mean_time_ms": 6.006587335529427,
+        "median_time_ms": 5.8185739908367395,
+        "std_dev_ms": 0.6533318789319745,
+        "iterations": 3,
+        "peak_memory_mb": 0.0077667236328125,
+        "memory_delta_mb": 0.00507354736328125,
+        "cpu_time_ms": 5.503605333333383,
+        "wall_time_ms": 6.006587335529427
+      }
+    },
+    {
+      "name": "cgp_mutation",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:31.894965+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 14.641731977462769,
+        "max_time_ms": 15.459312999155372,
+        "mean_time_ms": 14.996601656700173,
+        "median_time_ms": 14.888759993482381,
+        "std_dev_ms": 0.41932332394247446,
+        "iterations": 3,
+        "peak_memory_mb": 0.011138916015625,
+        "memory_delta_mb": 0.0050201416015625,
+        "cpu_time_ms": 14.604840999999961,
+        "wall_time_ms": 14.996601656700173
+      }
+    },
+    {
+      "name": "cgp_fitness",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:32.166536+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 57.975451985839754,
+        "max_time_ms": 61.486255028285086,
+        "mean_time_ms": 59.61650734146436,
+        "median_time_ms": 59.38781501026824,
+        "std_dev_ms": 1.766538886487299,
+        "iterations": 3,
+        "peak_memory_mb": 0.01238250732421875,
+        "memory_delta_mb": 0.00746917724609375,
+        "cpu_time_ms": 52.9473626666667,
+        "wall_time_ms": 59.61650734146436
+      }
+    },
+    {
+      "name": "cgp_evolve",
+      "suite": "grammars",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: cgp_evolve() got an unexpected keyword argument 'fitness_fn'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_grammars.py\", line 229, in bench_cgp_evolve\n    cgp_evolve(\nTypeError: cgp_evolve() got an unexpected keyword argument 'fitness_fn'\n",
+      "timestamp": "2026-01-25T17:22:32.203453+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.09701061248779297,
+        "memory_delta_mb": 0.07172012329101562,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "cgp_expression",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:32.271923+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 5.683330993633717,
+        "max_time_ms": 6.7165689542889595,
+        "mean_time_ms": 6.350907652328412,
+        "median_time_ms": 6.652823009062558,
+        "std_dev_ms": 0.579016262991534,
+        "iterations": 3,
+        "peak_memory_mb": 0.008584976196289062,
+        "memory_delta_mb": 0.00485992431640625,
+        "cpu_time_ms": 6.013404000000018,
+        "wall_time_ms": 6.350907652328412
+      }
+    },
+    {
+      "name": "eggp_graph_create",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:32.464491+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 39.15946098277345,
+        "max_time_ms": 41.14299901993945,
+        "mean_time_ms": 40.281351655721664,
+        "median_time_ms": 40.54159496445209,
+        "std_dev_ms": 1.0170549252745917,
+        "iterations": 3,
+        "peak_memory_mb": 0.04920196533203125,
+        "memory_delta_mb": 0.0098419189453125,
+        "cpu_time_ms": 38.94541599999994,
+        "wall_time_ms": 40.281351655721664
+      }
+    },
+    {
+      "name": "eggp_mutate",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:32.745401+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 59.17278694687411,
+        "max_time_ms": 72.81922700349241,
+        "mean_time_ms": 65.17739698756486,
+        "median_time_ms": 63.54017701232806,
+        "std_dev_ms": 6.968981165866711,
+        "iterations": 3,
+        "peak_memory_mb": 0.06389236450195312,
+        "memory_delta_mb": 0.01025390625,
+        "cpu_time_ms": 63.24451933333338,
+        "wall_time_ms": 65.17739698756486
+      }
+    },
+    {
+      "name": "eggp_evolver_init",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:32.957838+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 45.163232018239796,
+        "max_time_ms": 47.77790402295068,
+        "mean_time_ms": 46.753677675345294,
+        "median_time_ms": 47.3198969848454,
+        "std_dev_ms": 1.3962738459531465,
+        "iterations": 3,
+        "peak_memory_mb": 0.0689544677734375,
+        "memory_delta_mb": 0.0098419189453125,
+        "cpu_time_ms": 46.103569000000086,
+        "wall_time_ms": 46.753677675345294
+      }
+    },
+    {
+      "name": "eggp_fitness",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:33.010289+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 1.751272997353226,
+        "max_time_ms": 1.848993997555226,
+        "mean_time_ms": 1.7864516703411937,
+        "median_time_ms": 1.759088016115129,
+        "std_dev_ms": 0.05430401135802537,
+        "iterations": 3,
+        "peak_memory_mb": 0.014753341674804688,
+        "memory_delta_mb": 0.005706787109375,
+        "cpu_time_ms": 1.7758873333331888,
+        "wall_time_ms": 1.7864516703411937
+      }
+    },
+    {
+      "name": "metagrammar_create",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:33.511804+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 124.47959999553859,
+        "max_time_ms": 143.69803498266265,
+        "mean_time_ms": 132.86057698618,
+        "median_time_ms": 130.40409598033875,
+        "std_dev_ms": 9.841889302243885,
+        "iterations": 3,
+        "peak_memory_mb": 0.22589111328125,
+        "memory_delta_mb": 0.040592193603515625,
+        "cpu_time_ms": 128.72519199999994,
+        "wall_time_ms": 132.86057698618
+      }
+    },
+    {
+      "name": "metagrammar_transform",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:33.593634+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 6.218288966920227,
+        "max_time_ms": 6.489863968454301,
+        "mean_time_ms": 6.381146978431691,
+        "median_time_ms": 6.435287999920547,
+        "std_dev_ms": 0.14365473546128113,
+        "iterations": 3,
+        "peak_memory_mb": 0.007409095764160156,
+        "memory_delta_mb": 0.00251007080078125,
+        "cpu_time_ms": 6.294795666666501,
+        "wall_time_ms": 6.381146978431691
+      }
+    },
+    {
+      "name": "metagrammar_type_mapping",
+      "suite": "grammars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:22:33.640623+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.1726070186123252,
+        "max_time_ms": 0.1994660124182701,
+        "mean_time_ms": 0.18534735621263584,
+        "median_time_ms": 0.1839690376073122,
+        "std_dev_ms": 0.013482440754562315,
+        "iterations": 3,
+        "peak_memory_mb": 0.0018310546875,
+        "memory_delta_mb": 0.000457763671875,
+        "cpu_time_ms": 0.17556999999997677,
+        "wall_time_ms": 0.18534735621263584
+      }
+    }
+  ]
+}

@@ -1,0 +1,389 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-25T17:20:11.356753+00:00",
+  "config": {
+    "size": "small",
+    "iterations": 3,
+    "warmup_iterations": 2
+  },
+  "results": [
+    {
+      "name": "smplx_params_create",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:03.525437+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 2.2016940056346357,
+        "max_time_ms": 8.99634201778099,
+        "mean_time_ms": 4.5307696564123034,
+        "median_time_ms": 2.3942729458212852,
+        "std_dev_ms": 3.8684976474098804,
+        "iterations": 3,
+        "peak_memory_mb": 0.00417327880859375,
+        "memory_delta_mb": 0.0004119873046875,
+        "cpu_time_ms": 2.1259476666666646,
+        "wall_time_ms": 4.5307696564123034
+      }
+    },
+    {
+      "name": "smplx_params_with_values",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:03.697162+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 4.435765033122152,
+        "max_time_ms": 36.506618023850024,
+        "mean_time_ms": 17.824723016625892,
+        "median_time_ms": 12.531785992905498,
+        "std_dev_ms": 16.67771835836732,
+        "iterations": 3,
+        "peak_memory_mb": 0.004791259765625,
+        "memory_delta_mb": 0.00061798095703125,
+        "cpu_time_ms": 5.090315000000012,
+        "wall_time_ms": 17.824723016625892
+      }
+    },
+    {
+      "name": "smplx_output_create",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:03.947934+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.5759939667768776,
+        "max_time_ms": 0.7287540356628597,
+        "mean_time_ms": 0.6728283478878438,
+        "median_time_ms": 0.7137370412237942,
+        "std_dev_ms": 0.08419649965618296,
+        "iterations": 3,
+        "peak_memory_mb": 0.09464263916015625,
+        "memory_delta_mb": 0.00078582763671875,
+        "cpu_time_ms": 0.662815666666631,
+        "wall_time_ms": 0.6728283478878438
+      }
+    },
+    {
+      "name": "smplx_param_operations",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:04.040522+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 2.660436963196844,
+        "max_time_ms": 4.104770021513104,
+        "mean_time_ms": 3.1903859926387668,
+        "median_time_ms": 2.805950993206352,
+        "std_dev_ms": 0.7952151893844528,
+        "iterations": 3,
+        "peak_memory_mb": 0.00785064697265625,
+        "memory_delta_mb": 0.00074005126953125,
+        "cpu_time_ms": 2.72921833333332,
+        "wall_time_ms": 3.1903859926387668
+      }
+    },
+    {
+      "name": "gaussian_create",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:04.416930+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 8.937170961871743,
+        "max_time_ms": 29.6852930332534,
+        "mean_time_ms": 22.315586335025728,
+        "median_time_ms": 28.32429500995204,
+        "std_dev_ms": 11.606014704770097,
+        "iterations": 3,
+        "peak_memory_mb": 0.00214385986328125,
+        "memory_delta_mb": 0.00087738037109375,
+        "cpu_time_ms": 6.40055666666665,
+        "wall_time_ms": 22.315586335025728
+      }
+    },
+    {
+      "name": "gaussian_cloud_create",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:04.477151+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 1.6415019636042416,
+        "max_time_ms": 1.7660019802860916,
+        "mean_time_ms": 1.7055579810403287,
+        "median_time_ms": 1.709169999230653,
+        "std_dev_ms": 0.0623285532079853,
+        "iterations": 3,
+        "peak_memory_mb": 0.056121826171875,
+        "memory_delta_mb": 0.0099029541015625,
+        "cpu_time_ms": 1.6965559999999602,
+        "wall_time_ms": 1.7055579810403287
+      }
+    },
+    {
+      "name": "mesh_to_gaussian_init",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:04.694527+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.1838349853642285,
+        "max_time_ms": 0.24462502915412188,
+        "mean_time_ms": 0.20439267003287873,
+        "median_time_ms": 0.1847179955802858,
+        "std_dev_ms": 0.03484504221702025,
+        "iterations": 3,
+        "peak_memory_mb": 0.00201416015625,
+        "memory_delta_mb": 0.00034332275390625,
+        "cpu_time_ms": 0.19357400000001115,
+        "wall_time_ms": 0.20439267003287873
+      }
+    },
+    {
+      "name": "mesh_to_gaussian_convert",
+      "suite": "avatars",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: MeshToGaussian.convert() got an unexpected keyword argument 'colors'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_avatars.py\", line 207, in bench_mesh_to_gaussian_convert\n    cloud = converter.convert(\n            ^^^^^^^^^^^^^^^^^^\nTypeError: MeshToGaussian.convert() got an unexpected keyword argument 'colors'\n",
+      "timestamp": "2026-01-25T17:20:04.794042+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.10286903381347656,
+        "memory_delta_mb": 0.07749748229980469,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "gaussian_cloud_operations",
+      "suite": "avatars",
+      "size": "small",
+      "success": false,
+      "error": "AttributeError: 'GaussianCloudOperations' object has no attribute 'compute_bounds'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_avatars.py\", line 227, in bench_gaussian_cloud_operations\n    bounds = ops.compute_bounds(positions)\n             ^^^^^^^^^^^^^^^^^^\nAttributeError: 'GaussianCloudOperations' object has no attribute 'compute_bounds'\n",
+      "timestamp": "2026-01-25T17:20:04.884068+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.046710968017578125,
+        "memory_delta_mb": 0.0028390884399414062,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "pbr_material_create",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:09.345551+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 590.6127970083617,
+        "max_time_ms": 1572.4145249696448,
+        "mean_time_ms": 1118.0151146642554,
+        "median_time_ms": 1191.0180220147595,
+        "std_dev_ms": 494.9552773919681,
+        "iterations": 3,
+        "peak_memory_mb": 21.001708984375,
+        "memory_delta_mb": 0.00077056884765625,
+        "cpu_time_ms": 753.764381,
+        "wall_time_ms": 1118.0151146642554
+      }
+    },
+    {
+      "name": "pbr_material_with_subsurface",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:09.946860+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 70.47494599828497,
+        "max_time_ms": 102.91644698008895,
+        "mean_time_ms": 89.4183693259644,
+        "median_time_ms": 94.86371499951929,
+        "std_dev_ms": 16.892352962701032,
+        "iterations": 3,
+        "peak_memory_mb": 5.502677917480469,
+        "memory_delta_mb": 0.00115966796875,
+        "cpu_time_ms": 64.57326899999967,
+        "wall_time_ms": 89.4183693259644
+      }
+    },
+    {
+      "name": "pbr_texture_operations",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:10.827442+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 100.14708898961544,
+        "max_time_ms": 276.2652499950491,
+        "mean_time_ms": 186.99288732993105,
+        "median_time_ms": 184.56632300512865,
+        "std_dev_ms": 88.0841519219023,
+        "iterations": 3,
+        "peak_memory_mb": 5.001747131347656,
+        "memory_delta_mb": 0.000701904296875,
+        "cpu_time_ms": 72.94379966666693,
+        "wall_time_ms": 186.99288732993105
+      }
+    },
+    {
+      "name": "body_controls_create",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:10.933919+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.7668570033274591,
+        "max_time_ms": 1.9483690266497433,
+        "mean_time_ms": 1.1860493492955964,
+        "median_time_ms": 0.8429220179095864,
+        "std_dev_ms": 0.6612827984091548,
+        "iterations": 3,
+        "peak_memory_mb": 0.0019073486328125,
+        "memory_delta_mb": 0.0007476806640625,
+        "cpu_time_ms": 1.0867320000000902,
+        "wall_time_ms": 1.1860493492955964
+      }
+    },
+    {
+      "name": "facial_controls_create",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:10.996025+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.9957500151358545,
+        "max_time_ms": 1.3017490273341537,
+        "mean_time_ms": 1.1529143472823005,
+        "median_time_ms": 1.161243999376893,
+        "std_dev_ms": 0.15316946887221494,
+        "iterations": 3,
+        "peak_memory_mb": 0.00189208984375,
+        "memory_delta_mb": 0.00090789794921875,
+        "cpu_time_ms": 1.0916853333332217,
+        "wall_time_ms": 1.1529143472823005
+      }
+    },
+    {
+      "name": "procedural_avatar_init",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:11.075528+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.32697501592338085,
+        "max_time_ms": 0.3567420062609017,
+        "mean_time_ms": 0.34329867533718544,
+        "median_time_ms": 0.34617900382727385,
+        "std_dev_ms": 0.015091078410657929,
+        "iterations": 3,
+        "peak_memory_mb": 0.00258636474609375,
+        "memory_delta_mb": 0.00099945068359375,
+        "cpu_time_ms": 0.3175443333332713,
+        "wall_time_ms": 0.34329867533718544
+      }
+    },
+    {
+      "name": "body_measurement_extraction",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:11.130516+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.5693970015272498,
+        "max_time_ms": 2.7821100084111094,
+        "mean_time_ms": 1.3419666793197393,
+        "median_time_ms": 0.6743930280208588,
+        "std_dev_ms": 1.2483051099950053,
+        "iterations": 3,
+        "peak_memory_mb": 0.00478363037109375,
+        "memory_delta_mb": 0.00157928466796875,
+        "cpu_time_ms": 0.6663623333335403,
+        "wall_time_ms": 1.3419666793197393
+      }
+    },
+    {
+      "name": "lbs_weights",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:11.220926+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 3.0896830139681697,
+        "max_time_ms": 3.9863669662736356,
+        "mean_time_ms": 3.6225043198404214,
+        "median_time_ms": 3.7914629792794585,
+        "std_dev_ms": 0.4716150962703751,
+        "iterations": 3,
+        "peak_memory_mb": 0.6301040649414062,
+        "memory_delta_mb": 0.00069427490234375,
+        "cpu_time_ms": 3.4764896666666565,
+        "wall_time_ms": 3.6225043198404214
+      }
+    },
+    {
+      "name": "pose_interpolation",
+      "suite": "avatars",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:11.356669+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 16.776831995230168,
+        "max_time_ms": 18.31117697292939,
+        "mean_time_ms": 17.73011067416519,
+        "median_time_ms": 18.10232305433601,
+        "std_dev_ms": 0.8321419167497973,
+        "iterations": 3,
+        "peak_memory_mb": 0.02172088623046875,
+        "memory_delta_mb": 0.00077056884765625,
+        "cpu_time_ms": 16.038427000000095,
+        "wall_time_ms": 17.73011067416519
+      }
+    }
+  ]
+}

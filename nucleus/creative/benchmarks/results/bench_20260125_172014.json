@@ -1,0 +1,536 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-25T17:20:22.515582+00:00",
+  "config": {
+    "size": "small",
+    "iterations": 3,
+    "warmup_iterations": 2
+  },
+  "results": [
+    {
+      "name": "kernel_init",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: DiTSSpec.__init__() got an unexpected keyword argument 'id'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 150, in bench_kernel_init\n    spec = DiTSSpec(\n           ^^^^^^^^^\nTypeError: DiTSSpec.__init__() got an unexpected keyword argument 'id'\n",
+      "timestamp": "2026-01-25T17:20:14.895862+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.10901355743408203,
+        "memory_delta_mb": 0.08448410034179688,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "kernel_state_create",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: DiTSState.__init__() got an unexpected keyword argument 'current_state'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 167, in bench_kernel_state_create\n    state = DiTSState(\n            ^^^^^^^^^^\nTypeError: DiTSState.__init__() got an unexpected keyword argument 'current_state'\n",
+      "timestamp": "2026-01-25T17:20:14.931680+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.02953052520751953,
+        "memory_delta_mb": 0.002155303955078125,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "formula_parse",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:14.990589+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 1.2225619866512716,
+        "max_time_ms": 1.5661949873901904,
+        "mean_time_ms": 1.4238019939512014,
+        "median_time_ms": 1.4826490078121424,
+        "std_dev_ms": 0.17921533996695363,
+        "iterations": 3,
+        "peak_memory_mb": 0.0081787109375,
+        "memory_delta_mb": 0.00746917724609375,
+        "cpu_time_ms": 1.2594803333333404,
+        "wall_time_ms": 1.4238019939512014
+      }
+    },
+    {
+      "name": "formula_pretty_print",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:15.045714+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.5142230074852705,
+        "max_time_ms": 0.6195579771883786,
+        "mean_time_ms": 0.5565003181497256,
+        "median_time_ms": 0.5357199697755277,
+        "std_dev_ms": 0.05565726475046582,
+        "iterations": 3,
+        "peak_memory_mb": 0.0020599365234375,
+        "memory_delta_mb": 0.0007781982421875,
+        "cpu_time_ms": 0.5428786666666537,
+        "wall_time_ms": 0.5565003181497256
+      }
+    },
+    {
+      "name": "formula_evaluation",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: DiTSSpec.__init__() got an unexpected keyword argument 'id'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 210, in bench_formula_evaluation\n    spec = DiTSSpec(\n           ^^^^^^^^^\nTypeError: DiTSSpec.__init__() got an unexpected keyword argument 'id'\n",
+      "timestamp": "2026-01-25T17:20:15.077481+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.029976844787597656,
+        "memory_delta_mb": 0.0024175643920898438,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "evaluation_cache",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "AttributeError: 'EvaluationCache' object has no attribute 'store'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 241, in bench_evaluation_cache\n    cache.store(f\"formula_{i}\", f\"state_{i % 10}\", i % 2 == 0)\n    ^^^^^^^^^^^\nAttributeError: 'EvaluationCache' object has no attribute 'store'\n",
+      "timestamp": "2026-01-25T17:20:15.113191+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.031183242797851562,
+        "memory_delta_mb": 0.0028600692749023438,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "narrative_engine_init",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:15.759240+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 100.92256998177618,
+        "max_time_ms": 307.8248930396512,
+        "mean_time_ms": 177.40483133820817,
+        "median_time_ms": 123.46703099319711,
+        "std_dev_ms": 113.50818275009969,
+        "iterations": 3,
+        "peak_memory_mb": 0.25408363342285156,
+        "memory_delta_mb": 0.026810646057128906,
+        "cpu_time_ms": 91.58329166666668,
+        "wall_time_ms": 177.40483133820817
+      }
+    },
+    {
+      "name": "episode_create",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:17.775745+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 552.9115559766069,
+        "max_time_ms": 595.2342079835944,
+        "mean_time_ms": 571.0044699953869,
+        "median_time_ms": 564.8676460259594,
+        "std_dev_ms": 21.81850532346213,
+        "iterations": 3,
+        "peak_memory_mb": 0.2253122329711914,
+        "memory_delta_mb": 0.05231189727783203,
+        "cpu_time_ms": 163.7417986666667,
+        "wall_time_ms": 571.0044699953869
+      }
+    },
+    {
+      "name": "narrative_build",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "BrokenPipeError: [Errno 32] Broken pipe\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 279, in bench_narrative_build\n    engine.create_episode(text)\n  File \"/pluribus/nucleus/creative/dits/narrative.py\", line 544, in create_episode\n    self._emit_event(\"episode_created\", {\n  File \"/pluribus/nucleus/creative/dits/narrative.py\", line 490, in _emit_event\n    publish_event(event)\n  File \"/pluribus/nucleus/creative/dits/narrative.py\", line 83, in publish_event\n    print(f\"[BUS] {json.dumps(asdict(event))}\")\nBrokenPipeError: [Errno 32] Broken pipe\n",
+      "timestamp": "2026-01-25T17:20:19.556490+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 574.1009810008109,
+        "max_time_ms": 574.1009810008109,
+        "mean_time_ms": 574.1009810008109,
+        "median_time_ms": 574.1009810008109,
+        "std_dev_ms": 0.0,
+        "iterations": 1,
+        "peak_memory_mb": 0.2904796600341797,
+        "memory_delta_mb": 0.09769535064697266,
+        "cpu_time_ms": 308.8546339999998,
+        "wall_time_ms": 574.1009810008109
+      }
+    },
+    {
+      "name": "entity_extraction",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:19.620084+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 1.2819970143027604,
+        "max_time_ms": 1.5123250195756555,
+        "mean_time_ms": 1.3920376853396494,
+        "median_time_ms": 1.3817910221405327,
+        "std_dev_ms": 0.11550538118756545,
+        "iterations": 3,
+        "peak_memory_mb": 0.0023670196533203125,
+        "memory_delta_mb": 0.00067138671875,
+        "cpu_time_ms": 1.3815819999998997,
+        "wall_time_ms": 1.3920376853396494
+      }
+    },
+    {
+      "name": "coherence_scoring",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "BrokenPipeError: [Errno 32] Broken pipe\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 308, in bench_coherence_scoring\n    episodes.append(engine.create_episode(text))\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/pluribus/nucleus/creative/dits/narrative.py\", line 544, in create_episode\n    self._emit_event(\"episode_created\", {\n  File \"/pluribus/nucleus/creative/dits/narrative.py\", line 490, in _emit_event\n    publish_event(event)\n  File \"/pluribus/nucleus/creative/dits/narrative.py\", line 83, in publish_event\n    print(f\"[BUS] {json.dumps(asdict(event))}\")\nBrokenPipeError: [Errno 32] Broken pipe\n",
+      "timestamp": "2026-01-25T17:20:20.912774+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.2714529037475586,
+        "memory_delta_mb": 0.02373504638671875,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "rheomode_engine_init",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:20.959655+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.08687900844961405,
+        "max_time_ms": 0.09418895933777094,
+        "mean_time_ms": 0.08955597877502441,
+        "median_time_ms": 0.08759996853768826,
+        "std_dev_ms": 0.004028439838602449,
+        "iterations": 3,
+        "peak_memory_mb": 0.001922607421875,
+        "memory_delta_mb": 0.00034332275390625,
+        "cpu_time_ms": 0.07973833333337528,
+        "wall_time_ms": 0.08955597877502441
+      }
+    },
+    {
+      "name": "rheomode_flow_create",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: create_rheomode_flow() missing 1 required positional argument: 'subject'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 336, in bench_rheomode_flow_create\n    flow = create_rheomode_flow(episode)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_rheomode_flow() missing 1 required positional argument: 'subject'\n",
+      "timestamp": "2026-01-25T17:20:21.506104+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.2825651168823242,
+        "memory_delta_mb": 0.03713226318359375,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "verb_extraction",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:21.687298+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 10.831015999428928,
+        "max_time_ms": 24.461822002194822,
+        "mean_time_ms": 15.53768499676759,
+        "median_time_ms": 11.320216988679022,
+        "std_dev_ms": 7.732399069544821,
+        "iterations": 3,
+        "peak_memory_mb": 0.002346038818359375,
+        "memory_delta_mb": 0.0007171630859375,
+        "cpu_time_ms": 8.721591666666603,
+        "wall_time_ms": 15.53768499676759
+      }
+    },
+    {
+      "name": "verb_conjugation",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "AttributeError: 'VerbConjugator' object has no attribute 'conjugate'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 361, in bench_verb_conjugation\n    conjugator.conjugate(verb, tense)\n    ^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'VerbConjugator' object has no attribute 'conjugate'\n",
+      "timestamp": "2026-01-25T17:20:21.744507+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.03171348571777344,
+        "memory_delta_mb": 0.0034303665161132812,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "verb_tense_normalize",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:21.827773+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 2.521352027542889,
+        "max_time_ms": 9.997987013775855,
+        "mean_time_ms": 5.020161353362103,
+        "median_time_ms": 2.5411450187675655,
+        "std_dev_ms": 4.310934837100952,
+        "iterations": 3,
+        "peak_memory_mb": 0.0018463134765625,
+        "memory_delta_mb": 0.0004425048828125,
+        "cpu_time_ms": 2.531786333333249,
+        "wall_time_ms": 5.020161353362103
+      }
+    },
+    {
+      "name": "omega_bridge_init",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:22.043467+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 1.6559420037083328,
+        "max_time_ms": 2.849379030521959,
+        "mean_time_ms": 2.174573678833743,
+        "median_time_ms": 2.018400002270937,
+        "std_dev_ms": 0.6118542695616294,
+        "iterations": 3,
+        "peak_memory_mb": 0.012048721313476562,
+        "memory_delta_mb": 0.009840011596679688,
+        "cpu_time_ms": 1.7925796666666827,
+        "wall_time_ms": 2.174573678833743
+      }
+    },
+    {
+      "name": "omega_state_create",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: OmegaState.__init__() got an unexpected keyword argument 'mhc_beta'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 391, in bench_omega_state_create\n    state = OmegaState(\n            ^^^^^^^^^^^\nTypeError: OmegaState.__init__() got an unexpected keyword argument 'mhc_beta'\n",
+      "timestamp": "2026-01-25T17:20:22.108622+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.029480934143066406,
+        "memory_delta_mb": 0.004460334777832031,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "omega_modification_create",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: create_mhc_beta_modification() got an unexpected keyword argument 'delta'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 409, in bench_omega_modification_create\n    mod1 = create_mhc_beta_modification(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_mhc_beta_modification() got an unexpected keyword argument 'delta'\n",
+      "timestamp": "2026-01-25T17:20:22.150953+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.029326438903808594,
+        "memory_delta_mb": 0.0021991729736328125,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "state_history_tracking",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: StateHistoryTracker.__init__() got an unexpected keyword argument 'max_history'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 431, in bench_state_history_tracking\n    tracker = StateHistoryTracker(max_history=100)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: StateHistoryTracker.__init__() got an unexpected keyword argument 'max_history'\n",
+      "timestamp": "2026-01-25T17:20:22.191054+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.030295372009277344,
+        "memory_delta_mb": 0.0025157928466796875,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "spec_loader_init",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:22.275374+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.18735200865194201,
+        "max_time_ms": 0.25357300182804465,
+        "mean_time_ms": 0.22112333681434393,
+        "median_time_ms": 0.22244499996304512,
+        "std_dev_ms": 0.03313027436373466,
+        "iterations": 3,
+        "peak_memory_mb": 0.00177001953125,
+        "memory_delta_mb": 0.00051116943359375,
+        "cpu_time_ms": 0.2071800000000105,
+        "wall_time_ms": 0.22112333681434393
+      }
+    },
+    {
+      "name": "spec_parse",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "SchemaValidationError: Spec validation failed: Missing required field: sorts; Missing required field: mu_spec; Missing required field: nu_spec; State 'idle' has invalid type: initial; State 'exploring' has invalid type: normal; State 'verifying' has invalid type: normal; State 'done' has invalid type: final\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 464, in bench_spec_parse\n    spec = parse_dits_spec(_test_data[\"simple_spec\"])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/pluribus/nucleus/creative/dits/spec_loader.py\", line 835, in parse_dits_spec\n    return loader.parse(data)\n           ^^^^^^^^^^^^^^^^^^\n  File \"/pluribus/nucleus/creative/dits/spec_loader.py\", line 750, in parse\n    raise SchemaValidationError(\nnucleus.creative.dits.spec_loader.SchemaValidationError: Spec validation failed: Missing required field: sorts; Missing required field: mu_spec; Missing required field: nu_spec; State 'idle' has invalid type: initial; State 'exploring' has invalid type: normal; State 'verifying' has invalid type: normal; State 'done' has invalid type: final\n",
+      "timestamp": "2026-01-25T17:20:22.322777+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.1004343032836914,
+        "memory_delta_mb": 0.0694131851196289,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "spec_validate",
+      "suite": "dits",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:22.405748+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 3.336875990498811,
+        "max_time_ms": 5.305461992975324,
+        "mean_time_ms": 4.088076316596319,
+        "median_time_ms": 3.6218909663148224,
+        "std_dev_ms": 1.063874662683263,
+        "iterations": 3,
+        "peak_memory_mb": 0.00542449951171875,
+        "memory_delta_mb": 0.00128173828125,
+        "cpu_time_ms": 3.414897333333222,
+        "wall_time_ms": 4.088076316596319
+      }
+    },
+    {
+      "name": "spec_builder",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: DiTSSpecBuilder.__init__() missing 1 required positional argument: 'name'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 480, in bench_spec_builder\n    builder = DiTSSpecBuilder()\n              ^^^^^^^^^^^^^^^^^\nTypeError: DiTSSpecBuilder.__init__() missing 1 required positional argument: 'name'\n",
+      "timestamp": "2026-01-25T17:20:22.461819+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.02989482879638672,
+        "memory_delta_mb": 0.0022220611572265625,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "graph_export",
+      "suite": "dits",
+      "size": "small",
+      "success": false,
+      "error": "AttributeError: 'Formula' object has no attribute 'states'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_dits.py\", line 502, in bench_graph_export\n    dot = export_to_dot(formula)\n          ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/pluribus/nucleus/creative/dits/kernel.py\", line 1892, in export_to_dot\n    return GraphExporter.to_dot(spec, current_state, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/pluribus/nucleus/creative/dits/kernel.py\", line 1783, in to_dot\n    for state_id, state in spec.states.items():\n                           ^^^^^^^^^^^\nAttributeError: 'Formula' object has no attribute 'states'\n",
+      "timestamp": "2026-01-25T17:20:22.514636+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.17624282836914062,
+        "memory_delta_mb": 0.14635753631591797,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    }
+  ]
+}

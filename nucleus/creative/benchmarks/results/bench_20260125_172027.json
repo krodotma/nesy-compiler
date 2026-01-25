@@ -1,0 +1,389 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-25T17:20:28.100259+00:00",
+  "config": {
+    "size": "small",
+    "iterations": 3,
+    "warmup_iterations": 2
+  },
+  "results": [
+    {
+      "name": "pipeline_create",
+      "suite": "pipelines",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:27.146490+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.9448720375075936,
+        "max_time_ms": 1.284309953916818,
+        "mean_time_ms": 1.1598856654018164,
+        "median_time_ms": 1.2504750047810376,
+        "std_dev_ms": 0.1869741856003969,
+        "iterations": 3,
+        "peak_memory_mb": 0.026048660278320312,
+        "memory_delta_mb": 0.025636672973632812,
+        "cpu_time_ms": 1.0113796666667192,
+        "wall_time_ms": 1.1598856654018164
+      }
+    },
+    {
+      "name": "pipeline_add_stages",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 87, in bench_pipeline_add_stages\n    pipeline.add_stage(stage_name, subsystem, operation)\nTypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\n",
+      "timestamp": "2026-01-25T17:20:27.179588+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.1051321029663086,
+        "memory_delta_mb": 0.07923603057861328,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "pipeline_stage_config",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: PipelineStageConfig.__init__() got an unexpected keyword argument 'timeout'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 95, in bench_pipeline_stage_config\n    config = PipelineStageConfig(\n             ^^^^^^^^^^^^^^^^^^^^\nTypeError: PipelineStageConfig.__init__() got an unexpected keyword argument 'timeout'\n",
+      "timestamp": "2026-01-25T17:20:27.221581+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.029633522033691406,
+        "memory_delta_mb": 0.0022735595703125,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "pipeline_status",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 111, in bench_pipeline_status\n    pipeline.add_stage(\nTypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\n",
+      "timestamp": "2026-01-25T17:20:27.255599+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.03198432922363281,
+        "memory_delta_mb": 0.004576683044433594,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "stage_result_create",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: StageResult.__init__() got an unexpected keyword argument 'success'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 127, in bench_stage_result_create\n    result = StageResult(\n             ^^^^^^^^^^^^\nTypeError: StageResult.__init__() got an unexpected keyword argument 'success'\n",
+      "timestamp": "2026-01-25T17:20:27.283777+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.029572486877441406,
+        "memory_delta_mb": 0.0022420883178710938,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "preset_list",
+      "suite": "pipelines",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:27.343996+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.4000659682787955,
+        "max_time_ms": 1.1889399611391127,
+        "mean_time_ms": 0.7064603075074652,
+        "median_time_ms": 0.5303749931044877,
+        "std_dev_ms": 0.42288896014691796,
+        "iterations": 3,
+        "peak_memory_mb": 0.00492095947265625,
+        "memory_delta_mb": 0.00461578369140625,
+        "cpu_time_ms": 0.547757333333306,
+        "wall_time_ms": 0.7064603075074652
+      }
+    },
+    {
+      "name": "preset_create",
+      "suite": "pipelines",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:27.542426+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 14.469005982391536,
+        "max_time_ms": 37.84885199274868,
+        "mean_time_ms": 23.588782312193263,
+        "median_time_ms": 18.44848896143958,
+        "std_dev_ms": 12.5088473356203,
+        "iterations": 3,
+        "peak_memory_mb": 0.1405658721923828,
+        "memory_delta_mb": 0.09735870361328125,
+        "cpu_time_ms": 18.20290966666671,
+        "wall_time_ms": 23.588782312193263
+      }
+    },
+    {
+      "name": "pipeline_preset_config",
+      "suite": "pipelines",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:27.594369+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.7691720384173095,
+        "max_time_ms": 0.9995130239985883,
+        "mean_time_ms": 0.8724016758302847,
+        "median_time_ms": 0.8485199650749564,
+        "std_dev_ms": 0.11701279627070535,
+        "iterations": 3,
+        "peak_memory_mb": 0.0053844451904296875,
+        "memory_delta_mb": 0.00476837158203125,
+        "cpu_time_ms": 0.8355386666666353,
+        "wall_time_ms": 0.8724016758302847
+      }
+    },
+    {
+      "name": "orchestrator_init",
+      "suite": "pipelines",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:20:27.662492+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.49950199900195,
+        "max_time_ms": 0.6708069704473019,
+        "mean_time_ms": 0.5707413268586,
+        "median_time_ms": 0.541915011126548,
+        "std_dev_ms": 0.08921639798538249,
+        "iterations": 3,
+        "peak_memory_mb": 0.00701141357421875,
+        "memory_delta_mb": 0.0029296875,
+        "cpu_time_ms": 0.5616563333333454,
+        "wall_time_ms": 0.5707413268586
+      }
+    },
+    {
+      "name": "orchestrator_with_pool",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: PipelineOrchestrator.__init__() got an unexpected keyword argument 'resource_pool'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 202, in bench_orchestrator_with_pool\n    orchestrator = PipelineOrchestrator(resource_pool=pool)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: PipelineOrchestrator.__init__() got an unexpected keyword argument 'resource_pool'\n",
+      "timestamp": "2026-01-25T17:20:27.690009+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.030813217163085938,
+        "memory_delta_mb": 0.0026578903198242188,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "job_create",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: PipelineJob.__init__() got an unexpected keyword argument 'pipeline_name'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 212, in bench_job_create\n    job = PipelineJob(\n          ^^^^^^^^^^^^\nTypeError: PipelineJob.__init__() got an unexpected keyword argument 'pipeline_name'\n",
+      "timestamp": "2026-01-25T17:20:27.753592+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.029707908630371094,
+        "memory_delta_mb": 0.002323150634765625,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "job_queue_operations",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: PipelineJob.__init__() got an unexpected keyword argument 'pipeline_name'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 230, in bench_job_queue_operations\n    job = PipelineJob(\n          ^^^^^^^^^^^^\nTypeError: PipelineJob.__init__() got an unexpected keyword argument 'pipeline_name'\n",
+      "timestamp": "2026-01-25T17:20:27.791681+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.031851768493652344,
+        "memory_delta_mb": 0.0025691986083984375,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "resource_pool_acquire_release",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "AttributeError: 'ResourcePool' object has no attribute 'try_acquire'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 259, in bench_resource_pool_acquire_release\n    acquired = pool.try_acquire(memory_mb=100, gpu_memory_mb=200)\n               ^^^^^^^^^^^^^^^^\nAttributeError: 'ResourcePool' object has no attribute 'try_acquire'\n",
+      "timestamp": "2026-01-25T17:20:27.854117+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.031681060791015625,
+        "memory_delta_mb": 0.0034885406494140625,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "resource_limits_check",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "AttributeError: 'ResourcePool' object has no attribute 'can_acquire'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 289, in bench_resource_limits_check\n    can_acquire = pool.can_acquire(memory_mb=mem, gpu_memory_mb=gpu_mem)\n                  ^^^^^^^^^^^^^^^^\nAttributeError: 'ResourcePool' object has no attribute 'can_acquire'\n",
+      "timestamp": "2026-01-25T17:20:27.918683+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.03177070617675781,
+        "memory_delta_mb": 0.003543853759765625,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "orchestrator_status",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "AttributeError: 'PipelineOrchestrator' object has no attribute 'get_status'\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 300, in bench_orchestrator_status\n    status = orchestrator.get_status()\n             ^^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: 'PipelineOrchestrator' object has no attribute 'get_status'. Did you mean: '_status'?\n",
+      "timestamp": "2026-01-25T17:20:27.989427+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.03384208679199219,
+        "memory_delta_mb": 0.0038928985595703125,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "pipeline_mock_execution",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 311, in bench_pipeline_mock_execution\n    pipeline.add_stage(\nTypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\n",
+      "timestamp": "2026-01-25T17:20:28.030338+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.03182411193847656,
+        "memory_delta_mb": 0.004584312438964844,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "pipeline_parallel_simulation",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 346, in bench_pipeline_parallel_simulation\n    pipeline.add_stage(f\"stage_{j}\", \"visual\", \"generate\")\nTypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\n",
+      "timestamp": "2026-01-25T17:20:28.065613+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.03468036651611328,
+        "memory_delta_mb": 0.005372047424316406,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    },
+    {
+      "name": "pipeline_chain",
+      "suite": "pipelines",
+      "size": "small",
+      "success": false,
+      "error": "TypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\nTraceback (most recent call last):\n  File \"/pluribus/nucleus/creative/benchmarks/__init__.py\", line 276, in run_benchmark\n    fn()\n  File \"/pluribus/nucleus/creative/benchmarks/bench_pipelines.py\", line 371, in bench_pipeline_chain\n    pipeline.add_stage(\"process\", _test_data[\"subsystems\"][i], \"transform\")\nTypeError: CreativePipeline.add_stage() takes 2 positional arguments but 4 were given\n",
+      "timestamp": "2026-01-25T17:20:28.100230+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.0,
+        "max_time_ms": 0.0,
+        "mean_time_ms": 0.0,
+        "median_time_ms": 0.0,
+        "std_dev_ms": 0.0,
+        "iterations": 0,
+        "peak_memory_mb": 0.034707069396972656,
+        "memory_delta_mb": 0.005379676818847656,
+        "cpu_time_ms": 0.0,
+        "wall_time_ms": 0.0
+      }
+    }
+  ]
+}

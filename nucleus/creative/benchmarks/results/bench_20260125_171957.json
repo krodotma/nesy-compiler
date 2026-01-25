@@ -1,0 +1,326 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-25T17:19:58.351849+00:00",
+  "config": {
+    "size": "small",
+    "iterations": 3,
+    "warmup_iterations": 2
+  },
+  "results": [
+    {
+      "name": "voice_config_create",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.365665+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.7827749941498041,
+        "max_time_ms": 0.7987720309756696,
+        "mean_time_ms": 0.790875346865505,
+        "median_time_ms": 0.7910790154710412,
+        "std_dev_ms": 0.008000462953959921,
+        "iterations": 3,
+        "peak_memory_mb": 0.001445770263671875,
+        "memory_delta_mb": 0.00072479248046875,
+        "cpu_time_ms": 0.7825539999999909,
+        "wall_time_ms": 0.790875346865505
+      }
+    },
+    {
+      "name": "voice_config_variations",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.405304+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.3204030217602849,
+        "max_time_ms": 0.4675000091083348,
+        "mean_time_ms": 0.3719909970338146,
+        "median_time_ms": 0.3280699602328241,
+        "std_dev_ms": 0.08280201704652827,
+        "iterations": 3,
+        "peak_memory_mb": 0.0020904541015625,
+        "memory_delta_mb": 0.00057220458984375,
+        "cpu_time_ms": 0.3269689999999918,
+        "wall_time_ms": 0.3719909970338146
+      }
+    },
+    {
+      "name": "speaker_embedding_create",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.448159+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.07166294381022453,
+        "max_time_ms": 0.11043500853702426,
+        "mean_time_ms": 0.08569031100099285,
+        "median_time_ms": 0.07497298065572977,
+        "std_dev_ms": 0.021493350787904375,
+        "iterations": 3,
+        "peak_memory_mb": 0.0020751953125,
+        "memory_delta_mb": 0.00093841552734375,
+        "cpu_time_ms": 0.07484433333334224,
+        "wall_time_ms": 0.08569031100099285
+      }
+    },
+    {
+      "name": "speaker_encoder_init",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.490117+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.06246997509151697,
+        "max_time_ms": 0.142729957588017,
+        "mean_time_ms": 0.09073332572976749,
+        "median_time_ms": 0.06700004450976849,
+        "std_dev_ms": 0.04508733387200101,
+        "iterations": 3,
+        "peak_memory_mb": 0.0020599365234375,
+        "memory_delta_mb": 0.00034332275390625,
+        "cpu_time_ms": 0.08029566666667431,
+        "wall_time_ms": 0.09073332572976749
+      }
+    },
+    {
+      "name": "speaker_encoder_compare",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.533600+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.3598410403355956,
+        "max_time_ms": 0.44837797759100795,
+        "mean_time_ms": 0.39342266973108053,
+        "median_time_ms": 0.37204899126663804,
+        "std_dev_ms": 0.04798252716321052,
+        "iterations": 3,
+        "peak_memory_mb": 0.002044677734375,
+        "memory_delta_mb": 0.00045013427734375,
+        "cpu_time_ms": 0.38304566666665557,
+        "wall_time_ms": 0.39342266973108053
+      }
+    },
+    {
+      "name": "embedding_normalization",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.594628+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 1.0771419620141387,
+        "max_time_ms": 1.9333829986862838,
+        "mean_time_ms": 1.5164279805806775,
+        "median_time_ms": 1.5387589810416102,
+        "std_dev_ms": 0.42855709468697056,
+        "iterations": 3,
+        "peak_memory_mb": 0.004352569580078125,
+        "memory_delta_mb": 0.0009307861328125,
+        "cpu_time_ms": 1.309393333333353,
+        "wall_time_ms": 1.5164279805806775
+      }
+    },
+    {
+      "name": "embedding_averaging",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.645917+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.29164698207750916,
+        "max_time_ms": 0.44119200902059674,
+        "mean_time_ms": 0.36266267610092956,
+        "median_time_ms": 0.3551490372046828,
+        "std_dev_ms": 0.07505511207072835,
+        "iterations": 3,
+        "peak_memory_mb": 0.01055145263671875,
+        "memory_delta_mb": 0.0009002685546875,
+        "cpu_time_ms": 0.3528676666666823,
+        "wall_time_ms": 0.36266267610092956
+      }
+    },
+    {
+      "name": "voice_cloner_init",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.681459+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.07036200258880854,
+        "max_time_ms": 0.07705501047894359,
+        "mean_time_ms": 0.07286766776815057,
+        "median_time_ms": 0.07118599023669958,
+        "std_dev_ms": 0.003649673703797755,
+        "iterations": 3,
+        "peak_memory_mb": 0.001983642578125,
+        "memory_delta_mb": 0.00046539306640625,
+        "cpu_time_ms": 0.06405833333337589,
+        "wall_time_ms": 0.07286766776815057
+      }
+    },
+    {
+      "name": "voice_cloner_list_speakers",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.719754+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.17533899517729878,
+        "max_time_ms": 0.23067998699843884,
+        "mean_time_ms": 0.19854066583017507,
+        "median_time_ms": 0.18960301531478763,
+        "std_dev_ms": 0.028732691163346966,
+        "iterations": 3,
+        "peak_memory_mb": 0.00511932373046875,
+        "memory_delta_mb": 0.00373077392578125,
+        "cpu_time_ms": 0.174573666666659,
+        "wall_time_ms": 0.19854066583017507
+      }
+    },
+    {
+      "name": "voice_cloner_get_speaker",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.771685+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 1.7950280453078449,
+        "max_time_ms": 2.480180002748966,
+        "mean_time_ms": 2.0610023445139327,
+        "median_time_ms": 1.9077989854849875,
+        "std_dev_ms": 0.36737141030524406,
+        "iterations": 3,
+        "peak_memory_mb": 0.00237274169921875,
+        "memory_delta_mb": 0.00106048583984375,
+        "cpu_time_ms": 1.935995666666653,
+        "wall_time_ms": 2.0610023445139327
+      }
+    },
+    {
+      "name": "transcription_result_create",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.842280+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 4.751680011395365,
+        "max_time_ms": 5.763444001786411,
+        "mean_time_ms": 5.115096321484695,
+        "median_time_ms": 4.830164951272309,
+        "std_dev_ms": 0.5628552277107621,
+        "iterations": 3,
+        "peak_memory_mb": 0.011997222900390625,
+        "memory_delta_mb": 0.00952911376953125,
+        "cpu_time_ms": 4.880891333333359,
+        "wall_time_ms": 5.115096321484695
+      }
+    },
+    {
+      "name": "transcription_segment_processing",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.905028+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 0.7597149815410376,
+        "max_time_ms": 1.1846160050481558,
+        "mean_time_ms": 0.9172096809682747,
+        "median_time_ms": 0.8072980563156307,
+        "std_dev_ms": 0.23279957875753757,
+        "iterations": 3,
+        "peak_memory_mb": 0.001922607421875,
+        "memory_delta_mb": 0.0004730224609375,
+        "cpu_time_ms": 0.7927786666666788,
+        "wall_time_ms": 0.9172096809682747
+      }
+    },
+    {
+      "name": "audio_array_operations",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:57.973661+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 3.161031985655427,
+        "max_time_ms": 4.652185016311705,
+        "mean_time_ms": 3.756293658322344,
+        "median_time_ms": 3.4556639729999006,
+        "std_dev_ms": 0.7897265324032455,
+        "iterations": 3,
+        "peak_memory_mb": 0.337615966796875,
+        "memory_delta_mb": 0.00087738037109375,
+        "cpu_time_ms": 3.4921486666666577,
+        "wall_time_ms": 3.756293658322344
+      }
+    },
+    {
+      "name": "audio_vad_mock",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:58.112502+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 20.158796978648752,
+        "max_time_ms": 23.71856605168432,
+        "mean_time_ms": 22.05789601430297,
+        "median_time_ms": 22.296325012575835,
+        "std_dev_ms": 1.791821769526249,
+        "iterations": 3,
+        "peak_memory_mb": 0.00689697265625,
+        "memory_delta_mb": 0.00113677978515625,
+        "cpu_time_ms": 19.323947333333386,
+        "wall_time_ms": 22.05789601430297
+      }
+    },
+    {
+      "name": "audio_spectrogram_mock",
+      "suite": "auralux",
+      "size": "small",
+      "success": true,
+      "error": null,
+      "timestamp": "2026-01-25T17:19:58.351755+00:00",
+      "metadata": {},
+      "stats": {
+        "min_time_ms": 27.50427497085184,
+        "max_time_ms": 31.737843994051218,
+        "mean_time_ms": 29.67126799436907,
+        "median_time_ms": 29.771685018204153,
+        "std_dev_ms": 2.118570119810826,
+        "iterations": 3,
+        "peak_memory_mb": 0.093231201171875,
+        "memory_delta_mb": 0.000640869140625,
+        "cpu_time_ms": 26.71902433333336,
+        "wall_time_ms": 29.67126799436907
+      }
+    }
+  ]
+}
