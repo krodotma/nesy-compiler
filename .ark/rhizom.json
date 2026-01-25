@@ -1,5 +1,25 @@
 {
   "version": "1.0",
   "created": "2026-01-25T15:01:22.730251",
-  "nodes": {}
+  "nodes": {
+    "2e6f0f45ae29af4b961e4a96388f2eee17210f51": {
+      "sha": "2e6f0f45ae29af4b961e4a96388f2eee17210f51",
+      "etymology": "Antigravity Session 2 Iteration",
+      "cmp": 0.5,
+      "entropy": {
+        "h_struct": 0.5,
+        "h_doc": 0.5,
+        "h_type": 0.5,
+        "h_test": 0.5,
+        "h_deps": 0.5,
+        "h_churn": 0.5,
+        "h_debt": 0.5,
+        "h_align": 0.5
+      },
+      "parent": null,
+      "lineage_tags": [],
+      "timestamp": "2026-01-25T15:01:22.955605",
+      "witness_id": null
+    }
+  }
 }

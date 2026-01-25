@@ -51,6 +51,10 @@
         "ark.cmp.score": {
             "description": "Complexity-Maturity-Potential score update",
             "schema": "ScorePayload"
+        },
+        "ark.safety.rollback": {
+            "description": "Automatic rollback due to CMP regression",
+            "schema": "RollbackPayload"
         }
     }
 }

@@ -1,0 +1,20 @@
+{
+    "name": "system_invariants",
+    "description": "Core system invariants that must never be violated",
+    "formula": "□ (edit → ¬delete_core ∧ ¬break_tests)",
+    "invariants": [
+        "Preserve<__init__.py>",
+        "NoDelete<test_>",
+        "Preserve<LICENSE>"
+    ],
+    "allowed_patterns": [
+        "^\\+.*def ",
+        "^\\+.*class ",
+        "^\\+.*# TODO"
+    ],
+    "forbidden_patterns": [
+        "^-.*def main\\(",
+        "eval\\(.*input",
+        "exec\\(.*input"
+    ]
+}

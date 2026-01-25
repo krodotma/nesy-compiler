@@ -10,6 +10,9 @@ Purposeless churn is rejected.
 
 from dataclasses import dataclass, field
 from typing import Optional
+import logging
+
+logger = logging.getLogger("ARK.Entelecheia")
 
 
 @dataclass
@@ -19,6 +22,7 @@ class EntelecheiaContext:
     spec_ref: Optional[str] = None
     is_cosmetic: bool = False
     liveness_gain: float = 0.0
+    diff: str = ""  # Git diff for spec validation
 
 
 class EntelecheiaGate:
@@ -27,6 +31,7 @@ class EntelecheiaGate:
     
     Every code change must serve a clear purpose.
     Cosmetic refactoring without liveness gain is rejected.
+    Now with LTL spec validation.
     """
     
     # Cosmetic-only indicators
@@ -37,6 +42,20 @@ class EntelecheiaGate:
         "lint",
         "typo",
     ]
+    
+    def __init__(self):
+        self._ltl_validator = None
+    
+    @property
+    def ltl_validator(self):
+        """Lazy-load LTL validator."""
+        if self._ltl_validator is None:
+            try:
+                from nucleus.ark.specs.ltl_validator import LTLValidator
+                self._ltl_validator = LTLValidator()
+            except ImportError:
+                logger.warning("LTL validator not available")
+        return self._ltl_validator
     
     def name(self) -> str:
         return "Entelecheia"
@@ -49,6 +68,7 @@ class EntelecheiaGate:
         1. Must have a non-empty purpose or spec_ref
         2. Purely cosmetic changes are allowed ONLY with explicit purpose
         3. Changes with liveness_gain > 0 always pass
+        4. If spec_ref is provided, diff must satisfy the spec
         """
         # Check for explicit purpose
         has_purpose = bool(context.purpose.strip())
@@ -62,6 +82,15 @@ class EntelecheiaGate:
         # If cosmetic without explicit purpose, reject
         if context.is_cosmetic or self._is_cosmetic_purpose(context.purpose):
             if not has_spec:
+                return False
+        
+        # If spec_ref provided, validate against LTL spec
+        if has_spec and self.ltl_validator and context.diff:
+            passed, reason = self.ltl_validator.validate(
+                context.spec_ref, context.diff, context.purpose
+            )
+            if not passed:
+                logger.warning(f"LTL validation failed: {reason}")
                 return False
         
         # Must have some form of purpose
