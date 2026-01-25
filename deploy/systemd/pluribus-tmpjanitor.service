@@ -1,0 +1,14 @@
+[Unit]
+Description=Pluribus /tmp Janitorial Service
+Documentation=https://github.com/krodotma/pluribus
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /pluribus/nucleus/tools/tmpjanitor.py
+User=root
+Nice=19
+IOSchedulingClass=idle
+
+# Prevent tmpjanitor from consuming too much resources
+CPUQuota=25%
+MemoryMax=256M
