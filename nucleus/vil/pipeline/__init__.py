@@ -52,6 +52,11 @@ from .metalearning_adapter import (
     create_metalearning_adapter,
     OMEGA_AVAILABLE,
 )
+from .vil_metalearning_pipeline import (
+    VILMetalearningResult,
+    VILMetalearningPipeline,
+    create_vil_metalearning_pipeline,
+)
 
 __all__ = [
     "TheiaVILAdapter",
@@ -86,4 +91,7 @@ __all__ = [
     "MetalearningAdapter",
     "create_metalearning_adapter",
     "OMEGA_AVAILABLE",
+    "VILMetalearningResult",
+    "VILMetalearningPipeline",
+    "create_vil_metalearning_pipeline",
 ]
