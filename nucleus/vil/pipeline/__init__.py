@@ -12,10 +12,20 @@ from .theia_adapter import (
     VLMInference,
     THEIA_AVAILABLE,
 )
+from .entropy import (
+    EntropyMetrics,
+    EntropyNormalizer,
+    compute_h_star,
+    get_entropy_normalizer,
+)
 
 __all__ = [
     "TheiaVILAdapter",
     "create_theia_adapter",
     "VLMInference",
     "THEIA_AVAILABLE",
+    "EntropyMetrics",
+    "EntropyNormalizer",
+    "compute_h_star",
+    "get_entropy_normalizer",
 ]

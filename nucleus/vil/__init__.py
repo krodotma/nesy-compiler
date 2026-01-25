@@ -57,6 +57,12 @@ from .interfaces import (
     VILICLInterface,
     VILInterface,
 )
+from .pipeline import (
+    TheiaVILAdapter,
+    create_theia_adapter,
+    VLMInference,
+    THEIA_AVAILABLE,
+)
 
 __all__ = [
     # Coordinator
@@ -98,4 +104,10 @@ __all__ = [
     "VILCMPInterface",
     "VILICLInterface",
     "VILInterface",
+
+    # Pipeline
+    "TheiaVILAdapter",
+    "create_theia_adapter",
+    "VLMInference",
+    "THEIA_AVAILABLE",
 ]
