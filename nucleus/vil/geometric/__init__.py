@@ -15,8 +15,23 @@ from .metalearning import (
     GeometricMetalearning,
     create_geometric_metalearning,
 )
+from .attractor import (
+    BasinType,
+    AttractorBasin,
+    ConvergenceResult,
+    AttractorDynamics,
+    create_attractor_dynamics,
+)
+from .fiber_bundle import (
+    ConnectionType,
+    FiberBundle,
+    ParallelTransportResult,
+    FiberBundleGeometry,
+    create_fiber_bundle_geometry,
+)
 
 __all__ = [
+    # Metalearning
     "ManifoldType",
     "GeometricState",
     "GeometricUpdate",
@@ -24,4 +39,18 @@ __all__ = [
     "HyperbolicManifold",
     "GeometricMetalearning",
     "create_geometric_metalearning",
+
+    # Attractor
+    "BasinType",
+    "AttractorBasin",
+    "ConvergenceResult",
+    "AttractorDynamics",
+    "create_attractor_dynamics",
+
+    # Fiber Bundle
+    "ConnectionType",
+    "FiberBundle",
+    "ParallelTransportResult",
+    "FiberBundleGeometry",
+    "create_fiber_bundle_geometry",
 ]
