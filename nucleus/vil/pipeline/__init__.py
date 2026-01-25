@@ -24,6 +24,20 @@ from .icl_pipeline import (
     VisionToICLPipeline,
     create_icl_pipeline,
 )
+from .vision_tracking import (
+    VisionState,
+    VisionLineage,
+    VisionCMPMetrics,
+    VisionFrame,
+    VisionTracker,
+    create_vision_tracker,
+)
+from .vision_quality import (
+    QualityScore,
+    DeduplicationResult,
+    VisionQualityProcessor,
+    create_quality_processor,
+)
 
 __all__ = [
     "TheiaVILAdapter",
@@ -38,4 +52,14 @@ __all__ = [
     "ICLExample",
     "VisionToICLPipeline",
     "create_icl_pipeline",
+    "VisionState",
+    "VisionLineage",
+    "VisionCMPMetrics",
+    "VisionFrame",
+    "VisionTracker",
+    "create_vision_tracker",
+    "QualityScore",
+    "DeduplicationResult",
+    "VisionQualityProcessor",
+    "create_quality_processor",
 ]
