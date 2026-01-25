@@ -38,6 +38,12 @@ from .vision_quality import (
     VisionQualityProcessor,
     create_quality_processor,
 )
+from .vision_pipeline import (
+    PipelineError,
+    PipelineResult,
+    VisionPipeline,
+    create_vision_pipeline,
+)
 
 __all__ = [
     "TheiaVILAdapter",
@@ -62,4 +68,8 @@ __all__ = [
     "DeduplicationResult",
     "VisionQualityProcessor",
     "create_quality_processor",
+    "PipelineError",
+    "PipelineResult",
+    "VisionPipeline",
+    "create_vision_pipeline",
 ]
