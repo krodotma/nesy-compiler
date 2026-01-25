@@ -18,6 +18,12 @@ from .entropy import (
     compute_h_star,
     get_entropy_normalizer,
 )
+from .icl_pipeline import (
+    ICLStrategy,
+    ICLExample,
+    VisionToICLPipeline,
+    create_icl_pipeline,
+)
 
 __all__ = [
     "TheiaVILAdapter",
@@ -28,4 +34,8 @@ __all__ = [
     "EntropyNormalizer",
     "compute_h_star",
     "get_entropy_normalizer",
+    "ICLStrategy",
+    "ICLExample",
+    "VisionToICLPipeline",
+    "create_icl_pipeline",
 ]
