@@ -62,6 +62,20 @@ from .pipeline import (
     create_theia_adapter,
     VLMInference,
     THEIA_AVAILABLE,
+    VisionPipeline,
+    create_vision_pipeline,
+    MetalearningAdapter,
+    create_metalearning_adapter,
+    MetalearningMethod,
+    VILMetalearningPipeline,
+    create_vil_metalearning_pipeline,
+)
+from .geometric import (
+    ManifoldType,
+    GeometricState,
+    GeometricUpdate,
+    GeometricMetalearning,
+    create_geometric_metalearning,
 )
 
 __all__ = [
@@ -110,4 +124,18 @@ __all__ = [
     "create_theia_adapter",
     "VLMInference",
     "THEIA_AVAILABLE",
+    "VisionPipeline",
+    "create_vision_pipeline",
+    "MetalearningAdapter",
+    "create_metalearning_adapter",
+    "MetalearningMethod",
+    "VILMetalearningPipeline",
+    "create_vil_metalearning_pipeline",
+
+    # Geometric
+    "ManifoldType",
+    "GeometricState",
+    "GeometricUpdate",
+    "GeometricMetalearning",
+    "create_geometric_metalearning",
 ]
