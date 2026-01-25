@@ -39,7 +39,7 @@ export default component$(() => {
   const mood = useComputed$(() => {
     if (workerCount.value > 2) return 'focused';
     // Logic for anxious/calm could be derived from entropy if needed
-    return 'calm'; 
+    return 'calm';
   });
 
   // Auth State
@@ -77,7 +77,7 @@ export default component$(() => {
     worker.postMessage({ type: 'PREFETCH', payload: { views: ['sota', 'git', 'browser'] } });
     cleanup(() => worker.terminate());
   });
-  
+
   // Handlers
   const openAuthOverlay = $(() => authOverlayOpen.value = true);
   const closeAuthOverlay = $(() => authOverlayOpen.value = false);
@@ -158,72 +158,77 @@ export default component$(() => {
     <VoiceProvider>
       <div class="h-screen flex flex-col overflow-hidden relative glass-layout-root">
         {/* Layer 0: Aurora gradient background (subtle animated depth) */}
-      <div
-        class="glass-aurora-bg fixed inset-0 z-0 pointer-events-none"
-        aria-hidden="true"
-      />
+        <div
+          class="glass-aurora-bg fixed inset-0 z-0 pointer-events-none"
+          aria-hidden="true"
+        />
 
-      {/* Layer 1: Noise texture overlay (glass depth effect) */}
-      <div
-        class="glass-layout-noise fixed inset-0 z-[1] pointer-events-none opacity-[0.03]"
-        aria-hidden="true"
-      />
+        {/* Layer 1: Noise texture overlay (glass depth effect) */}
+        <div
+          class="glass-layout-noise fixed inset-0 z-[1] pointer-events-none opacity-[0.03]"
+          aria-hidden="true"
+        />
 
-      {/* Layer 1.5: Glass atmosphere (subtle radial gradients for depth) */}
-      <div
-        class="glass-layout-atmosphere fixed inset-0 z-[2] pointer-events-none"
-        aria-hidden="true"
-      />
+        {/* Layer 1.5: Glass atmosphere (subtle radial gradients for depth) */}
+        <div
+          class="glass-layout-atmosphere fixed inset-0 z-[2] pointer-events-none"
+          aria-hidden="true"
+        />
 
-      {/* Layer 2: Generative shader background (lazy-loaded to defer three.js) */}
-      <LazyGenerativeBackground entropy={entropy.value} mood={mood.value} requestScene={true} />
-      <ArtInjector />
+        {/* Layer 2: Generative shader background (lazy-loaded to defer three.js) */}
+        <LazyGenerativeBackground entropy={entropy.value} mood={mood.value} requestScene={true} />
+        <ArtInjector />
 
-      {/* Layer 3: Content wrapper with glass atmosphere */}
-      <div class="relative z-10 flex flex-col h-full glass-content-wrapper">
-        {/* TOP BREAD - Header */}
-        <LoadingStage id="comp:header">
-          <HeaderOmega
-            connected={connected.value}
-            workerCount={workerCount.value}
-            mood={mood.value}
-            entropy={entropy.value}
-            providerStatus={providerStatus.value}
-            onOpenAuth$={openAuthOverlay}
-          />
-        </LoadingStage>
+        {/* Layer 3: Content wrapper with glass atmosphere */}
+        <div class="relative z-10 flex flex-col h-full glass-content-wrapper">
+          {/* TOP BREAD - Header */}
+          <LoadingStage id="comp:header">
+            <HeaderOmega
+              connected={connected.value}
+              workerCount={workerCount.value}
+              mood={mood.value}
+              entropy={entropy.value}
+              providerStatus={providerStatus.value}
+              onOpenAuth$={openAuthOverlay}
+              navItems={[
+                { label: 'Portal', href: '/portal' },
+                { label: 'ARK', href: '/ark', activeClass: 'text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]' },
+                { label: 'Terminals', href: '/terminals' }
+              ]}
+            />
+          </LoadingStage>
 
-        {/* THE MEAT - Main content with page transition support */}
-        <main
-          class={[
-            'flex-1 min-h-0 overflow-hidden relative',
-            'glass-main-content',
-            pageTransition.transitioning && pageTransition.direction === 'enter'
-              ? 'glass-page-transition-enter'
-              : '',
-            pageTransition.transitioning && pageTransition.direction === 'exit'
-              ? 'glass-page-transition-exit'
-              : '',
-          ].filter(Boolean).join(' ')}
-        >
-          <Slot />
-        </main>
+          {/* THE MEAT - Main content with page transition support */}
+          <main
+            class={[
+              'flex-1 min-h-0 overflow-hidden relative',
+              'glass-main-content',
+              pageTransition.transitioning && pageTransition.direction === 'enter'
+                ? 'glass-page-transition-enter'
+                : '',
+              pageTransition.transitioning && pageTransition.direction === 'exit'
+                ? 'glass-page-transition-exit'
+                : '',
+            ].filter(Boolean).join(' ')}
+          >
+            <Slot />
+          </main>
 
-        {/* BOTTOM BREAD - Footer */}
-        <SuperMotdFooter />
-      </div>
+          {/* BOTTOM BREAD - Footer */}
+          <SuperMotdFooter />
+        </div>
 
-      {/* Global Overlays */}
-      <IPERoot enabled={true} />
-      <LazyVoiceOverlay />
-      <VNCAuthOverlay
-        open={authOverlayOpen.value}
-        providerStatus={providerStatus.value}
-        onClose$={closeAuthOverlay}
-      />
+        {/* Global Overlays */}
+        <IPERoot enabled={true} />
+        <LazyVoiceOverlay />
+        <VNCAuthOverlay
+          open={authOverlayOpen.value}
+          providerStatus={providerStatus.value}
+          onClose$={closeAuthOverlay}
+        />
 
-      {/* Shader A/B Testing Controls */}
-      <ShaderControl />
+        {/* Shader A/B Testing Controls */}
+        <ShaderControl />
       </div>
     </VoiceProvider>
   );

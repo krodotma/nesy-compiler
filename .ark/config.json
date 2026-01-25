@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "gates_enabled": true,
+  "neural_enabled": false,
+  "initial_entropy": {
+    "h_struct": 0.5,
+    "h_doc": 0.5,
+    "h_type": 0.5,
+    "h_test": 0.5,
+    "h_deps": 0.5,
+    "h_churn": 0.5,
+    "h_debt": 0.5,
+    "h_align": 0.5
+  }
+}
