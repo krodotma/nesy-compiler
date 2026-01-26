@@ -75,6 +75,7 @@
   - Added HOLON semantic naming spec and updated docs (UNIFORM, REPL header contract, lexicon, isomorphic git, agents)
   - Added official docs plan and subagent iteration log scaffold
   - Created iteration 01 placeholders for Opus-A and Opus-B
+  - Attempted Opus-A/Opus-B runs via Claude CLI (permission + network issues, then rate-limited until 01:00 UTC)
 - Files created/modified:
   - /pluribus/nucleus/plans/holon_pluribus_irkg_header_migration_plan.md (created)
   - /pluribus/nucleus/specs/holon_semantic_naming_v1.md (created)
