@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": 1,
+  "title": "Pluribus Project Registry",
+  "description": "Nx-equivalent project graph for affected detection and build orchestration. First-principles Git-native implementation using iso_git.mjs.",
+  "updated_iso": "2026-01-26T21:00:00Z",
+  "protocol_version": "v29",
+
+  "workspace": {
+    "root": "/pluribus",
+    "default_base": "origin/main",
+    "cache_dir": ".pluribus/cache/builds",
+    "skip_dirs": [".git", ".pluribus", ".pluribus_local", "node_modules", ".venv", "__pycache__", "dist", "coverage"]
+  },
+
+  "projects": {
+    "nucleus/dashboard": {
+      "id": "dashboard",
+      "root": "nucleus/dashboard",
+      "type": "application",
+      "language": "typescript",
+      "targets": {
+        "build": {
+          "command": "npm run build",
+          "outputs": ["nucleus/dashboard/dist", "nucleus/dashboard/server"]
+        },
+        "test": {
+          "command": "npm run test",
+          "outputs": []
+        },
+        "lint": {
+          "command": "npm run lint",
+          "outputs": []
+        },
+        "dev": {
+          "command": "npm run dev",
+          "outputs": []
+        }
+      },
+      "dependencies": ["nucleus/ark", "nucleus/specs"],
+      "inputs": ["nucleus/dashboard/src/**/*", "nucleus/dashboard/package.json", "nucleus/dashboard/tsconfig.json"],
+      "tags": ["type:frontend", "scope:nucleus", "ring:2"]
+    },
+
+    "nucleus/tools": {
+      "id": "tools",
+      "root": "nucleus/tools",
+      "type": "library",
+      "language": "python",
+      "targets": {
+        "test": {
+          "command": "python3 -m pytest nucleus/tools/tests/ -q",
+          "outputs": []
+        },
+        "lint": {
+          "command": "ruff check nucleus/tools/",
+          "outputs": []
+        }
+      },
+      "dependencies": ["nucleus/specs", "nucleus/ark"],
+      "inputs": ["nucleus/tools/**/*.py"],
+      "tags": ["type:backend", "scope:nucleus", "ring:1"]
+    },
+
+    "nucleus/ark": {
+      "id": "ark",
+      "root": "nucleus/ark",
+      "type": "library",
+      "language": "python",
+      "targets": {
+        "test": {
+          "command": "python3 -m pytest nucleus/ark/ -q",
+          "outputs": []
+        }
+      },
+      "dependencies": ["nucleus/specs"],
+      "inputs": ["nucleus/ark/**/*.py"],
+      "tags": ["type:core", "scope:nucleus", "ring:0"]
+    },
+
+    "nucleus/mcp": {
+      "id": "mcp",
+      "root": "nucleus/mcp",
+      "type": "library",
+      "language": "python",
+      "targets": {
+        "test": {
+          "command": "python3 -m pytest nucleus/mcp/ -q",
+          "outputs": []
+        }
+      },
+      "dependencies": ["nucleus/tools", "nucleus/ark"],
+      "inputs": ["nucleus/mcp/**/*.py"],
+      "tags": ["type:service", "scope:nucleus", "ring:1"]
+    },
+
+    "nucleus/secops": {
+      "id": "secops",
+      "root": "nucleus/secops",
+      "type": "library",
+      "language": "python",
+      "targets": {
+        "test": {
+          "command": "python3 -m pytest nucleus/secops/ -q",
+          "outputs": []
+        }
+      },
+      "dependencies": ["nucleus/ark"],
+      "inputs": ["nucleus/secops/**/*.py"],
+      "tags": ["type:security", "scope:nucleus", "ring:0"]
+    },
+
+    "nucleus/specs": {
+      "id": "specs",
+      "root": "nucleus/specs",
+      "type": "library",
+      "language": "json",
+      "targets": {
+        "validate": {
+          "command": "python3 -m jsonschema nucleus/specs/*.json",
+          "outputs": []
+        }
+      },
+      "dependencies": [],
+      "inputs": ["nucleus/specs/**/*.json", "nucleus/specs/**/*.md"],
+      "tags": ["type:config", "scope:nucleus", "ring:0"]
+    },
+
+    "nucleus/creative": {
+      "id": "creative",
+      "root": "nucleus/creative",
+      "type": "library",
+      "language": "python",
+      "targets": {
+        "test": {
+          "command": "python3 -m pytest nucleus/creative/ -q",
+          "outputs": []
+        }
+      },
+      "dependencies": ["nucleus/tools", "nucleus/ark"],
+      "inputs": ["nucleus/creative/**/*.py"],
+      "tags": ["type:domain", "scope:nucleus", "ring:2"]
+    },
+
+    "nucleus/auralux": {
+      "id": "auralux",
+      "root": "nucleus/auralux",
+      "type": "library",
+      "language": "typescript",
+      "targets": {
+        "build": {
+          "command": "npx tsc",
+          "outputs": ["nucleus/auralux/dist"]
+        },
+        "test": {
+          "command": "npm run test",
+          "outputs": []
+        }
+      },
+      "dependencies": ["nucleus/specs"],
+      "inputs": ["nucleus/auralux/**/*.ts"],
+      "tags": ["type:audio", "scope:nucleus", "ring:2"]
+    },
+
+    "membrane/graphiti": {
+      "id": "graphiti",
+      "root": "membrane/graphiti",
+      "type": "external",
+      "language": "python",
+      "targets": {},
+      "dependencies": [],
+      "inputs": ["membrane/graphiti/**/*"],
+      "tags": ["type:external", "scope:membrane", "subtree:true"]
+    },
+
+    "membrane/oss-skills": {
+      "id": "oss-skills",
+      "root": "membrane/oss-skills",
+      "type": "external",
+      "language": "mixed",
+      "targets": {},
+      "dependencies": [],
+      "inputs": ["membrane/oss-skills/**/*"],
+      "tags": ["type:external", "scope:membrane", "subtree:true"]
+    },
+
+    "meta_learner": {
+      "id": "meta_learner",
+      "root": "meta_learner",
+      "type": "library",
+      "language": "python",
+      "targets": {
+        "test": {
+          "command": "python3 -m pytest meta_learner/ -q",
+          "outputs": []
+        }
+      },
+      "dependencies": ["nucleus/tools", "nucleus/ark"],
+      "inputs": ["meta_learner/**/*.py"],
+      "tags": ["type:ml", "scope:root", "ring:1"]
+    }
+  },
+
+  "implicit_dependencies": {
+    "AGENTS.md": ["*"],
+    "nucleus/AGENTS.md": ["nucleus/*"],
+    ".pluribus/constitution.md": ["*"],
+    "nucleus/specs/semops.json": ["nucleus/tools", "nucleus/mcp"]
+  },
+
+  "tag_groups": {
+    "ring": {
+      "ring:0": "Kernel - Constitutional, immutable",
+      "ring:1": "Core - Operators, bus, coordination",
+      "ring:2": "Application - UI, reports, agents"
+    },
+    "scope": {
+      "scope:nucleus": "Core nucleus directory",
+      "scope:membrane": "External integrations",
+      "scope:root": "Root-level modules"
+    },
+    "type": {
+      "type:frontend": "Web UI applications",
+      "type:backend": "Python services",
+      "type:core": "Core libraries",
+      "type:external": "External subtrees/submodules"
+    }
+  }
+}
