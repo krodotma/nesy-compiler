@@ -110,6 +110,7 @@ Deliverables:
   - mapping to IRKG nodes/edges
   - explicit "next_actions"
 - **Commit rhythm:** after each major spec update (protocol + naming + docs).
+  - Iteration 01 placeholders created (awaiting subagent runs).
 
 ## Naming Conventions (new proposal)
 ### Branch Naming (dense semantic, entelexis‑aligned)

@@ -74,6 +74,7 @@
   - Attempted checkout to evo branch (iso_git checkout timed out; still on prior branch)
   - Added HOLON semantic naming spec and updated docs (UNIFORM, REPL header contract, lexicon, isomorphic git, agents)
   - Added official docs plan and subagent iteration log scaffold
+  - Created iteration 01 placeholders for Opus-A and Opus-B
 - Files created/modified:
   - /pluribus/nucleus/plans/holon_pluribus_irkg_header_migration_plan.md (created)
   - /pluribus/nucleus/specs/holon_semantic_naming_v1.md (created)
@@ -85,3 +86,5 @@
   - /pluribus/nucleus/docs/plans/holon_irkg_header_migration.md (created)
   - /pluribus/nucleus/plans/holon_irkg_header_migration/README.md (created)
   - /pluribus/nucleus/plans/holon_irkg_header_migration/OPUS_TASKS.md (created)
+  - /pluribus/nucleus/plans/holon_irkg_header_migration/opusA_iter01.md (created)
+  - /pluribus/nucleus/plans/holon_irkg_header_migration/opusB_iter01.md (created)
