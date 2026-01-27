@@ -1,0 +1,342 @@
+#!/bin/bash
+
+# Main wrapper script for coding agents
+# Usage:
+#   agent-wrapper [mode] [args...]
+#
+# Modes:
+#   claude (default) -> Runs standard Claude Code with default environment
+#   glm              -> Runs Claude Code configured for Z.ai (GLM 4.7)
+
+MODE="${1:-claude}"
+shift
+CHOOSE_MODE=0
+
+BUS_CLAUDE="/pluribus/nucleus/tools/bus-claude"
+BUS_GLM="/pluribus/nucleus/tools/bus-glm"
+
+KEYS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/agent-wrapper"
+KEYS_FILE="$KEYS_DIR/keys"
+LAST_KEY_FILE="$KEYS_DIR/last_key"
+SEED_KEYS=(
+  "fa84568feb1a4ab78b4134954fa19070.k2LY10Pz470DUhfM"
+  "adb0202c062d4f1693e01cd8c5c5e39e.lozBBoKVzF5OsNM1"
+)
+KEYS=()
+SELECTED_KEY=""
+
+declare -A KEY_LABELS=(
+  ["fa84568feb1a4ab78b4134954fa19070.k2LY10Pz470DUhfM"]="Mindlike"
+  ["adb0202c062d4f1693e01cd8c5c5e39e.lozBBoKVzF5OsNM1"]="Legacy"
+)
+
+mask_key() {
+  local key="$1"
+  local len="${#key}"
+  if (( len <= 8 )); then
+    printf '%s' "****"
+    return
+  fi
+  local head="${key:0:6}"
+  local tail="${key: -4}"
+  printf '%s...%s' "$head" "$tail"
+}
+
+describe_key() {
+  local key="$1"
+  local label="${KEY_LABELS[$key]-}"
+  if [[ -n "$label" ]]; then
+    printf '%s (%s)' "$label" "$(mask_key "$key")"
+    return
+  fi
+  printf '%s' "$(mask_key "$key")"
+}
+
+preferred_key() {
+  local key
+  for key in "${KEYS[@]}"; do
+    if [[ "${KEY_LABELS[$key]-}" == "Mindlike" ]]; then
+      printf '%s' "$key"
+      return 0
+    fi
+  done
+  return 1
+}
+
+ensure_keys_file() {
+  mkdir -p "$KEYS_DIR" 2>/dev/null || true
+  if [[ ! -f "$KEYS_FILE" ]]; then
+    umask 077
+    : > "$KEYS_FILE"
+  fi
+  chmod 600 "$KEYS_FILE" 2>/dev/null || true
+  if [[ ! -f "$LAST_KEY_FILE" ]]; then
+    umask 077
+    : > "$LAST_KEY_FILE"
+  fi
+  chmod 600 "$LAST_KEY_FILE" 2>/dev/null || true
+}
+
+load_keys() {
+  KEYS=()
+  if [[ -f "$KEYS_FILE" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      [[ "$line" == \#* ]] && continue
+      KEYS+=("$line")
+    done < "$KEYS_FILE"
+  fi
+}
+
+load_last_key() {
+  if [[ -f "$LAST_KEY_FILE" ]]; then
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      [[ "$line" == \#* ]] && continue
+      printf '%s' "$line"
+      return 0
+    done < "$LAST_KEY_FILE"
+  fi
+  return 1
+}
+
+save_last_key() {
+  local key="$1"
+  [[ -n "$key" ]] || return 0
+  printf '%s\n' "$key" > "$LAST_KEY_FILE"
+  chmod 600 "$LAST_KEY_FILE" 2>/dev/null || true
+}
+
+save_keys() {
+  local -A seen=()
+  local -a out=()
+  local key
+  for key in "$@"; do
+    [[ -n "$key" ]] || continue
+    if [[ -z "${seen[$key]+x}" ]]; then
+      out+=("$key")
+      seen[$key]=1
+    fi
+  done
+  printf '%s\n' "${out[@]}" > "$KEYS_FILE"
+  chmod 600 "$KEYS_FILE" 2>/dev/null || true
+  KEYS=("${out[@]}")
+}
+
+seed_keys() {
+  local -a seeded=()
+  local key
+  for key in "$@"; do
+    [[ -n "$key" ]] || continue
+    seeded+=("$key")
+  done
+  if [[ "${#seeded[@]}" -eq 0 ]]; then
+    return 0
+  fi
+  local -a merged=()
+  local -A seen=()
+  for key in "${seeded[@]}" "${KEYS[@]}"; do
+    [[ -n "$key" ]] || continue
+    if [[ -z "${seen[$key]+x}" ]]; then
+      merged+=("$key")
+      seen[$key]=1
+    fi
+  done
+  KEYS=("${merged[@]}")
+}
+
+add_key_prompt() {
+  local new_key=""
+  read -r -s -p "Enter new key (input hidden): " new_key
+  printf '\n'
+  if [[ -z "$new_key" ]]; then
+    echo "No key entered."
+    return 1
+  fi
+  KEYS+=("$new_key")
+  save_keys "${KEYS[@]}"
+  echo "Added key ($(describe_key "$new_key"))."
+  SELECTED_KEY="$new_key"
+  return 0
+}
+
+delete_key_prompt() {
+  if [[ "${#KEYS[@]}" -eq 0 ]]; then
+    echo "No stored keys to delete."
+    return 0
+  fi
+  echo "Stored keys:"
+  local i=1
+  local key
+  for key in "${KEYS[@]}"; do
+    printf '  %d) %s\n' "$i" "$(mask_key "$key")"
+    i=$((i+1))
+  done
+  read -r -p "Delete which number (blank to cancel): " del
+  [[ -z "$del" ]] && return 0
+  if ! [[ "$del" =~ ^[0-9]+$ ]]; then
+    echo "Invalid selection."
+    return 0
+  fi
+  if (( del < 1 || del > ${#KEYS[@]} )); then
+    echo "Invalid selection."
+    return 0
+  fi
+  unset 'KEYS[del-1]'
+  KEYS=("${KEYS[@]}")
+  save_keys "${KEYS[@]}"
+  echo "Deleted key."
+  return 0
+}
+
+choose_key_interactive() {
+  local current="${MINDLIKE_API_KEY:-${GLM_API_KEY:-}}"
+  local last_key=""
+  last_key="$(load_last_key 2>/dev/null || true)"
+  while true; do
+    echo "Select MINDLIKE_API_KEY:"
+    local -A map=()
+    local idx=1
+    if [[ -n "$last_key" ]]; then
+      printf '  %d) Use last selected key (%s)\n' "$idx" "$(describe_key "$last_key")"
+      map[$idx]="$last_key"
+      idx=$((idx+1))
+    fi
+    if [[ -n "$current" ]]; then
+      printf '  %d) Use current env key (%s)\n' "$idx" "$(describe_key "$current")"
+      map[$idx]="__CURRENT__"
+      idx=$((idx+1))
+    fi
+    local i=1
+    local key
+    for key in "${KEYS[@]}"; do
+      printf '  %d) Use stored key %d (%s)\n' "$idx" "$i" "$(describe_key "$key")"
+      map[$idx]="$key"
+      idx=$((idx+1))
+      i=$((i+1))
+    done
+    echo "  a) Add new key"
+    echo "  d) Delete stored key"
+    echo "  q) Quit"
+    read -r -p "Choice (Enter for last): " choice
+    if [[ -z "$choice" && -n "$last_key" ]]; then
+      SELECTED_KEY="$last_key"
+      return 0
+    fi
+    case "$choice" in
+      q|Q)
+        return 1
+        ;;
+      a|A)
+        if add_key_prompt; then
+          return 0
+        fi
+        ;;
+      d|D)
+        delete_key_prompt
+        ;;
+      *)
+        if [[ -n "${map[$choice]-}" ]]; then
+          if [[ "${map[$choice]}" == "__CURRENT__" ]]; then
+            SELECTED_KEY="$current"
+          else
+            SELECTED_KEY="${map[$choice]}"
+          fi
+          return 0
+        fi
+        echo "Invalid choice."
+        ;;
+    esac
+  done
+}
+
+choose_key_noninteractive() {
+  if [[ "$CHOOSE_MODE" -eq 1 ]]; then
+    local last_key=""
+    last_key="$(load_last_key 2>/dev/null || true)"
+    if [[ -n "$last_key" ]]; then
+      SELECTED_KEY="$last_key"
+      return 0
+    fi
+  fi
+  local preferred=""
+  preferred=$(preferred_key) || preferred=""
+  if [[ -n "$preferred" ]]; then
+    SELECTED_KEY="$preferred"
+    return 0
+  fi
+  if [[ -n "${MINDLIKE_API_KEY:-}" ]]; then
+    SELECTED_KEY="$MINDLIKE_API_KEY"
+    return 0
+  fi
+  if [[ -n "${GLM_API_KEY:-}" ]]; then
+    SELECTED_KEY="$GLM_API_KEY"
+    return 0
+  fi
+  if [[ "${#KEYS[@]}" -gt 0 ]]; then
+    SELECTED_KEY="${KEYS[0]}"
+    return 0
+  fi
+  return 1
+}
+
+select_key() {
+  ensure_keys_file
+  load_keys
+  if [[ "${PLURIBUS_DISABLE_SEED_KEYS:-0}" != "1" ]]; then
+    seed_keys "${SEED_KEYS[@]}"
+    save_keys "${KEYS[@]}"
+  fi
+  SELECTED_KEY=""
+  if [[ "$CHOOSE_MODE" -eq 1 ]]; then
+    if [[ -t 0 && -t 1 ]]; then
+      choose_key_interactive || return 1
+    else
+      choose_key_noninteractive || return 1
+    fi
+  else
+    choose_key_noninteractive || return 1
+  fi
+  save_last_key "$SELECTED_KEY"
+  [[ -n "$SELECTED_KEY" ]]
+}
+
+if [[ "$MODE" == "glm" ]]; then
+  glm_args=()
+  for arg in "$@"; do
+    if [[ "$arg" == "--choose" ]]; then
+      CHOOSE_MODE=1
+      continue
+    fi
+    glm_args+=("$arg")
+  done
+  if ! select_key; then
+    echo "No key available for glm; add one with 'agent-wrapper glm --choose'." >&2
+    exit 2
+  fi
+  export MINDLIKE_API_KEY="$SELECTED_KEY"
+  export GLM_API_KEY="$SELECTED_KEY"
+  if [[ "$CHOOSE_MODE" -eq 1 ]]; then
+    export MINDLIKE_KEY_MODE="choose"
+  else
+    export MINDLIKE_KEY_MODE="default"
+  fi
+  if [[ -x "$BUS_GLM" ]]; then
+    exec "$BUS_GLM" "${glm_args[@]}"
+  fi
+  echo "bus-glm not found; cannot launch glm" >&2
+  exit 127
+elif [[ "$MODE" == "claude" ]]; then
+  # Standard run - prefer PLURIBUS wrapper to enforce header + env
+  if [[ -x "$BUS_CLAUDE" ]]; then
+    exec "$BUS_CLAUDE" "$@"
+  fi
+  exec claude "$@"
+else
+  # Fallback provided command as arguments to default claude
+  # e.g. "agent-wrapper -p prompt" defaults to claude
+  if [[ -x "$BUS_CLAUDE" ]]; then
+    exec "$BUS_CLAUDE" "$MODE" "$@"
+  fi
+  exec claude "$MODE" "$@"
+fi
