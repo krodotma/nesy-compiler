@@ -1309,9 +1309,27 @@ async function cmdCheckout(dir, name) {
     console.log('Usage: node iso_git.mjs checkout <directory> <branch>')
     process.exit(2)
   }
-  await git.checkout({ fs, dir, ref: name })
+  if (process.env.PLURIBUS_FAST_CHECKOUT === '1') {
+    const result = spawnSync('git', ['checkout', name], {
+      cwd: dir,
+      stdio: ['inherit', 'pipe', 'pipe'],
+      encoding: 'utf-8',
+      env: { ...process.env },
+    })
+    if (result.status !== 0) {
+      console.error('Checkout failed:', result.stderr || result.stdout)
+      emitBusEvent('git.checkout.failed', {
+        dir,
+        ref: name,
+        error: result.stderr || result.stdout,
+      })
+      process.exit(result.status || 1)
+    }
+  } else {
+    await git.checkout({ fs, dir, ref: name })
+  }
   console.log(`Checked out ${name}`)
-  emitBusEvent('git.checkout', { dir, ref: name })
+  emitBusEvent('git.checkout', { dir, ref: name, fast: process.env.PLURIBUS_FAST_CHECKOUT === '1' })
 }
 
 // --- Evolutionary Commands (CMP/VGT/HGT) ---
