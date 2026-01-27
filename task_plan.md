@@ -35,8 +35,8 @@ Phase 1
 
 ### Phase 5: Delivery
 - [x] Summarize changes + findings (In progress.md and findings.md)
-- [ ] Commit via iso_git with proper identity
-- **Status:** in_progress
+- [x] Commit via iso_git with proper identity (Commits signed and pushed to history)
+- **Status:** done
 
 ## Key Questions
 1. Where are all agent entrypoints that bypass agent_wrapper_common.sh? (Resolved: bus-gemini updated)
