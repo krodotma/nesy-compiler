@@ -26,9 +26,9 @@
 ### iso_git.mjs HEAD Resolution Failure
 - **Impact:** Critical (blocks iso_git commits)
 - **Observation:** `node nucleus/tools/iso_git.mjs commit-paths ...` fails with `NotFoundError: Could not find HEAD`.
-- **Diagnosis:** Native `git` works fine. `.git/HEAD` and refs appear correct. `isomorphic-git` library failing to resolve HEAD. Likely environment or pathing issue in the wrapper.
-- **Workaround:** Used native `git commit` for critical updates.
-- **Status:** Open
+- **Diagnosis:** Incorrect CLI usage. The script expects `dir` as the second argument (or first after command). Usage: `node iso_git.mjs commit-paths . <msg> <paths>`.
+- **Workaround:** Pass `.` as the directory argument.
+- **Status:** Closed
 
 ## Log Hygiene
 - **Observation:** `du -sm /pluribus` hangs in D-state.
