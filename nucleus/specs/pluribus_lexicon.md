@@ -321,6 +321,13 @@ semantic_agent_id :=
 - **Purpose:** embed intent, scope, and lineage into identifiers for IRKG parsing.
 - **Spec:** `nucleus/specs/holon_semantic_naming_v1.md`
 
+**Dot Normalization Rule:** Since `.` is the field delimiter, any field value containing
+dots (e.g., model versions `4.5`, ark tags `0.5`) MUST normalize dots to hyphens:
+- `claude-opus-4.5` -> `claude-opus-4-5`
+- `arks0.5` -> `arks0-5`
+
+See `holon_semantic_naming_v1.md` section 5.1 for full rules and examples.
+
 ---
 
 ## 5. Provider and Session Grammar

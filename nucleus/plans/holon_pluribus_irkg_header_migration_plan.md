@@ -1,7 +1,8 @@
 # HOLON/PLURIBUS Header + IRKG Event Store Migration Plan
 # Date: 2026-01-26
 # Owner: codex (planner/orchestrator)
-# Target Branch: evo/20260126-holon.irkg.header.plan.orch.codex
+# Target Branch: evo/20260126-holon.protocol.migrate.header.irkg.p0.codex.arkm01
+# Conformance: validated against semantic_branch grammar (pluribus_lexicon.md 4.4)
 
 ## Goal
 Retire NDJSON header scans and migrate UNIFORM/PLURIBUS header metrics to the IRKG/event store,
@@ -128,7 +129,9 @@ Fields:
 - `ark`: `arkc<cmp>` or short ARK tag (e.g., arks0.5)
 
 Example:
-`evo/20260126-holon.observability.plan.header.irkg.p0.codex.arkc05`
+`evo/20260126-holon.observability.plan.header.irkg.p0.codex.arkc0-5`
+
+**Note:** ARK/CMP version dots normalized to hyphens (`0.5` -> `0-5`) per rule 5.1.
 
 ### Agent Naming (semantically dense identifiers)
 Format:
@@ -145,7 +148,9 @@ Fields:
 - `variant`: ultrathink|fast|safe|audit
 
 Example:
-`sagent.planner.holon.irkg.header.dialogos.r0.claude-opus-4.5.ultrathink`
+`sagent.planner.holon.header.dialogos.r0.claude-opus-4-5.ultrathink`
+
+**Note:** Model version dots normalized to hyphens (`4.5` -> `4-5`) per rule 5.1.
 
 ## Evidence & Artifacts
 - This plan file
@@ -157,7 +162,10 @@ Example:
   - refs: /pluribus/nucleus/specs/UNIFORM.md:10-18, /pluribus/nucleus/specs/repl_header_contract_v1.md:6-15
 - **Bus Derivation Ambiguity**: UNIFORM derives `bus:+N` from local bus topic scan; isomorphic_git_reference treats `events.ndjson` as bus events with no canonical derivation note.
   - refs: /pluribus/nucleus/specs/UNIFORM.md:201-219, /pluribus/nucleus/docs/isomorphic_git_reference.md:1-33
-- **Naming Grammar Alignment**: semantic_branch / semantic_agent_id exist but agent IDs are dot-separated model/variant with no explicit mapping rules.
-  - refs: /pluribus/nucleus/specs/holon_semantic_naming_v1.md:1-20, /pluribus/nucleus/specs/pluribus_lexicon.md:311-319, /pluribus/docs/agents/index.md:9-20
-- **Plan Target Branch Conformance**: migration plan target branch not explicitly validated against semantic_branch grammar.
-  - refs: /pluribus/nucleus/plans/holon_pluribus_irkg_header_migration_plan.md:1-5, /pluribus/nucleus/specs/pluribus_lexicon.md:311-319
+- **Naming Grammar Alignment**: RESOLVED. Added dot-normalization rule 5.1 to holon_semantic_naming_v1.md.
+  Model/ARK version dots must be replaced with hyphens (e.g., `4.5` -> `4-5`).
+  - refs: /pluribus/nucleus/specs/holon_semantic_naming_v1.md:83-120
+- **Plan Target Branch Conformance**: RESOLVED. Target branch updated to conform to semantic_branch grammar.
+  Old: `evo/20260126-holon.irkg.header.plan.orch.codex` (6 fields, wrong order)
+  New: `evo/20260126-holon.protocol.migrate.header.irkg.p0.codex.arkm01` (8 fields, correct order)
+  - refs: /pluribus/nucleus/plans/holon_pluribus_irkg_header_migration_plan.md:4-5

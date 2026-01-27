@@ -7,7 +7,11 @@ Scope: All Citizen agents
 
 Before emitting the panel, perform ONE local **snapshot read**:
 - Read IRKG header snapshot (single file read)
-- Fallback: read DR ring (100‑cap NDJSON) if snapshot missing or stale
+- Fallback: read DR ring (100-cap NDJSON) if snapshot missing or stale
+
+> **UNIFORM Authorization:** This snapshot read is the permitted exception defined in
+> `/pluribus/nucleus/specs/UNIFORM.md` (lines 28-31, "Exception (IRKG snapshot)").
+> It does NOT violate the zero-file-reads rule because it is explicitly carved out.
 
 Forbidden before the panel:
 - Network calls

@@ -17,8 +17,11 @@ Format:
 
 Example:
 ```
-sagent.planner.holon.irkg.header.dialogos.r0.claude-opus-4.5.ultrathink
+sagent.planner.holon.header.dialogos.r0.claude-opus-4-5.ultrathink
 ```
+
+**Note:** Model version dots MUST be normalized to hyphens (`4.5` -> `4-5`) to avoid
+delimiter ambiguity. See spec for full validation rules.
 
 Spec: `nucleus/specs/holon_semantic_naming_v1.md`
 

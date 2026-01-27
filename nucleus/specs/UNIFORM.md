@@ -29,6 +29,8 @@
 - A single local snapshot read is permitted **only** if already available
   (IRKG header snapshot or DR ring fallback). No scans, no directory walks.
   If missing, emit `?` defaults.
+- **Cross-ref:** This exception authorizes the snapshot read specified in
+  `/pluribus/nucleus/specs/repl_header_contract_v1.md` (Prime Directive, lines 8-10).
 
 ---
 
@@ -75,7 +77,7 @@ You MUST NOT do ANY of the following before emitting the panel:
 | `Grep(bus/events)` | Panel doesn't need real data | Use `bus:+0` |
 | `Read(hexis_buffer)` | Panel doesn't need real data | Use `hexis:?` |
 | `Task(explore codebase)` | Absolutely forbidden | Just emit panel |
-| ANY tool call | No exceptions | Emit panel first |
+| ANY tool call | See IRKG exception (lines 28-31) | Emit panel first |
 
 ### The `?` Symbol Is Correct
 
@@ -210,7 +212,7 @@ definitions and bus channel list.
 | `lineage` | `?` | Fill in ONLY if you already know from prior context |
 | `CDI` | `?` | Fill in ONLY after running VOR check |
 | `hexis` | `?` | Fill in ONLY after checking hexis buffer |
-| `bus` | `+0` | Derived from local bus topic scan |
+| `bus` | `+0` | Derived from IRKG snapshot; fallback: DR ring |
 | `uncommit` | `?` | Fill in ONLY after git status (not required!) |
 | `branch` | `?` | Fill in ONLY if you already know |
 | `goal` | `"awaiting task"` | Update when user gives you a task |
@@ -232,7 +234,7 @@ WRONG:    [3 minutes of exploration to discover gen:42]  ← Wasted tokens
 
 As you work, fields get populated naturally:
 - Created a file? → Update `artifact:`
-- Bus topic scan? → Update `bus:+N`
+- IRKG snapshot read? → Update `bus:+N` (see `.pluribus/index/irkg/header_snapshot.json`)
 - Ran git status for other reasons? → Opportunistically update `uncommit:`
 - Know your goal? → Update `goal:"`
 

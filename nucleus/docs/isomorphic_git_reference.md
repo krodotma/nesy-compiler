@@ -111,6 +111,13 @@ node nucleus/tools/iso_git.mjs evo lineage <directory>
 
 All state-changing operations emit events to the Pluribus bus:
 
+> **Data Layer Clarification:**
+> - `$PLURIBUS_BUS_DIR/events.ndjson` - Operational bus (append-only audit trail)
+> - `.pluribus/index/irkg/header_snapshot.json` - Derived metrics for UNIFORM panel display (updated every 5 min by `header_snapshot_updater.py`)
+> - `.pluribus/dr/header_events.ndjson` - Disaster recovery ring (100-cap circular buffer for catastrophic recovery)
+>
+> Agents reading bus counts for the UNIFORM header should prefer the IRKG snapshot for efficiency; the DR ring serves as a fallback when the snapshot is stale or unavailable. See `nucleus/specs/UNIFORM.md` field defaults table.
+
 | Command | Event Topic | Event Kind |
 |---------|-------------|------------|
 | `init` | `git.init` | `artifact` |
