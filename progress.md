@@ -185,7 +185,10 @@
   - Created `nucleus/tools/ARK_PORT_AUDIT.md`.
   - Identified initial port candidates (Bus, Git, Dispatcher).
   - Categorized patterns (Daemons, Operators, ML/Keep).
+  - Initialized `ark` Monorepo (Step 1).
+  - Created workspaces: `ark-git`, `ark-bus`, `ark-spine`, `ark-cli`, `ark-api`.
 - Files modified:
   - `nucleus/tools/ARK_PORT_AUDIT.md` (Created)
+  - `ark/package.json` (Created)
   - `progress.md` (Updated)
 
