@@ -157,3 +157,11 @@
   - /pluribus/nucleus/tools/bus-gemini (updated)
   - /pluribus/task_plan.md (updated)
   - /pluribus/progress.md (updated)
+
+### Phase: Verification
+- **Status:** in_progress
+- Actions taken:
+  - Validated agent header output against `repl_header_contract_v1.md` (Matches Tablet style).
+  - Verified `du -sm /pluribus` still times out (confirmed finding).
+  - Testing `iso_git` with correct `commit-paths` syntax: `node ... commit-paths . <msg> <path>`.
+
