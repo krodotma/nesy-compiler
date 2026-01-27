@@ -165,13 +165,16 @@
   - Verified `du -sm /pluribus` still times out (confirmed finding).
   - Testing `iso_git` with correct `commit-paths` syntax: `node ... commit-paths . <msg> <path>`.
 
-### Phase: Sequester Verification
+### Phase: Spec Normalization & Whitepaper
 - **Status:** completed
 - Actions taken:
-  - Verified `iso_git.mjs clone` functionality.
-  - Created sequestered clone: `/tmp/paip-gemini` (Lineage: 5da3c934).
-  - Verified `agent_header.py` in the sequestered clone (UNIFORM v2.1 validated).
-  - This confirms readiness for Phase 1 of `pluribus-multiagent-plan.md`.
+  - Scanned for "Antigravity" terms in `nucleus/specs` (Legacy references found in archived/historical docs; `SAFETY.md` identified as active).
+  - Normalized `nucleus/SAFETY.md` from "Antigravity Safety Rails" to "Pluribus Safety Protocol".
+  - Verified `AGENTS.md` and `nucleus/AGENTS.md` are PLURIBUS v1 compliant.
+  - Drafted `nucleus/specs/PLURIBUS_PROTOCOL_V1_WHITEPAPER.md` (Skeleton created).
+  - Committed changes via `iso_git` with PQC signatures.
 - Files modified:
-  - /pluribus/progress.md (updated)
+  - `nucleus/SAFETY.md` (normalized)
+  - `nucleus/specs/PLURIBUS_PROTOCOL_V1_WHITEPAPER.md` (created)
+  - `progress.md` (updated)
 
