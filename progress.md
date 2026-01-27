@@ -187,8 +187,13 @@
   - Categorized patterns (Daemons, Operators, ML/Keep).
   - Initialized `ark` Monorepo (Step 1).
   - Created workspaces: `ark-git`, `ark-bus`, `ark-spine`, `ark-cli`, `ark-api`.
+  - Defined the "Sextet" Bounded Contexts (Step 4).
+  - Created additional packages: `ark-graph`, `ark-storage`, `ark-edge`, `ark-nucleus`.
+  - Mapped `iso_git` capabilities to `ark-git` (Step 3).
 - Files modified:
   - `nucleus/tools/ARK_PORT_AUDIT.md` (Created)
   - `ark/package.json` (Created)
+  - `ark/SEXTET.md` (Created)
+  - `ark/packages/ark-git/CAPABILITIES.md` (Created)
   - `progress.md` (Updated)
 
