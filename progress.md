@@ -165,16 +165,16 @@
   - Verified `du -sm /pluribus` still times out (confirmed finding).
   - Testing `iso_git` with correct `commit-paths` syntax: `node ... commit-paths . <msg> <path>`.
 
-### Phase: Spec Normalization & Whitepaper
+### Phase: Tooling & ISO Integration
 - **Status:** completed
 - Actions taken:
-  - Scanned for "Antigravity" terms in `nucleus/specs` (Legacy references found in archived/historical docs; `SAFETY.md` identified as active).
-  - Normalized `nucleus/SAFETY.md` from "Antigravity Safety Rails" to "Pluribus Safety Protocol".
-  - Verified `AGENTS.md` and `nucleus/AGENTS.md` are PLURIBUS v1 compliant.
-  - Drafted `nucleus/specs/PLURIBUS_PROTOCOL_V1_WHITEPAPER.md` (Skeleton created).
-  - Committed changes via `iso_git` with PQC signatures.
+  - Enforced strict PQC signing in `iso_git.mjs` (Replaced best-effort `try-catch` with strict error throwing).
+  - Created `iso_wrapper.sh` to shim `git` commands to `iso_git.mjs`.
+  - Updated `agent_bus.py` to include `protocol: "v1"` in all event payloads.
+  - Verified `agent_header.py` normalization (implicit in every turn).
 - Files modified:
-  - `nucleus/SAFETY.md` (normalized)
-  - `nucleus/specs/PLURIBUS_PROTOCOL_V1_WHITEPAPER.md` (created)
+  - `nucleus/tools/iso_git.mjs` (Strict PQC)
+  - `nucleus/tools/iso_wrapper.sh` (New)
+  - `nucleus/tools/agent_bus.py` (v1 protocol field)
   - `progress.md` (updated)
 
