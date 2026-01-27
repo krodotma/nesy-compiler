@@ -193,6 +193,9 @@
   - Defined `ark-spine` schema (LMDB) (Step 6).
   - Designed `ark-storage` (MinIO) binding layer (Step 7).
   - Designed `ark-graph` (FalkorDB) connector (Step 8).
+  - Designed `ark-api` (Fastify) architecture (Step 9).
+  - Designed `ark-edge` (uWebSockets.js) architecture (Step 10).
+  - Defined `ark-cli` structure and PLI schema (Steps 5 & 13).
 - Files modified:
   - `nucleus/tools/ARK_PORT_AUDIT.md` (Created)
   - `ark/package.json` (Created)
@@ -201,5 +204,8 @@
   - `ark/packages/ark-spine/SCHEMA.md` (Created)
   - `ark/packages/ark-storage/DESIGN.md` (Created)
   - `ark/packages/ark-graph/DESIGN.md` (Created)
+  - `ark/packages/ark-api/DESIGN.md` (Created)
+  - `ark/packages/ark-edge/DESIGN.md` (Created)
+  - `ark/packages/ark-cli/DESIGN.md` (Created)
   - `progress.md` (Updated)
 
