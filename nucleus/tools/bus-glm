@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+. "${SCRIPT_DIR}/agent_wrapper_common.sh" "glm"
+
+choose_key=0
+args=()
+for arg in "$@"; do
+  if [ "$arg" = "--choose" ]; then
+    choose_key=1
+    continue
+  fi
+  args+=("$arg")
+done
+
+export PLURIBUS_PROVIDER="${PLURIBUS_PROVIDER:-glm}"
+export PLURIBUS_MODEL_ALIAS="${PLURIBUS_MODEL_ALIAS:-glm}"
+
+KEYS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/agent-wrapper"
+KEYS_FILE="$KEYS_DIR/keys"
+
+select_default_key() {
+  if [ -f "$KEYS_FILE" ]; then
+    while IFS= read -r line; do
+      [ -n "$line" ] || continue
+      case "$line" in
+        \#*) continue ;;
+      esac
+      printf '%s' "$line"
+      return 0
+    done < "$KEYS_FILE"
+  fi
+  return 1
+}
+
+if [ -z "${MINDLIKE_API_KEY:-}" ] && [ -z "${GLM_API_KEY:-}" ]; then
+  default_key="$(select_default_key || true)"
+  if [ -n "$default_key" ]; then
+    export MINDLIKE_API_KEY="$default_key"
+    export GLM_API_KEY="$default_key"
+  fi
+  unset default_key
+fi
+
+if [ -z "${MINDLIKE_API_KEY:-}" ] && [ -n "${GLM_API_KEY:-}" ]; then
+  export MINDLIKE_API_KEY="$GLM_API_KEY"
+fi
+
+if [ -n "${MINDLIKE_API_KEY:-}" ] && [ -z "${GLM_API_KEY:-}" ]; then
+  export GLM_API_KEY="$MINDLIKE_API_KEY"
+fi
+
+if [ -n "${MINDLIKE_API_KEY:-}" ]; then
+  export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-$MINDLIKE_API_KEY}"
+  if [ -n "${MINDLIKE_BASE_URL:-}" ]; then
+    export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-$MINDLIKE_BASE_URL}"
+    export ANTHROPIC_API_URL="${ANTHROPIC_API_URL:-$MINDLIKE_BASE_URL}"
+  fi
+fi
+
+if [ "$choose_key" -eq 1 ]; then
+  export MINDLIKE_KEY_MODE="${MINDLIKE_KEY_MODE:-choose}"
+elif [ -n "${MINDLIKE_API_KEY:-}" ]; then
+  export MINDLIKE_KEY_MODE="${MINDLIKE_KEY_MODE:-default}"
+fi
+
+glm_bin="/usr/bin/glm"
+if [ ! -x "$glm_bin" ]; then
+  glm_bin="$(command -v glm || true)"
+fi
+glm_py="${SCRIPT_DIR}/glm_cli.py"
+if [ -z "$glm_bin" ] && [ -x "$glm_py" ]; then
+  glm_bin="$glm_py"
+fi
+
+if [ -n "$glm_bin" ]; then
+  if [ "$choose_key" -eq 1 ]; then
+    exec "$glm_bin" --choose "${args[@]}"
+  fi
+  if [ -z "${MINDLIKE_API_KEY:-}" ]; then
+    echo "MINDLIKE_API_KEY not set; add /pluribus/.pluribus/mindlike_env.conf or pass --choose" >&2
+    exit 2
+  fi
+  exec "$glm_bin" "${args[@]}"
+fi
+
+if command -v claude >/dev/null 2>&1; then
+  CLAUDE_GLM_CONFIG_DIR="${PLURIBUS_CLAUDE_GLM_CONFIG_DIR:-/pluribus/.pluribus/agent_homes/claude_glm}"
+  mkdir -p "$CLAUDE_GLM_CONFIG_DIR" 2>/dev/null || true
+  export CLAUDE_CONFIG_DIR="$CLAUDE_GLM_CONFIG_DIR"
+  unset ANTHROPIC_AUTH_TOKEN CLAUDE_OAUTH_TOKEN
+  if [ -z "${MINDLIKE_API_KEY:-}" ]; then
+    echo "MINDLIKE_API_KEY not set; add /pluribus/.pluribus/mindlike_env.conf or pass --choose" >&2
+    exit 2
+  fi
+  exec claude "${args[@]}"
+fi
+
+echo "glm wrapper requires /usr/bin/glm or claude CLI in PATH" >&2
+exit 127
