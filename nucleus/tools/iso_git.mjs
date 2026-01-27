@@ -454,14 +454,15 @@ async function cmdCommit(dir, message, authorName, authorEmail, opts = {}) {
     currentBranch = await git.currentBranch({ fs, dir }) || 'main'
   } catch {}
 
-  // --- PQC Signing ---
+  // --- PQC Signing (STRICT MODE) ---
   let finalMessage = message
   try {
     finalMessage = signMessage(message)
-    // Only log if we actually signed it (signMessage throws if no keys)
     console.log('[PQC] Commit signed.')
   } catch (err) {
-    // Best-effort signing: proceed unsigned if no keys found
+    console.error('[PQC] CRITICAL: Signing failed. Strict mode enabled.')
+    console.error(err.message)
+    throw new Error('PQC Signing Required: Commit rejected.')
   }
 
   const sha = await git.commit({

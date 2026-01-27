@@ -936,6 +936,7 @@ def emit_event(
         "kind": kind,
         "level": level,
         "actor": actor,
+        "protocol": "v1",
         "host": _get_cached_hostname(),  # Performance: cached
         "pid": _get_cached_pid(),  # Performance: cached
         "data": data,
