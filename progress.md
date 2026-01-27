@@ -109,3 +109,51 @@
   - /pluribus/nucleus/plans/holon_irkg_header_migration/OPUS_TASKS.md (updated)
   - /pluribus/nucleus/plans/holon_irkg_header_migration/README.md (updated)
   - /pluribus/nucleus/plans/holon_pluribus_irkg_header_migration_plan.md (updated)
+
+## Session: 2026-01-27 (continued)
+
+### Phase: System Health / log_hygiene Process Flooding Fix
+- **Status:** completed
+- Actions taken:
+  - Investigated "pbhygiene flooding" - found it was actually log_hygiene.py
+  - Discovered 35+ processes stuck in D-state (uninterruptible I/O)
+  - Root cause: cron entry `*/15 * * * *` with no singleton lock
+  - Processes getting stuck on `rglob()` hitting problematic fs paths
+  - Fixed /etc/crontab: added `flock -n` (singleton) and `timeout 300` (5 min cap)
+  - Killed all stuck processes with `pkill -9`
+- Files modified:
+  - /etc/crontab (added flock and timeout to log_hygiene cron entry)
+
+### Phase: IRKG Header Snapshot Infrastructure
+- **Status:** completed
+- Actions taken:
+  - Created IRKG index directory: /pluribus/.pluribus/index/irkg/
+  - Created DR ring directory: /pluribus/.pluribus/dr/
+  - Created header_snapshot_updater.py to generate IRKG snapshots from bus events
+  - Added cron job for snapshot updates every 5 minutes
+  - Fixed snapshot key mapping to match agent_header.py expectations
+  - Verified agent_header.py now reads from snapshot (shows real metrics)
+- Files created/modified:
+  - /pluribus/.pluribus/index/irkg/header_snapshot.json (created)
+  - /pluribus/.pluribus/dr/header_events.ndjson (created - 100-cap DR ring)
+  - /pluribus/nucleus/tools/header_snapshot_updater.py (created)
+  - /etc/crontab (added header_snapshot cron entry)
+
+## Session: 2026-01-27 (Gemini CLI Fix & Normalization)
+
+### Phase: CLI Tooling & Normalization
+- **Status:** completed
+- Actions taken:
+  - Investigated `gemini` CLI version mismatch (0.21.3 vs 0.25.2).
+  - Identified root cause: `bus-gemini` wrapper script hardcoded to `/usr/bin/gemini` (symlink to old version).
+  - Fixed `bus-gemini` to prioritize `/root/.local/node20/bin/gemini` (npm updated version).
+  - Verified `gemini --version` now reports 0.25.2.
+  - Verified `iso_pqc.mjs` exists and `iso_git` status check passes (keys present).
+  - Restarted `log_hygiene_watch.sh` which was not running.
+  - Verified 50-step plan and whitepaper task outline exist (`pluribus-multiagent-plan.md` and `pluribus-spec-protocol-whitepaper-plan.md`).
+  - Confirmed `agent_header.py` is normalized (UNIFORM v2.1).
+  - Updated `task_plan.md` to reflect progress.
+- Files modified:
+  - /pluribus/nucleus/tools/bus-gemini (updated)
+  - /pluribus/task_plan.md (updated)
+  - /pluribus/progress.md (updated)
