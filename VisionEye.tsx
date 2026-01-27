@@ -77,7 +77,7 @@ export const VisionEye = component$(() => {
                 meta: { count: ringBuffer.value.length }
             };
 
-            const res = await fetch('http://localhost:8080/v1/eyes/ingest', {
+            const res = await fetch('/api/vision/ingest', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

@@ -370,6 +370,28 @@ async function listWorkdirFiles(dir) {
   return out.sort()
 }
 
+async function listWorkdirFilesUnder(dir, relRoot) {
+  const out = []
+  const root = relRoot ? relRoot.split(path.sep).join('/') : ''
+
+  async function walk(rel) {
+    const abs = path.join(dir, rel)
+    const entries = await fs.promises.readdir(abs, { withFileTypes: true })
+    for (const ent of entries) {
+      const nextRel = rel ? path.join(rel, ent.name) : ent.name
+      if (isSkippablePath(nextRel)) continue
+      if (ent.isDirectory()) {
+        await walk(nextRel)
+      } else if (ent.isFile()) {
+        out.push(nextRel.split(path.sep).join('/'))
+      }
+    }
+  }
+
+  await walk(root)
+  return out
+}
+
 function parseGitIndex(indexPath) {
   // Minimal reader: version 2/3/4, stage=0 entries only.
   // Format: https://git-scm.com/docs/index-format
@@ -541,11 +563,10 @@ async function cmdCommitPaths(dir, message, paths = [], authorName, authorEmail,
   }
 
   if (dirPaths.length) {
-    const workFiles = await listWorkdirFiles(dir)
     for (const p of dirPaths) {
-      const prefix = p.endsWith('/') ? p : `${p}/`
-      for (const f of workFiles) {
-        if (String(f).startsWith(prefix)) expanded.add(f)
+      const files = await listWorkdirFilesUnder(dir, p)
+      for (const f of files) {
+        expanded.add(f)
       }
     }
   }
@@ -649,6 +670,22 @@ async function cmdStatus(dir) {
   // Fast porcelain-ish output without spawning git CLI.
   // Use isomorphic-git statusMatrix to avoid O(N) blob reads/hashing in large repos.
   // Reference mapping: https://isomorphic-git.org/docs/en/statusMatrix (mirrored in node_modules).
+  if (process.env.PLURIBUS_FAST_STATUS === '1') {
+    const result = spawnSync('git', ['status', '--porcelain'], {
+      cwd: dir,
+      encoding: 'utf-8',
+    })
+    if (result.status === 0) {
+      const lines = String(result.stdout || '')
+        .split('\n')
+        .map(line => line.trimEnd())
+        .filter(Boolean)
+      emitBusEvent('git.status', { dir, lines, count: lines.length, fast: true })
+      console.log(lines.join('\n'))
+      return
+    }
+  }
+
   let matrix = []
   try {
     matrix = await git.statusMatrix({ fs, dir, filepaths: ['.'] })

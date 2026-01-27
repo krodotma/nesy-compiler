@@ -1,47 +1,64 @@
 /**
- * useTracking Hook - Auto-registers component lifecycle with verbose tracker
+ * useTracking Hook - Bridges both tracking systems
  * 
- * Usage in any component:
- * 
- * import { useTracking } from '../lib/telemetry/use-tracking';
- * 
- * export const MyComponent = component$(() => {
- *   useTracking('comp:my-component');
- *   // ... rest of component
- * });
+ * Uses window globals to ensure singleton works across Qwik chunks
  */
 
 import { useVisibleTask$ } from '@builder.io/qwik';
-import { tracker } from './verbose-tracker';
 
 /**
- * Hook that registers component entry/exit with the loading tracker
- * @param trackingId - ID from TRACKING_MANIFEST (e.g., 'comp:header', 'sys:auth')
+ * Hook that registers component entry/exit with BOTH tracking systems
+ * Uses window globals to ensure we're using the same instances across chunks
  */
 export function useTracking(trackingId: string) {
-    useVisibleTask$(({ cleanup }) => {
-        // Entry - component is now visible/active
-        tracker.entry(trackingId);
-
-        // Exit - component unmounts or cleanup
-        cleanup(() => {
-            tracker.exit(trackingId);
-        });
+  useVisibleTask$(({ cleanup }) => {
+    // Use window globals for true singleton behavior
+    const registry = (window as any).__loadingRegistry;
+    const tracker = (window as any).__verboseTracker;
+    
+    if (registry) {
+      registry.entry(trackingId);
+    }
+    if (tracker) {
+      tracker.entry(trackingId);
+    }
+    
+    console.log('[useTracking] entry:', trackingId);
+    
+    cleanup(() => {
+      if (registry) {
+        registry.exit(trackingId);
+      }
+      if (tracker) {
+        tracker.exit(trackingId);
+      }
     });
+  });
 }
 
 /**
- * Inline tracking for non-component contexts (flows, subsystems)
- * Returns cleanup function
+ * Inline tracking for non-component contexts
  */
 export function trackEntry(trackingId: string): () => void {
-    tracker.entry(trackingId);
-    return () => tracker.exit(trackingId);
+  const registry = (window as any).__loadingRegistry;
+  const tracker = (window as any).__verboseTracker;
+  
+  if (registry) registry.entry(trackingId);
+  if (tracker) tracker.entry(trackingId);
+  
+  return () => {
+    if (registry) registry.exit(trackingId);
+    if (tracker) tracker.exit(trackingId);
+  };
 }
 
 /**
- * Manual exit call for flows that complete asynchronously
+ * Manual exit call
  */
 export function trackExit(trackingId: string): void {
-    tracker.exit(trackingId);
+  const registry = (window as any).__loadingRegistry;
+  const tracker = (window as any).__verboseTracker;
+  
+  if (registry) registry.exit(trackingId);
+  if (tracker) tracker.exit(trackingId);
 }

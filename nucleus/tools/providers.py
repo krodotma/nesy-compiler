@@ -67,7 +67,9 @@ class ClaudeProvider(BaseLLMProvider):
 
 # Gemini Provider (Google) - Uses LASER Token
 class GeminiProvider(BaseLLMProvider):
-    def __init__(self, model_name: str = "gemini-2.0-flash-thinking-exp"):
+    def __init__(self, model_name: str = None):
+        if model_name is None:
+            model_name = os.getenv("GEMINI_MODEL", "gemini-3-pro")
         super().__init__(model_name)
         self.token = load_auth_token("gemini")
         self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")

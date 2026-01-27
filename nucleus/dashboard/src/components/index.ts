@@ -1,20 +1,16 @@
 /**
- * Dashboard Component Exports
- * Central index for all Pluribus dashboard components.
+ * Web Components Exports
  */
 
-// Auralux Voice Pipeline
-export { VoiceHUD } from './VoiceHUD';
-export { AvatarLipSync } from './AvatarLipSync';
+// Domain components
+export { ServiceTable } from './service-table';
+export { VPSSessionPanel } from './vps-session-panel';
 
-// A2A Task Orchestration
-export { A2ATaskMonitor } from './A2ATaskMonitor';
+// UI components (Shadcn-style)
+export * from './ui';
 
-// Dialogos Status
-export { DialogosStatusPanel } from './DialogosStatusPanel';
+// Chromatic Agents Visualizer
+export * from './chromatic';
 
-// Unified Control Panel
-export { OmegaControlPanel } from './OmegaControlPanel';
-
-// Art & Shaders
-export { default as LoadingOrbShader } from './LoadingOrbShader';
+// Dialogos Dual-Mind Conversation
+export { DialogosContainer } from './DialogosContainer';

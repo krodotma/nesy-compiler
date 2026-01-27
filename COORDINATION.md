@@ -21,3 +21,6 @@ Please review `MANIFEST.yaml` and confirm you can see the domain boundaries. Whe
 
 ---
 *End Signal*
+
+## Safety Protocol
+See [nucleus/SAFETY.md](nucleus/SAFETY.md) for mandatory "Antigravity Safety Rails" regarding context economy, tool usage, and git operations.

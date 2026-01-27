@@ -233,6 +233,32 @@ def _classify_router_failure(stderr: str, stdout: str, exit_code: int) -> str | 
     return _classify_router_blocker(text_lower)
 
 
+def _router_error_status(reason: str | None) -> int:
+    if reason in {"auth", "config"}:
+        return 424
+    if reason == "quota":
+        return 429
+    if reason == "overload":
+        return 503
+    if reason == "timeout":
+        return 504
+    if reason == "circuit_open":
+        return 503
+    return 500
+
+
+def _router_error_type(reason: str | None) -> str:
+    mapping = {
+        "auth": "provider_auth_required",
+        "config": "provider_unavailable",
+        "quota": "provider_quota",
+        "overload": "provider_overload",
+        "timeout": "provider_timeout",
+        "circuit_open": "provider_unavailable",
+    }
+    return mapping.get(reason or "", "router_error")
+
+
 def _gap_analysis_for_reason(
     reason: str | None,
     *,
@@ -2341,7 +2367,14 @@ class WorldRouterHandlers:
             self.circuit_breaker.record_failure(resolved_provider)
 
         if exit_code != 0:
-            error_data = {"error": {"message": stderr or "Router error", "type": "router_error"}}
+            gap_reason = _classify_router_failure(stderr, stdout, exit_code)
+            error_data = {
+                "error": {
+                    "message": stderr or "Router error",
+                    "type": _router_error_type(gap_reason),
+                    "gap_reason": gap_reason,
+                }
+            }
             await response.write(f"data: {json.dumps(error_data)}\n\n".encode())
             await response.write(b"data: [DONE]\n\n")
             return response
@@ -2627,14 +2660,15 @@ class WorldRouterHandlers:
         )
 
         if exit_code != 0:
+            status = _router_error_status(gap_reason)
             return web.json_response({
                 "error": {
                     "message": stderr or "Router error",
-                    "type": "router_error",
+                    "type": _router_error_type(gap_reason),
                     "gaps": gaps if gaps.get("epistemic") or gaps.get("aleatoric") else None,
                     "gap_reason": gap_reason,
                 },
-            }, status=500)
+            }, status=status)
 
         # Build OpenAI-compatible response
         response = {
@@ -2724,7 +2758,7 @@ class WorldRouterHandlers:
                 "object": "chat.completion.chunk",
                 "error": {
                     "message": stderr or "Router error",
-                    "type": "router_error",
+                    "type": _router_error_type(gap_reason),
                     "gaps": gaps if gaps.get("epistemic") or gaps.get("aleatoric") else None,
                     "gap_reason": gap_reason,
                 },
@@ -2873,14 +2907,15 @@ class WorldRouterHandlers:
         )
 
         if exit_code != 0:
+            status = _router_error_status(gap_reason)
             return web.json_response({
                 "error": {
                     "message": stderr or "Router error",
-                    "type": "router_error",
+                    "type": _router_error_type(gap_reason),
                     "gaps": gaps if gaps.get("epistemic") or gaps.get("aleatoric") else None,
                     "gap_reason": gap_reason,
                 },
-            }, status=500)
+            }, status=status)
 
         # OpenAI Responses format
         response = {
@@ -3005,14 +3040,15 @@ class WorldRouterHandlers:
         )
 
         if exit_code != 0:
+            status = _router_error_status(gap_reason)
             return web.json_response({
                 "error": {
-                    "code": 500,
+                    "code": status,
                     "message": stderr or "Router error",
                     "gaps": gaps if gaps.get("epistemic") or gaps.get("aleatoric") else None,
                     "gap_reason": gap_reason,
                 },
-            }, status=500)
+            }, status=status)
 
         # Gemini response format
         response = {
@@ -3195,15 +3231,16 @@ class WorldRouterHandlers:
         )
 
         if exit_code != 0:
+            status = _router_error_status(gap_reason)
             return web.json_response({
                 "type": "error",
                 "error": {
-                    "type": "api_error",
+                    "type": _router_error_type(gap_reason),
                     "message": stderr or "Router error",
                     "gaps": gaps if gaps.get("epistemic") or gaps.get("aleatoric") else None,
                     "gap_reason": gap_reason,
                 },
-            }, status=500)
+            }, status=status)
 
         # Anthropic-compatible response
         content_text = stdout.strip()
@@ -3291,7 +3328,7 @@ class WorldRouterHandlers:
             error_event = {
                 "type": "error",
                 "error": {
-                    "type": "api_error",
+                    "type": _router_error_type(gap_reason),
                     "message": stderr or "Router error",
                     "gaps": gaps if gaps.get("epistemic") or gaps.get("aleatoric") else None,
                     "gap_reason": gap_reason,
