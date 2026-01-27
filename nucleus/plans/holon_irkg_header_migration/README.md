@@ -5,6 +5,8 @@ This directory is reserved for subagent iteration artifacts.
 Naming:
 - `opusA_iter01.md`, `opusA_iter02.md`
 - `opusB_iter01.md`, `opusB_iter02.md`
+- `glmA_iter01.md`, `glmA_iter02.md`
+- `codexB_iter01.md`, `codexB_iter02.md`
 
 Each file should include:
 - assumptions and sources

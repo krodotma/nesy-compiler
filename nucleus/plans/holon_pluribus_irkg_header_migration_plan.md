@@ -151,3 +151,13 @@ Example:
 - This plan file
 - DR ring spec draft
 - Subagent outputs archived in `nucleus/plans/` as append‑only artifacts
+
+## Subagent Review Notes (Codex-B, 2026-01-27)
+- **UNIFORM vs Header Contract**: UNIFORM forbids pre-panel file reads while repl_header_contract requires snapshot read before panel; must reconcile precedence or exception.
+  - refs: /pluribus/nucleus/specs/UNIFORM.md:10-18, /pluribus/nucleus/specs/repl_header_contract_v1.md:6-15
+- **Bus Derivation Ambiguity**: UNIFORM derives `bus:+N` from local bus topic scan; isomorphic_git_reference treats `events.ndjson` as bus events with no canonical derivation note.
+  - refs: /pluribus/nucleus/specs/UNIFORM.md:201-219, /pluribus/nucleus/docs/isomorphic_git_reference.md:1-33
+- **Naming Grammar Alignment**: semantic_branch / semantic_agent_id exist but agent IDs are dot-separated model/variant with no explicit mapping rules.
+  - refs: /pluribus/nucleus/specs/holon_semantic_naming_v1.md:1-20, /pluribus/nucleus/specs/pluribus_lexicon.md:311-319, /pluribus/docs/agents/index.md:9-20
+- **Plan Target Branch Conformance**: migration plan target branch not explicitly validated against semantic_branch grammar.
+  - refs: /pluribus/nucleus/plans/holon_pluribus_irkg_header_migration_plan.md:1-5, /pluribus/nucleus/specs/pluribus_lexicon.md:311-319

@@ -92,3 +92,20 @@
   - /pluribus/nucleus/plans/holon_irkg_header_migration/OPUS_TASKS.md (created)
   - /pluribus/nucleus/plans/holon_irkg_header_migration/opusA_iter01.md (created)
   - /pluribus/nucleus/plans/holon_irkg_header_migration/opusB_iter01.md (created)
+
+## Session: 2026-01-27
+
+### Phase 0: Subagent Retry + Review
+- **Status:** in_progress
+- Actions taken:
+  - Retried GLM-A via bus-glm; API key rejected (invalid key)
+  - Retried Codex-B via bus-codex; produced spec contradiction review
+  - Added GLM/Codex subagent prompt scaffolds to OPUS_TASKS
+  - Added codex review notes to header migration plan
+  - Expanded subagent log README naming list (GLM/Codex)
+- Files created/modified:
+  - /pluribus/nucleus/plans/holon_irkg_header_migration/glmA_iter01.md (updated)
+  - /pluribus/nucleus/plans/holon_irkg_header_migration/codexB_iter01.md (updated)
+  - /pluribus/nucleus/plans/holon_irkg_header_migration/OPUS_TASKS.md (updated)
+  - /pluribus/nucleus/plans/holon_irkg_header_migration/README.md (updated)
+  - /pluribus/nucleus/plans/holon_pluribus_irkg_header_migration_plan.md (updated)
