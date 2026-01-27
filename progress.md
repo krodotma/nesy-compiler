@@ -77,6 +77,7 @@
   - Created iteration 01 placeholders for Opus-A and Opus-B
   - Attempted Opus-A/Opus-B runs via Claude CLI (permission + network issues, then rate-limited until 01:00 UTC)
   - Retried Opus-A/Opus-B (still rate-limited; reset remains 01:00 UTC)
+  - Retried Opus-A/Opus-B after reauth (still rate-limited; reset remains 01:00 UTC)
   - iso_git checkout to semantic evo branch aborted (Signal 6)
 - Files created/modified:
   - /pluribus/nucleus/plans/holon_pluribus_irkg_header_migration_plan.md (created)
