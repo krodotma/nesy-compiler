@@ -1,0 +1,4 @@
+# Run every minute and again at +30s (cron has 60s granularity).
+# Report-only every minute, kill pass every minute at +30s.
+* * * * * /usr/bin/env python3 /pluribus/dev_scripts/omega_cron_guard.py --min-age 600 --cooldown 180
+* * * * * sleep 30; /usr/bin/env python3 /pluribus/dev_scripts/omega_cron_guard.py --min-age 600 --cooldown 180 --kill

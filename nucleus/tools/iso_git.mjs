@@ -507,23 +507,30 @@ async function cmdCommitPaths(dir, message, paths = [], authorName, authorEmail,
     throw new Error('commit-paths requires at least one path within the repo')
   }
 
-  const workFiles = await listWorkdirFiles(dir)
   const expanded = new Set()
+  const dirPaths = []
   for (const p of normalized) {
     const abs = path.join(dir, p)
     try {
       const st = fs.statSync(abs)
       if (st.isDirectory()) {
-        const prefix = p.endsWith('/') ? p : `${p}/`
-        for (const f of workFiles) {
-          if (String(f).startsWith(prefix)) expanded.add(f)
-        }
+        dirPaths.push(p)
       } else {
         expanded.add(p)
       }
     } catch {
       // Path missing: if it exists in index we stage a removal.
       expanded.add(p)
+    }
+  }
+
+  if (dirPaths.length) {
+    const workFiles = await listWorkdirFiles(dir)
+    for (const p of dirPaths) {
+      const prefix = p.endsWith('/') ? p : `${p}/`
+      for (const f of workFiles) {
+        if (String(f).startsWith(prefix)) expanded.add(f)
+      }
     }
   }
 
