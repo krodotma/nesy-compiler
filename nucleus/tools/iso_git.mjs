@@ -87,6 +87,21 @@ async function treeBlobMap(dir, ref) {
 }
 
 async function ensureCleanWorktree(dir) {
+  if (process.env.PLURIBUS_FAST_STATUS === '1') {
+    const result = spawnSync('git', ['status', '--porcelain'], {
+      cwd: dir,
+      encoding: 'utf-8',
+    })
+    if (result.status === 0) {
+      const lines = String(result.stdout || '')
+        .split('\n')
+        .map(line => line.trimEnd())
+        .filter(Boolean)
+      const dirty = lines.map(line => line.slice(3)).filter(Boolean)
+      return { clean: dirty.length === 0, dirty }
+    }
+  }
+
   try {
     const matrix = await git.statusMatrix({ fs, dir })
     const dirty = []
