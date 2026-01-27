@@ -1,0 +1,17 @@
+{
+  "name": "ark-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "wsrun test",
+    "build": "wsrun build",
+    "lint": "eslint packages/**"
+  },
+  "devDependencies": {
+    "wsrun": "^5.2.4",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  }
+}
