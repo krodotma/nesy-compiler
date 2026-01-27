@@ -30,7 +30,7 @@ This directory is reserved for subagent iteration artifacts.
 #### Pending / Not Yet Produced
 - [ ] IRKG header snapshot schema (JSON schema or typed table)
 - [ ] DR ring formal contract (separate spec file)
-- [ ] Producer/consumer matrix across subsystems
+- [x] Producer/consumer matrix across subsystems (`producer_consumer_matrix.md`)
 - [ ] Dual-write migration timeline
 - [ ] Verification checklist + rollback plan
 - [ ] Header overhead analysis with mitigations
@@ -110,3 +110,4 @@ Each file should include:
 | 2026-01-27 | codex-B | Completed review, identified spec issues |
 | 2026-01-27 | (unknown) | Applied spec fixes (UNIFORM + repl_header_contract) |
 | 2026-01-27 | opus-D | Status audit (this update) |
+| 2026-01-27 | claude-haiku-4-5 | Created producer/consumer matrix + quick ref + metric categorization docs |

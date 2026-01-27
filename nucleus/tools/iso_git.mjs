@@ -1029,6 +1029,55 @@ async function cmdPush(dir, remote, branch, opts = {}) {
   console.log(`[Push] Successfully pushed ${branch} to ${remote}`)
 }
 
+// --- Merge Command: Guarded boundary operation (uses native git) ---
+async function cmdMerge(dir, sourceRef, opts = {}) {
+  if (!sourceRef) {
+    console.log('Usage: node iso_git.mjs merge <dir> <source-ref> [--ff-only] [--no-ff] [--no-edit]')
+    process.exit(2)
+  }
+
+  const allowDirty = process.env.PLURIBUS_ALLOW_DIRTY_MERGE === '1'
+  const { clean, dirty } = await ensureCleanWorktree(dir)
+  if (!clean && !allowDirty) {
+    console.error('Merge rejected: uncommitted changes exist')
+    console.error('  Dirty files:', dirty.slice(0, 5).join(', '))
+    emitBusEvent('git.merge.rejected', { dir, source: sourceRef, reason: 'dirty_worktree' })
+    process.exit(1)
+  }
+  if (!clean && allowDirty) {
+    console.log('[Merge] Proceeding with dirty worktree (PLURIBUS_ALLOW_DIRTY_MERGE=1).')
+    emitBusEvent('git.merge.dirty', { dir, source: sourceRef, dirty: dirty.slice(0, 25) })
+  }
+
+  const args = ['merge', sourceRef]
+  if (opts.ffOnly) args.push('--ff-only')
+  if (opts.noFf) args.push('--no-ff')
+  if (opts.noEdit) args.push('--no-edit')
+
+  console.log(`[Merge] Executing: git ${args.join(' ')}`)
+
+  const result = spawnSync('git', args, {
+    cwd: dir,
+    stdio: ['inherit', 'pipe', 'pipe'],
+    encoding: 'utf-8',
+    env: { ...process.env },
+  })
+
+  if (result.status !== 0) {
+    console.error('Merge failed:', result.stderr || result.stdout)
+    emitBusEvent('git.merge.failed', {
+      dir,
+      source: sourceRef,
+      status: result.status,
+      stderr: result.stderr || null,
+    })
+    process.exit(result.status || 1)
+  }
+
+  console.log(`[Merge] Successfully merged ${sourceRef}`)
+  emitBusEvent('git.merge', { dir, source: sourceRef })
+}
+
 // --- Fetch Command: Guarded boundary operation (uses native git) ---
 async function cmdFetch(dir, remote, opts = {}) {
   remote = remote || 'origin'
@@ -1670,6 +1719,14 @@ async function main() {
         }
       }
       await cmdDiff(dir, baseRef, headRef)
+    } else if (command === 'merge') {
+      const sourceRef = args[2]
+      const opts = {
+        ffOnly: args.includes('--ff-only'),
+        noFf: args.includes('--no-ff'),
+        noEdit: args.includes('--no-edit'),
+      }
+      await cmdMerge(dir, sourceRef, opts)
     } else if (command === 'push') {
       const remote = args[2] || 'origin'
       const branch = args[3]
@@ -1710,6 +1767,7 @@ async function main() {
       console.log('')
       console.log('Boundary Commands (require native git):')
       console.log('  push [remote] [branch]   Push to remote (guarded)')
+      console.log('  merge <ref>              Merge ref into current branch (guarded)')
       console.log('  fetch [remote]           Fetch from remote (guarded)')
       console.log('  clone <url> [dir]        Clone repository (guarded)')
       console.log('')
@@ -1742,6 +1800,7 @@ export {
   cmdCheckout,
   cmdEvo,
   cmdReset,
+  cmdMerge,
   cmdPush,
   cmdFetch,
   cmdClone,
