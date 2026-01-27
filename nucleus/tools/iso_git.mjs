@@ -939,11 +939,16 @@ async function cmdPush(dir, remote, branch, opts = {}) {
 
   // Guard check: ensure worktree is clean
   const { clean, dirty } = await ensureCleanWorktree(dir)
-  if (!clean && !opts.force) {
+  const allowDirty = process.env.PLURIBUS_ALLOW_DIRTY_PUSH === '1'
+  if (!clean && !opts.force && !allowDirty) {
     console.error('Push rejected: uncommitted changes exist')
     console.error('  Dirty files:', dirty.slice(0, 5).join(', '))
     emitBusEvent('git.push.rejected', { dir, remote, branch, reason: 'dirty_worktree' })
     process.exit(1)
+  }
+  if (!clean && allowDirty) {
+    console.log('[Push] Proceeding with dirty worktree (PLURIBUS_ALLOW_DIRTY_PUSH=1).')
+    emitBusEvent('git.push.dirty', { dir, remote, branch, dirty: dirty.slice(0, 25) })
   }
 
   // Use native git for actual push (boundary operation)
