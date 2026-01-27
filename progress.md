@@ -190,10 +190,16 @@
   - Defined the "Sextet" Bounded Contexts (Step 4).
   - Created additional packages: `ark-graph`, `ark-storage`, `ark-edge`, `ark-nucleus`.
   - Mapped `iso_git` capabilities to `ark-git` (Step 3).
+  - Defined `ark-spine` schema (LMDB) (Step 6).
+  - Designed `ark-storage` (MinIO) binding layer (Step 7).
+  - Designed `ark-graph` (FalkorDB) connector (Step 8).
 - Files modified:
   - `nucleus/tools/ARK_PORT_AUDIT.md` (Created)
   - `ark/package.json` (Created)
   - `ark/SEXTET.md` (Created)
   - `ark/packages/ark-git/CAPABILITIES.md` (Created)
+  - `ark/packages/ark-spine/SCHEMA.md` (Created)
+  - `ark/packages/ark-storage/DESIGN.md` (Created)
+  - `ark/packages/ark-graph/DESIGN.md` (Created)
   - `progress.md` (Updated)
 
