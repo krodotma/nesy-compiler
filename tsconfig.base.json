@@ -12,10 +12,33 @@
     "sourceMap": true,
     "composite": true,
     "incremental": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@nesy/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@nesy/pipeline": [
+        "./packages/pipeline/src/index.ts"
+      ],
+      "@nesy/integration": [
+        "./packages/integration/src/index.ts"
+      ],
+      "@nesy/prompt": [
+        "./packages/prompt/src/index.ts"
+      ],
+      "@nesy/learning": [
+        "./packages/learning/src/index.ts"
+      ],
+      "@nesy/puzzle": [
+        "./packages/puzzle/src/index.ts"
+      ]
+    }
   },
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -1,0 +1,21 @@
+{
+  "name": "@nesy/integration",
+  "version": "0.1.0",
+  "description": "NeSy Compiler integration package",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@nesy/core": "workspace:*",
+    "@nesy/pipeline": "workspace:*",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

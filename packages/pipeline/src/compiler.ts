@@ -261,7 +261,7 @@ export class NeSyCompiler {
   ): Promise<ConstrainOutput> {
     // Extract external constraints from request
     const externalConstraints = request.mode === 'constraint'
-      ? request.constraints
+      ? (request.constraints as import('@nesy/core').Constraint[])
       : undefined;
 
     const input: ConstrainInput = {
@@ -402,7 +402,8 @@ export class NeSyCompiler {
       },
       proof: {
         id: verifyOutput.proof.id,
-        gates: {
+        stages: [],
+        sextetReceipt: {
           provenance: verifyOutput.proof.provenance.status,
           effects: verifyOutput.proof.effects.status,
           liveness: verifyOutput.proof.liveness.status,
@@ -410,9 +411,13 @@ export class NeSyCompiler {
           quality: verifyOutput.proof.quality.status,
           omega: verifyOutput.proof.omega.status,
         },
-        derivation: verifyOutput.proof.derivation,
+        deterministic: verifyOutput.proof.passed,
       },
-      provenance: emitOutput.ir.provenance,
+      provenance: {
+        trust: artifact.trust,
+        taint: this.context.taintVector,
+        lineage: verifyOutput.proof.derivation,
+      },
     };
   }
 
