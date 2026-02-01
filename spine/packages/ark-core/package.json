@@ -1,0 +1,93 @@
+{
+  "name": "@ark/core",
+  "version": "0.1.0",
+  "description": "Core types for Neo Pluribus - Holon, Pentad, Sextet, Ring, Result, Events, Identity, Invariants",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./pentad": {
+      "import": "./dist/pentad.js",
+      "types": "./dist/pentad.d.ts"
+    },
+    "./sextet": {
+      "import": "./dist/sextet.js",
+      "types": "./dist/sextet.d.ts"
+    },
+    "./holon": {
+      "import": "./dist/holon.js",
+      "types": "./dist/holon.d.ts"
+    },
+    "./ring": {
+      "import": "./dist/ring.js",
+      "types": "./dist/ring.d.ts"
+    },
+    "./result": {
+      "import": "./dist/result.js",
+      "types": "./dist/result.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./events": {
+      "import": "./dist/events.js",
+      "types": "./dist/events.d.ts"
+    },
+    "./identity": {
+      "import": "./dist/identity.js",
+      "types": "./dist/identity.d.ts"
+    },
+    "./invariants": {
+      "import": "./dist/invariants.js",
+      "types": "./dist/invariants.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils.js",
+      "types": "./dist/utils.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "keywords": [
+    "ark",
+    "pluribus",
+    "holon",
+    "pentad",
+    "sextet",
+    "ring",
+    "result",
+    "events",
+    "identity",
+    "invariants",
+    "core"
+  ],
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pluribus/neo-pluribus",
+    "directory": "packages/ark-core"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

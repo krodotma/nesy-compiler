@@ -1,0 +1,36 @@
+[Unit]
+Description=Pluribus Dialogos Retention Service - Trace rotation, compression, and pruning
+Documentation=https://github.com/krodotma/pluribus
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/pluribus
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=PLURIBUS_ACTOR=dialogos-retention
+
+# Run all retention operations (rotate, compress, archive, prune)
+ExecStart=/usr/bin/python3 /pluribus/nucleus/tools/dialogos_retention.py \
+    --trace-dir /pluribus/.pluribus/dialogos \
+    --bus-dir /pluribus/.pluribus/bus \
+    --actor dialogos-retention \
+    all
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=50%
+
+# Timeout for the oneshot operation
+TimeoutStartSec=300
+
+# Logging
+StandardOutput=append:/pluribus/.pluribus/logs/dialogos-retention.log
+StandardError=append:/pluribus/.pluribus/logs/dialogos-retention.log
+
+[Install]
+WantedBy=multi-user.target

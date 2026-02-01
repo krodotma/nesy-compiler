@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pluribus Skills Registry Entry",
+  "type": "object",
+  "required": ["id", "iso", "name", "description", "path", "hash", "action"],
+  "properties": {
+    "id": {"type": "string"},
+    "iso": {"type": "string"},
+    "name": {"type": "string"},
+    "description": {"type": "string"},
+    "license": {"type": ["string", "null"]},
+    "author": {"type": ["string", "null"]},
+    "version": {"type": "string"},
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "path": {"type": "string"},
+    "token_estimate": {"type": "integer"},
+    "hash": {"type": "string"},
+    "action": {"type": "string", "enum": ["register", "deprecate", "revoke"]},
+    "source": {"type": "string"}
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "servers": {
+    "pluribus-rhizome": {
+      "ingest": { "tier": "high", "effects": ["W:file"] },
+      "list_artifacts": { "tier": "low", "effects": ["R:file"] },
+      "show_artifact": { "tier": "low", "effects": ["R:file"] },
+      "search_artifacts": { "tier": "low", "effects": ["R:file"] }
+    },
+    "pluribus-sota": {
+      "add_item": { "tier": "medium", "effects": ["W:file"] },
+      "list_items": { "tier": "low", "effects": ["R:file"] },
+      "tick": { "tier": "low", "effects": ["R:file"] }
+    },
+    "pluribus-kg": {
+      "add_node": { "tier": "medium", "effects": ["W:kg"] },
+      "add_edge": { "tier": "medium", "effects": ["W:kg"] },
+      "query": { "tier": "low", "effects": ["R:kg"] }
+    },
+    "pluribus-mem0": {
+      "mem0_store": { "tier": "medium", "effects": ["W:memory"] },
+      "mem0_update": { "tier": "medium", "effects": ["W:memory"] },
+      "mem0_delete": { "tier": "high", "effects": ["W:memory"] },
+      "mem0_retrieve": { "tier": "low", "effects": ["R:memory"] },
+      "mem0_list": { "tier": "low", "effects": ["R:memory"] }
+    },
+    "pluribus-graphiti": {
+      "graphiti_add_entity": { "tier": "medium", "effects": ["W:kg"] },
+      "graphiti_add_edge": { "tier": "medium", "effects": ["W:kg"] },
+      "graphiti_query": { "tier": "low", "effects": ["R:kg"] }
+    },
+    "pluribus-holon": {
+      "create_holon": { "tier": "medium", "effects": ["W:holon", "W:file"] },
+      "validate_sextet": { "tier": "low", "effects": ["R:holon"] },
+      "actualize_holon": { "tier": "medium", "effects": ["W:holon"] },
+      "query_holon": { "tier": "low", "effects": ["R:holon"] },
+      "list_holons": { "tier": "low", "effects": ["R:holon"] },
+      "spawn_child": { "tier": "medium", "effects": ["W:holon"] },
+      "send_message": { "tier": "low", "effects": ["W:holon", "ipc"] },
+      "get_expansion_stats": { "tier": "low", "effects": ["R:holon"] }
+    }
+  }
+}

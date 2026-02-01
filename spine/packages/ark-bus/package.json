@@ -1,0 +1,49 @@
+{
+  "name": "@ark/bus",
+  "version": "0.1.0",
+  "description": "Isomorphic event bus for Neo Pluribus - works in browser and Node.js",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/browser.js",
+  "exports": {
+    ".": {
+      "browser": "./dist/browser.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./file-bus.js": {
+      "import": "./dist/file-bus.js",
+      "types": "./dist/file-bus.d.ts"
+    },
+    "./shared-worker-bus.js": {
+      "import": "./dist/shared-worker-bus.js",
+      "types": "./dist/shared-worker-bus.d.ts"
+    },
+    "./mirror-daemon.js": {
+      "import": "./dist/mirror-daemon.js",
+      "types": "./dist/mirror-daemon.d.ts"
+    },
+    "./ledger.js": {
+      "import": "./dist/ledger.js",
+      "types": "./dist/ledger.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ark/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "sideEffects": false,
+  "license": "Apache-2.0"
+}

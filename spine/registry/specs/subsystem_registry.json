@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pluribus Subsystem Registry",
+  "description": "Exhaustive inventory of all Pluribus components for AI OS transparency",
+  "updated_iso": "2025-12-27T19:30:00Z",
+  "version": "1.0.0",
+
+  "categories": {
+    "vps_services": {
+      "label": "VPS Services",
+      "glyph": "⚙️",
+      "description": "Systemd-managed daemons running on the VPS"
+    },
+    "python_tools": {
+      "label": "Python Tools",
+      "glyph": "🐍",
+      "description": "CLI tools and daemons in nucleus/tools/"
+    },
+    "dashboard_views": {
+      "label": "Dashboard Views",
+      "glyph": "📊",
+      "description": "Main view components in the WebUI"
+    },
+    "dashboard_components": {
+      "label": "UI Components",
+      "glyph": "🧩",
+      "description": "Reusable UI components"
+    },
+    "protocols": {
+      "label": "Protocols",
+      "glyph": "📜",
+      "description": "DKIN/PAIP/CKIN protocol specifications"
+    },
+    "operators": {
+      "label": "Semantic Operators",
+      "glyph": "🔧",
+      "description": "PB* operators from semops.json"
+    },
+    "sota_integrations": {
+      "label": "SOTA Integrations",
+      "glyph": "🔬",
+      "description": "State-of-the-art tools and models"
+    },
+    "technologies": {
+      "label": "Technologies",
+      "glyph": "💡",
+      "description": "Core technologies and frameworks"
+    },
+    "agents": {
+      "label": "Agents",
+      "glyph": "🤖",
+      "description": "AI agent integrations"
+    },
+    "bus_subsystems": {
+      "label": "Bus Subsystems",
+      "glyph": "🌐",
+      "description": "Event bus and messaging components"
+    }
+  },
+
+  "subsystems": {
+    "vps_services": [
+      {"id": "pluribus-omega-heartbeat", "name": "Omega Heartbeat", "status_topic": "omega.heartbeat", "description": "Core system pulse and anomaly detection"},
+      {"id": "pluribus-omega-dispatcher", "name": "Omega Dispatcher", "status_topic": "omega.dispatch.*", "description": "A2A task dispatch and agent coordination"},
+      {"id": "pluribus-omega-guardian", "name": "Omega Guardian", "status_topic": "omega.guardian.*", "description": "System protection and watchdog"},
+      {"id": "pluribus-bus-bridge", "name": "Bus Bridge", "status_topic": "bridge.*", "description": "WebSocket bridge for real-time events"},
+      {"id": "pluribus-bus-mirror", "name": "Bus Mirror", "status_topic": "mirror.*", "description": "Event replication and backup"},
+      {"id": "pluribus-dashboard", "name": "Dashboard", "status_topic": "dashboard.*", "description": "Qwik-based WebUI server"},
+      {"id": "pluribus-tools-api", "name": "Tools API", "status_topic": "api.*", "description": "REST API for tool invocation"},
+      {"id": "pluribus-vps-session-daemon", "name": "VPS Session", "status_topic": "vps.session.*", "description": "Session state management"},
+      {"id": "pluribus-browser-session-daemon", "name": "Browser Session", "status_topic": "browser.*", "description": "Headless browser automation"},
+      {"id": "pluribus-dialogosd", "name": "Dialogos Daemon", "status_topic": "dialogos.*", "description": "Dialog stream persistence"},
+      {"id": "pluribus-dialogos-indexer", "name": "Dialogos Indexer", "status_topic": "dialogos.index.*", "description": "Dialog search indexing"},
+      {"id": "pluribus-dialogos-retention", "name": "Dialogos Retention", "status_topic": "dialogos.retention.*", "description": "Dialog retention policy"},
+      {"id": "pluribus-codemaster", "name": "Replisome (Codemaster)", "status_topic": "replisome.*", "description": "Singleton gatekeeper for critical branches"},
+      {"id": "pluribus-qa-observer", "name": "QA Observer", "status_topic": "qa.*", "description": "Event anomaly detection"},
+      {"id": "pluribus-qa-action-executor", "name": "QA Executor", "status_topic": "qa.action.*", "description": "Automated QA actions"},
+      {"id": "pluribus-qa-tool-queue", "name": "QA Tool Queue", "status_topic": "qa.tool.*", "description": "QA task scheduling"},
+      {"id": "pluribus-qa-live-checker", "name": "QA Live Checker", "status_topic": "qa.live.*", "description": "Live verification runner"},
+      {"id": "pluribus-meta-ingest", "name": "Meta Ingest", "status_topic": "meta.*", "description": "Metadata ingestion pipeline"},
+      {"id": "pluribus-art-director", "name": "Art Director", "status_topic": "art.*", "description": "Generative art coordination"},
+      {"id": "pluribus-vnc", "name": "VNC Server", "status_topic": "vnc.*", "description": "Remote desktop access"},
+      {"id": "pluribus-websockify", "name": "Websockify", "status_topic": "websockify.*", "description": "VNC WebSocket proxy"},
+      {"id": "pluribus-sky-connect", "name": "Sky Connect", "status_topic": "sky.*", "description": "BlueSky social integration"},
+      {"id": "pluribus-pbmint", "name": "PBMINT", "status_topic": "mint.*", "description": "Asset minting service"},
+      {"id": "pluribus-pblbc-hygiene", "name": "LBC Hygiene", "status_topic": "hygiene.*", "description": "System cleanup and maintenance"}
+    ],
+
+    "dashboard_views": [
+      {"id": "HomeView", "name": "Home", "route": "/", "description": "Main dashboard with MOTD and overview"},
+      {"id": "BusObservatoryView", "name": "Bus Observatory", "route": "/bus", "description": "Real-time event stream"},
+      {"id": "EventsView", "name": "Events", "route": "/events", "description": "Event log with filtering"},
+      {"id": "AgentsView", "name": "Agents", "route": "/agents", "description": "Agent status and telemetry"},
+      {"id": "RequestsView", "name": "Requests", "route": "/requests", "description": "STRp pending requests"},
+      {"id": "ServicesView", "name": "Services", "route": "/services", "description": "VPS service management"},
+      {"id": "SotaView", "name": "SOTA", "route": "/sota", "description": "State-of-the-art tool catalog"},
+      {"id": "StudioView", "name": "Studio", "route": "/studio", "description": "Code editing workspace"},
+      {"id": "RhizomeView", "name": "Rhizome", "route": "/rhizome", "description": "Immutable artifact browser"},
+      {"id": "TypesTreeOverlay", "name": "Types Atlas", "route": "/types", "description": "Sextet type schema tree"},
+      {"id": "MLOpsAtlasView", "name": "MLOps Atlas", "route": "/mlops", "description": "ML operations overview"},
+      {"id": "VoiceSpeechView", "name": "Voice", "route": "/voice", "description": "Voice I/O pipeline"},
+      {"id": "AuraluxConsole", "name": "Auralux", "route": "/auralux", "description": "Audio visualization console"},
+      {"id": "DistillView", "name": "Distill", "route": "/distill", "description": "Knowledge distillation"},
+      {"id": "CreativeView", "name": "Generative", "route": "/generative", "description": "Generative AI canvas"},
+      {"id": "DiagnosticsPanel", "name": "Diagnostics", "route": "/diagnostics", "description": "System diagnostics"},
+      {"id": "Terminal", "name": "Terminal", "route": "/terminal", "description": "Embedded terminal"},
+      {"id": "PluriChatTerminal", "name": "PluriChat", "route": "/plurichat", "description": "Multi-agent chat interface"},
+      {"id": "DKINFlowMonitor", "name": "DKIN Flow", "route": "/dkin", "description": "Protocol flow visualization"},
+      {"id": "SemopsEditor", "name": "SemOps Editor", "route": "/semops", "description": "Semantic operators editor"}
+    ],
+
+    "dashboard_components": [
+      {"id": "CodeSegmentPanel", "name": "System Inventory", "description": "Left slide panel showing all loaded segments"},
+      {"id": "NotificationSidepanel", "name": "Notifications", "description": "Right slide panel for alerts"},
+      {"id": "MemoryIngestBar", "name": "Memory Ingest Bar", "description": "Real-time memory/dialogos status"},
+      {"id": "BusPulseWidget", "name": "Bus Pulse", "description": "Event rate visualization"},
+      {"id": "PBLanesWidget", "name": "Lanes Widget", "description": "Multi-agent lane status"},
+      {"id": "AgentTelemetryPanel", "name": "Agent Telemetry", "description": "Agent performance metrics"},
+      {"id": "VNCAuthPanel", "name": "VNC Auth", "description": "Browser automation control"},
+      {"id": "LazyWebLLM", "name": "WebLLM Widget", "description": "Local LLM inference"},
+      {"id": "LocalLLMStatusWidget", "name": "Local LLM Status", "description": "Ollama/WebLLM status"},
+      {"id": "GenerativeCanvas", "name": "Generative Canvas", "description": "Stable Diffusion interface"},
+      {"id": "InferCellCard", "name": "Infer Cell", "description": "Inference module card"},
+      {"id": "SuperMotd", "name": "Super MOTD", "description": "Enhanced message of the day"},
+      {"id": "BicameralNav", "name": "Bicameral Nav", "description": "Main navigation system"}
+    ],
+
+    "protocols": [
+      {"id": "dkin_v28", "name": "DKIN v28 (Citizen Strata)", "spec": "dkin_protocol_v28_citizen_strata.md", "description": "SAGENT/CAGENT-SW classification and bootstrap profiles"},
+      {"id": "dkin_v27", "name": "DKIN v27 (CAGENT)", "spec": "dkin_protocol_v27_cagent.md", "description": "Citizen Agent unified bootstrapping"},
+      {"id": "dkin_v26", "name": "DKIN v26 (Replisome)", "spec": "dkin_protocol_v26_replisome.md", "description": "E Pluribus Unum singleton gatekeeper"},
+      {"id": "dkin_v25", "name": "DKIN v25 (Lifecycle)", "spec": "dkin_protocol_v25_lifecycle.md", "description": "Three-tier repository lifecycle"},
+      {"id": "dkin_v24", "name": "DKIN v24 (Verification)", "spec": "dkin_protocol_v24_verification.md", "description": "PBTEST verification covenant"},
+      {"id": "dkin_v23", "name": "DKIN v23 (Lanes)", "spec": "dkin_protocol_v23_lanes.md", "description": "PBLANES multi-agent coordination"},
+      {"id": "dkin_v22", "name": "DKIN v22 (Amber)", "spec": "dkin_protocol_v22_amber.md", "description": "Proactive persistence protocol"},
+      {"id": "dkin_v21", "name": "DKIN v21 (Lossless)", "spec": "dkin_protocol_v21_lossless.md", "description": "Lossless handoff reconciliation"},
+      {"id": "paip_v15", "name": "PAIP v15 (Citizen Tiers)", "spec": "ckin_protocol_v18_paip_citizen_tiers.md", "description": "Citizen-class aware isolation"},
+      {"id": "paip_v14", "name": "PAIP v14 (Tiers)", "spec": "ckin_protocol_v14_tiers.md", "description": "Phenomenological tier isolation"},
+      {"id": "paip_v13", "name": "PAIP v13 (Phenomenology)", "spec": "ckin_protocol_v13_phenomenology.md", "description": "Port and display isolation"},
+      {"id": "ckin_v18", "name": "CKIN v18 (PAIP Citizen Tiers)", "spec": "ckin_protocol_v18_paip_citizen_tiers.md", "description": "Citizen-class aware PAIP isolation and hygiene"},
+      {"id": "ckin_v17", "name": "CKIN v17 (Hygiene)", "spec": "ckin_protocol_v17.md", "description": "System hygiene and cleanup"},
+      {"id": "cagent_v1", "name": "CAGENT v1", "spec": "cagent_protocol_v1.md", "description": "Citizen Agent framework"},
+      {"id": "replisome_v2", "name": "Replisome v2", "spec": "codemaster_protocol_v2.md", "description": "Citizen-class gated critical branch gatekeeper"},
+      {"id": "replisome_v1", "name": "Replisome v1", "spec": "codemaster_protocol_v1.md", "description": "Critical branch gatekeeper"}
+    ],
+
+    "operators": [
+      {"id": "PBREPLISOME", "name": "PBREPLISOME", "alias": "PBCMASTER", "description": "Replisome control operator"},
+      {"id": "PBTEST", "name": "PBTEST", "description": "Verification covenant operator"},
+      {"id": "PBLANES", "name": "PBLANES", "description": "Multi-agent lane coordination"},
+      {"id": "PBDEEP", "name": "PBDEEP", "description": "Deep forensics and analysis"},
+      {"id": "PBPAIR", "name": "PBPAIR", "description": "Agent pairing and fallback"},
+      {"id": "PBRESUME", "name": "PBRESUME", "description": "Session resume operator"},
+      {"id": "PBHYGIENE", "name": "PBHYGIENE", "description": "System cleanup operator"},
+      {"id": "PBBLOCK", "name": "PBLOCK", "description": "Milestone freeze state"},
+      {"id": "PBREALITY", "name": "PBREALITY", "description": "Reality validation operator"},
+      {"id": "CKIN", "name": "CKIN", "alias": "DKIN", "description": "Status dashboard operator"},
+      {"id": "ITERATE", "name": "ITERATE", "description": "Agent coordination kick"},
+      {"id": "OITERATE", "name": "OITERATE", "description": "Omega iteration loop"},
+      {"id": "REALAGENTS", "name": "REALAGENTS", "description": "Task dispatch operator"}
+    ],
+
+    "sota_integrations": [
+      {"id": "graphiti", "name": "Graphiti", "type": "knowledge_graph", "description": "Temporal knowledge graph"},
+      {"id": "chroma", "name": "ChromaDB", "type": "vector_store", "description": "Vector embedding storage"},
+      {"id": "sqlite-vec", "name": "sqlite-vec", "type": "vector_store", "description": "SQLite vector extension"},
+      {"id": "webllm", "name": "WebLLM", "type": "inference", "description": "Browser-based LLM inference"},
+      {"id": "ollama", "name": "Ollama", "type": "inference", "description": "Local LLM server"},
+      {"id": "mlc-llm", "name": "MLC-LLM", "type": "inference", "description": "Compiled LLM runtime"},
+      {"id": "transformers", "name": "Transformers", "type": "ml_framework", "description": "HuggingFace transformers"},
+      {"id": "playwright", "name": "Playwright", "type": "browser_automation", "description": "Browser testing/automation"},
+      {"id": "gradio", "name": "Gradio", "type": "ui_framework", "description": "ML app interface builder"},
+      {"id": "marimo", "name": "Marimo", "type": "notebook", "description": "Reactive Python notebooks"},
+      {"id": "pyodide", "name": "Pyodide", "type": "wasm", "description": "Python in WebAssembly"},
+      {"id": "stable-diffusion", "name": "Stable Diffusion", "type": "generative", "description": "Image generation"},
+      {"id": "whisper", "name": "Whisper", "type": "asr", "description": "Speech recognition"},
+      {"id": "tts", "name": "TTS", "type": "speech", "description": "Text-to-speech synthesis"}
+    ],
+
+    "technologies": [
+      {"id": "qwik", "name": "Qwik", "category": "frontend", "description": "Resumable SSR framework"},
+      {"id": "threejs", "name": "Three.js", "category": "3d", "description": "WebGL 3D graphics"},
+      {"id": "tailwind", "name": "Tailwind CSS", "category": "css", "description": "Utility-first CSS"},
+      {"id": "websocket", "name": "WebSocket", "category": "realtime", "description": "Real-time communication"},
+      {"id": "ndjson", "name": "NDJSON", "category": "format", "description": "Newline-delimited JSON (bus format)"},
+      {"id": "systemd", "name": "systemd", "category": "init", "description": "Service management"},
+      {"id": "pm2", "name": "PM2", "category": "process", "description": "Node.js process manager"},
+      {"id": "git", "name": "Git", "category": "vcs", "description": "Version control system"},
+      {"id": "python", "name": "Python 3.12", "category": "runtime", "description": "Primary scripting language"},
+      {"id": "nodejs", "name": "Node.js", "category": "runtime", "description": "JavaScript runtime"},
+      {"id": "nginx", "name": "nginx", "category": "proxy", "description": "Reverse proxy and SSL"},
+      {"id": "xvfb", "name": "Xvfb", "category": "display", "description": "Virtual framebuffer"},
+      {"id": "vnc", "name": "VNC", "category": "remote", "description": "Virtual network computing"}
+    ],
+
+    "agents": [
+      {"id": "claude", "name": "Claude", "provider": "Anthropic", "archetype": "Architect", "description": "Structure and verification"},
+      {"id": "codex", "name": "Codex/GPT", "provider": "OpenAI", "archetype": "Engineer", "description": "Implementation speed"},
+      {"id": "gemini", "name": "Gemini", "provider": "Google", "archetype": "Polymath", "description": "Neurosymbolic evolution"},
+      {"id": "qwen", "name": "Qwen", "provider": "Alibaba", "archetype": "Visionary", "description": "Vision and multimodal"},
+      {"id": "aider", "name": "Aider", "provider": "local", "archetype": "Surgeon", "description": "Codebase refactoring"},
+      {"id": "omega", "name": "Omega", "provider": "internal", "archetype": "Guardian", "description": "System monitoring"},
+      {"id": "conductor", "name": "Conductor", "provider": "internal", "archetype": "Orchestrator", "description": "Task coordination"}
+    ],
+
+    "bus_subsystems": [
+      {"id": "bus_core", "name": "Event Bus Core", "path": ".pluribus/bus/events.ndjson", "description": "Append-only event log"},
+      {"id": "bus_ws", "name": "WebSocket Bridge", "port": 9200, "description": "Real-time event streaming"},
+      {"id": "task_ledger", "name": "Task Ledger", "path": ".pluribus/index/task_ledger.ndjson", "description": "Task tracking log"},
+      {"id": "dialogos_index", "name": "Dialogos Index", "path": ".pluribus/dialogos/", "description": "Dialog stream storage"},
+      {"id": "agent_homes", "name": "Agent Homes", "path": ".pluribus/agent_homes/", "description": "Per-agent state directories"},
+      {"id": "amber_refs", "name": "Amber Refs", "path": "refs/amber/", "description": "Proactive persistence refs"},
+      {"id": "lanes_state", "name": "Lanes State", "path": "nucleus/state/lanes.json", "description": "Multi-agent lane status"}
+    ]
+  },
+
+  "biological_stack": {
+    "rhizome": {"description": "Immutable evidence plane (bus, artifacts)", "components": ["bus_core", "dialogos_index", "amber_refs"]},
+    "dna": {"description": "Genotype (specs, protocols, GENOME.json)", "components": ["protocols", "semops.json"]},
+    "replisome": {"description": "Replication gatekeeper (critical branches)", "components": ["pluribus-codemaster", "PBREPLISOME"]},
+    "ribosome": {"description": "Translation engine (genotype → phenotype)", "components": ["dashboard_views", "python_tools"]},
+    "phenotype": {"description": "Runtime manifestation", "components": ["vps_services", "dashboard_components"]},
+    "cytoplasm": {"description": "Evolutionary clades (CAGENT agents)", "components": ["agents"]}
+  }
+}

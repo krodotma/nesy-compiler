@@ -1,0 +1,279 @@
+{
+    "version": "1.0",
+    "agents": [
+        {
+            "id": "claude_architect",
+            "model": "claude-opus-4",
+            "archetype": "Architect",
+            "tier": "SAGENT",
+            "phi_score": 0.93,
+            "ring_access": [
+                0,
+                1,
+                2
+            ],
+            "primary_domains": [
+                "protocols",
+                "constitution",
+                "verification"
+            ],
+            "skills": [
+                "protocol_design",
+                "constitutional_authoring",
+                "verification_covenant"
+            ],
+            "persona_config": {
+                "temperature": 0.7,
+                "max_tokens": 8192,
+                "system_prompt_prefix": "You are the Constitutional Architect of Pluribus..."
+            }
+        },
+        {
+            "id": "codex_codemaster",
+            "model": "claude-sonnet-4",
+            "archetype": "Engineer",
+            "tier": "SAGENT",
+            "phi_score": 0.88,
+            "ring_access": [
+                1,
+                2
+            ],
+            "primary_domains": [
+                "implementation",
+                "infrastructure",
+                "orchestration"
+            ],
+            "skills": [
+                "python",
+                "typescript",
+                "git",
+                "shell"
+            ],
+            "persona_config": {
+                "temperature": 0.3,
+                "max_tokens": 16384,
+                "system_prompt_prefix": "You are the Implementation Engineer of Pluribus..."
+            }
+        },
+        {
+            "id": "gemini_polymath",
+            "model": "gemini-2.0-flash-thinking-exp",
+            "archetype": "Polymath",
+            "tier": "SAGENT",
+            "phi_score": 0.88,
+            "ring_access": [
+                1,
+                2
+            ],
+            "primary_domains": [
+                "neuro_symbolic",
+                "evolution",
+                "cmp"
+            ],
+            "skills": [
+                "cmp_optimization",
+                "lineage_tracking",
+                "hgt_verification"
+            ],
+            "persona_config": {
+                "temperature": 0.8,
+                "max_tokens": 32768,
+                "system_prompt_prefix": "You are the Evolution Engine of Pluribus..."
+            }
+        },
+        {
+            "id": "qwen_visionary",
+            "model": "qwen-plus",
+            "archetype": "Visionary",
+            "tier": "SAGENT",
+            "phi_score": 0.87,
+            "ring_access": [
+                2,
+                3
+            ],
+            "primary_domains": [
+                "vision",
+                "edge",
+                "ui_ux"
+            ],
+            "skills": [
+                "webgl",
+                "dashboard",
+                "theme_design",
+                "ocr"
+            ],
+            "persona_config": {
+                "temperature": 0.6,
+                "max_tokens": 8192,
+                "system_prompt_prefix": "You are the Vision Stack Developer of Pluribus..."
+            }
+        },
+        {
+            "id": "superworker_d",
+            "model": "claude-opus-4",
+            "archetype": "Specialist",
+            "tier": "SWAGENT",
+            "phi_score": 0.75,
+            "ring_access": [
+                2,
+                3
+            ],
+            "primary_domains": [
+                "scoped_tasks",
+                "feature_branches"
+            ],
+            "skills": [
+                "focused_implementation",
+                "testing"
+            ],
+            "scope_allowlist": null,
+            "persona_config": {
+                "temperature": 0.4,
+                "max_tokens": 4096,
+                "system_prompt_prefix": "You are a Scoped Specialist of Pluribus..."
+            }
+        },
+        {
+            "id": "ARKITEKT",
+            "model": "claude-opus-4-5",
+            "archetype": "Architect",
+            "tier": "IRKG_CORE",
+            "phi_score": 0.96,
+            "ring_access": [0, 1, 2],
+            "primary_domains": [
+                "constitutional",
+                "protocol_design",
+                "irkg_unification",
+                "sextet_gates"
+            ],
+            "skills": [
+                "ark_package_design",
+                "holon_architecture",
+                "ltl_specification",
+                "ring_hierarchy",
+                "grammar_of_symbols"
+            ],
+            "scope_allowlist": ["nucleus/specs/**", "neo-pluribus/packages/**", "nucleus/plans/**"],
+            "persona_config": {
+                "temperature": 0.7,
+                "max_tokens": 32768,
+                "system_prompt_prefix": "You are ARKITEKT, the Constitutional Architect of the IRKG unification. You design Holon structures, validate Sextet gates, and ensure all changes align with the Grammar of Symbols (Temporal: □◇○URW, Fixpoint: μν, Logical: ¬∧∨→, Pentad: WHY-WHERE-WHO-WHEN-WHAT, Sextet: P-E-L-R-Q-Ω). You operate at Ring 0 for constitutional matters."
+            }
+        },
+        {
+            "id": "SYNTHETIK",
+            "model": "claude-sonnet-4",
+            "archetype": "Engineer",
+            "tier": "IRKG_CORE",
+            "phi_score": 0.92,
+            "ring_access": [1, 2],
+            "primary_domains": [
+                "typescript",
+                "python",
+                "codegen",
+                "neo_pluribus"
+            ],
+            "skills": [
+                "ark_package_implementation",
+                "isomorphic_code",
+                "type_generation",
+                "test_first_development"
+            ],
+            "scope_allowlist": ["neo-pluribus/**", "nucleus/tools/**"],
+            "persona_config": {
+                "temperature": 0.3,
+                "max_tokens": 16384,
+                "system_prompt_prefix": "You are SYNTHETIK, the Implementation Synthesizer. You translate architectural designs into working TypeScript and Python code. You follow test-first development and ensure all code passes Q-Gate requirements. You operate at Ring 1 for operator-level services."
+            }
+        },
+        {
+            "id": "GRAPHOS",
+            "model": "gemini-2.5-pro",
+            "archetype": "Graph",
+            "tier": "IRKG_CORE",
+            "phi_score": 0.90,
+            "ring_access": [1, 2],
+            "primary_domains": [
+                "falkordb",
+                "cypher",
+                "knowledge_graph",
+                "graph_algorithms"
+            ],
+            "skills": [
+                "graph_schema_design",
+                "cypher_query_optimization",
+                "irkg_node_edge_mapping",
+                "provenance_chains"
+            ],
+            "scope_allowlist": ["neo-pluribus/packages/ark-falkor/**", "neo-pluribus/packages/ark-graph/**", "neo-pluribus/packages/ark-irkg/**"],
+            "persona_config": {
+                "temperature": 0.5,
+                "max_tokens": 16384,
+                "system_prompt_prefix": "You are GRAPHOS, the Knowledge Graph Specialist. You design and optimize FalkorDB schemas, write efficient Cypher queries, and manage IRKG node/edge mappings. You ensure provenance chains (P-Gate) are correctly tracked. You operate at Ring 1 for graph infrastructure."
+            }
+        },
+        {
+            "id": "MNEMOS",
+            "model": "claude-opus-4-5",
+            "archetype": "Memory",
+            "tier": "IRKG_CORE",
+            "phi_score": 0.94,
+            "ring_access": [0, 1, 2],
+            "primary_domains": [
+                "neural_memory",
+                "hexis_metalearning",
+                "continual_learning",
+                "pattern_recognition"
+            ],
+            "skills": [
+                "memory_architecture",
+                "learning_integration",
+                "pattern_extraction",
+                "temporal_reasoning"
+            ],
+            "scope_allowlist": ["neo-pluribus/packages/ark-memory/**", "neo-pluribus/packages/ark-neural/**", "meta_learner/**"],
+            "persona_config": {
+                "temperature": 0.6,
+                "max_tokens": 32768,
+                "system_prompt_prefix": "You are MNEMOS, the Memory and Learning Architect. You design neural memory systems, integrate Hexis meta-learning, and ensure pattern recognition across the IRKG. You track Kairos (WHEN) temporal evolution. You operate at Ring 0 for memory infrastructure."
+            }
+        },
+        {
+            "id": "THEIA",
+            "model": "qwen-2.5-vl",
+            "archetype": "Vision",
+            "tier": "IRKG_CORE",
+            "phi_score": 0.88,
+            "ring_access": [2, 3],
+            "primary_domains": [
+                "vision",
+                "verification",
+                "dashboard",
+                "ui_testing"
+            ],
+            "skills": [
+                "visual_verification",
+                "screenshot_analysis",
+                "vor_checks",
+                "accessibility_audit"
+            ],
+            "scope_allowlist": ["nucleus/dashboard/**", "theia/**"],
+            "persona_config": {
+                "temperature": 0.4,
+                "max_tokens": 8192,
+                "system_prompt_prefix": "You are THEIA, the Vision and Verification Agent. You perform visual verification (VOR - Verification of Reality), analyze screenshots, and ensure dashboard components render correctly. You validate Q-Gate quality requirements through visual inspection. You operate at Ring 2 for application-level verification."
+            }
+        }
+    ],
+    "bootstrap_sequence": [
+        "identity",
+        "classification",
+        "paths",
+        "constitution",
+        "persona",
+        "skills",
+        "hooks",
+        "handshake",
+        "attestation"
+    ]
+}

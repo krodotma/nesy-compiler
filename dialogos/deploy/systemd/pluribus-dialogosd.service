@@ -1,0 +1,36 @@
+[Unit]
+Description=Pluribus Dialogos Daemon - Interaction Trace & LLM Router
+Documentation=https://github.com/krodotma/pluribus
+After=network.target pluribus-bus-mirror.service
+Wants=pluribus-bus-mirror.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/pluribus
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=PLURIBUS_ACTOR=dialogosd
+Environment=PLURIBUS_DIALOGOS_TRACE=/pluribus/.pluribus/dialogos/trace.ndjson
+Environment=PLURIBUS_PROVIDER_PROFILE=web-only
+Environment=PLURIBUS_ALLOWED_PROVIDERS=chatgpt-web,claude-web,gemini-web,ollama-local,ollama,vllm-local,tensorzero
+
+ExecStart=/usr/bin/python3 /pluribus/nucleus/tools/dialogosd.py \
+    --bus-dir /pluribus/.pluribus/bus \
+    --actor dialogosd \
+    --poll 0.1
+
+Restart=always
+RestartSec=5
+StandardOutput=append:/pluribus/.pluribus/logs/dialogosd.log
+StandardError=append:/pluribus/.pluribus/logs/dialogosd.log
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=25%
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,37 @@
+[Unit]
+Description=Pluribus Dialogos Indexer (Trace to IR/KG/Vector)
+Documentation=https://github.com/krodotma/pluribus
+After=network.target pluribus-dialogosd.service
+Wants=pluribus-dialogosd.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/pluribus
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PLURIBUS_ROOT=/pluribus
+Environment=PLURIBUS_BUS_DIR=/pluribus/.pluribus/bus
+Environment=PLURIBUS_BUS_BACKEND=falkordb
+Environment=PLURIBUS_NDJSON_MODE=dr
+Environment=PLURIBUS_ACTOR=dialogos-indexer
+Environment=DIALOGOS_INDEXER_POLL_S=1.0
+Environment=DIALOGOS_INDEXER_STATS_S=60.0
+EnvironmentFile=/pluribus/nucleus/deploy/systemd/pluribus-falkordb.env
+
+ExecStart=/usr/bin/python3 /pluribus/nucleus/tools/dialogos_indexer.py \
+    daemon \
+    --poll 1.0 \
+    --stats-interval 60.0
+
+Restart=always
+RestartSec=5
+StandardOutput=append:/pluribus/.pluribus/logs/dialogos-indexer.log
+StandardError=append:/pluribus/.pluribus/logs/dialogos-indexer.log
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=25%
+
+[Install]
+WantedBy=multi-user.target

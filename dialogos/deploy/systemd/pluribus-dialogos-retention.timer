@@ -1,0 +1,16 @@
+[Unit]
+Description=Pluribus Dialogos Retention Timer - Daily trace cleanup
+Documentation=https://github.com/krodotma/pluribus
+
+[Timer]
+# Run daily at 3 AM local time
+OnCalendar=*-*-* 03:00:00
+# Randomize start by up to 30 minutes to avoid thundering herd
+RandomizedDelaySec=1800
+# Ensure timer runs after boot if missed
+Persistent=true
+# Wake system if suspended (optional, usually not needed for servers)
+# WakeSystem=false
+
+[Install]
+WantedBy=timers.target

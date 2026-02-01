@@ -1,0 +1,40 @@
+{
+  "$schema": "nucleus/specs/omega_pairs.schema.json",
+  "schema_version": 1,
+  "updated_iso": "2025-12-15T00:00:00Z",
+  "pairs": [
+    {
+      "id": "infer_sync",
+      "request_topics": ["infer_sync.request"],
+      "response_topics": ["infer_sync.response"]
+    },
+    {
+      "id": "pbflush",
+      "request_topics": ["operator.pbflush.request"],
+      "response_topics": ["operator.pbflush.ack"]
+    },
+    {
+      "id": "rd_tasks",
+      "request_topics": ["rd.tasks.dispatch"],
+      "response_topics": ["rd.tasks.ack", "rd.tasks.done"]
+    },
+    {
+      "id": "pluribuscheck",
+      "request_topics": ["pluribus.check.trigger"],
+      "response_topics": ["pluribus.check.report"]
+    },
+    {
+      "id": "dialogos",
+      "request_topics": ["dialogos.submit"],
+      "response_topics": ["dialogos.cell.end"],
+      "kinds_request": ["request"],
+      "kinds_response": ["response"]
+    },
+    {
+      "id": "a2a_negotiate",
+      "request_topics": ["a2a.negotiate.request"],
+      "response_topics": ["a2a.negotiate.response", "a2a.decline", "a2a.redirect"]
+    }
+  ]
+}
+
