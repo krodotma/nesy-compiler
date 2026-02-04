@@ -285,7 +285,7 @@ export async function createCollapser(
   config?: Partial<CollapserConfig & { lsaDimensions?: number }>
 ): Promise<SemanticCollapser> {
   // Dynamic import to avoid circular dependency
-  const { buildLSAModel } = await import('./lsa');
+  const { buildLSAModel } = await import('./lsa.js');
 
   const model = buildLSAModel(corpus, {
     dimensions: config?.lsaDimensions ?? 100

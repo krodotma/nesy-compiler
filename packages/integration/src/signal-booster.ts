@@ -14,9 +14,9 @@
  * Output: Boosted confidence score that respects symbolic constraints.
  */
 
-import type { LintResult, Severity } from './linter-bridge';
-import type { AntipatternMatch } from './antipattern-mapper';
-import { getAntipatternSummary } from './antipattern-mapper';
+import type { LintResult, LintViolation, Severity } from './linter-bridge.js';
+import type { AntipatternMatch } from './antipattern-mapper.js';
+import { getAntipatternSummary } from './antipattern-mapper.js';
 
 export type SignalSource =
   | 'linter'      // ESLint, Ruff, TSC, Biome
@@ -196,8 +196,8 @@ export class SignalBooster {
           confidence: 0.95,  // High confidence - compilers don't lie
           message: `${result.errorCount} error(s) in ${result.filePath}`,
           evidence: result.violations
-            .filter(v => v.severity === 'error')
-            .map(v => `${v.ruleId}: ${v.message}`),
+            .filter((v: LintViolation) => v.severity === 'error')
+            .map((v: LintViolation) => `${v.ruleId}: ${v.message}`),
         });
       }
 
@@ -208,8 +208,8 @@ export class SignalBooster {
           confidence: 0.8,
           message: `${result.warningCount} warning(s) in ${result.filePath}`,
           evidence: result.violations
-            .filter(v => v.severity === 'warning')
-            .map(v => `${v.ruleId}: ${v.message}`),
+            .filter((v: LintViolation) => v.severity === 'warning')
+            .map((v: LintViolation) => `${v.ruleId}: ${v.message}`),
         });
       }
 

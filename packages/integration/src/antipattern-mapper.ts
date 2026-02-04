@@ -9,7 +9,7 @@
  * Reference: AGENTIC_THRASH_TAXONOMY.md
  */
 
-import type { LintViolation, Severity } from './linter-bridge';
+import type { LintViolation, Severity } from './linter-bridge.js';
 
 export interface Antipattern {
   id: number;
