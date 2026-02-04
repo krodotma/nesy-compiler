@@ -1,4 +1,4 @@
-import {{ defineWorkspace }} from 'vitest/config';
+import { defineWorkspace } from 'vitest/config';
 
 export default defineWorkspace([
   'packages/core',
@@ -7,4 +7,5 @@ export default defineWorkspace([
   'packages/integration',
   'packages/learning',
   'packages/puzzle',
+  'packages/temporal',
 ]);
