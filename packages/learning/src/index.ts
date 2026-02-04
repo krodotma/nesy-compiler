@@ -50,3 +50,25 @@ export {
   type UncertaintyDecomposition,
   type EditTriplet,
 } from './training-loop.js';
+
+// Holon Exporter - Gold Standard Training Data Export
+export {
+  HolonExporter,
+  type TrainingPair,
+  type ExportConfig,
+  type Holon,
+} from './holon-exporter.js';
+
+// Negative Sampler - Bad Examples from Rejected Thrash
+export {
+  NegativeSampler,
+  type NegativeSample,
+  type SamplingConfig,
+} from './negative-sampler.js';
+
+// Context Serializer - Graph Neighborhood to LLM Prompt
+export {
+  ContextSerializer,
+  type GraphNeighborhood,
+  type SerializedContext,
+} from './context-serializer.js';
