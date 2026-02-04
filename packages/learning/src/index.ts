@@ -72,3 +72,11 @@ export {
   type GraphNeighborhood,
   type SerializedContext,
 } from './context-serializer.js';
+
+// Dataset Pipeline - Full Training Data Extraction Orchestration
+export {
+  DatasetPipeline,
+  type DatasetConfig,
+  type DatasetSplit,
+  type DatasetEntry,
+} from './dataset-pipeline.js';

@@ -1,13 +1,8 @@
 {
   "name": "@nesy/temporal",
   "version": "0.1.0",
-  "description": "Git archeology and temporal analysis for NeSy Compiler",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest"
-  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "dependencies": {
     "@nesy/core": "workspace:*"
   },

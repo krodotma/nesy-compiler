@@ -167,6 +167,361 @@ export class PCFGGenerator {
   }
 
   /**
+   * Convert the PCFG to GBNF format for llama.cpp constrained sampling.
+   */
+  toGBNF(): string {
+    return pcfgToGBNF(this.grammar).grammar;
+  }
+
+  /**
+   * Train grammar from a corpus of code samples.
+   * @param corpus Map of filename -> code content
+   */
+  trainFromCorpus(corpus: Map<string, string>): void {
+    const learner = new PCFGLearner();
+    
+    for (const [filename, code] of corpus) {
+      const tree = this.parseCodeToTree(code, filename);
+      if (tree) {
+        learner.learnFromTree(tree);
+      }
+    }
+
+    const learned = learner.buildGrammar(
+      this.grammar.name + '-trained',
+      this.grammar.language,
+      this.grammar.startSymbol
+    );
+
+    this.mergeGrammar(learned);
+  }
+
+  /**
+   * Parse code into a simplified parse tree.
+   */
+  private parseCodeToTree(code: string, filename: string): ParseTreeNode | null {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    
+    const tokens = this.tokenize(code, ext);
+    if (tokens.length === 0) return null;
+
+    return this.buildTreeFromTokens(tokens);
+  }
+
+  /**
+   * Simple tokenizer for code.
+   */
+  private tokenize(code: string, ext?: string): string[] {
+    const patterns: RegExp[] = [
+      /\b(function|const|let|var|return|if|else|for|while|class|interface|type|export|import|from|async|await|def|class|return|if|elif|else|for|while|try|except|finally|with|import|from|as)\b/g,
+      /\b(true|false|null|undefined|None|True|False)\b/g,
+      /[a-zA-Z_][a-zA-Z0-9_]*/g,
+      /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`/g,
+      /\d+\.?\d*/g,
+      /[{}()\[\];,.:=<>!&|+\-*/%]/g,
+      /===|!==|==|!=|<=|>=|&&|\|\||=>|->/g,
+    ];
+
+    const tokens: string[] = [];
+    let remaining = code;
+
+    while (remaining.length > 0) {
+      let matched = false;
+      remaining = remaining.replace(/^\s+/, '');
+      if (!remaining) break;
+
+      for (const pattern of patterns) {
+        pattern.lastIndex = 0;
+        const match = pattern.exec(remaining);
+        if (match && match.index === 0) {
+          tokens.push(match[0]);
+          remaining = remaining.slice(match[0].length);
+          matched = true;
+          break;
+        }
+      }
+
+      if (!matched) {
+        remaining = remaining.slice(1);
+      }
+    }
+
+    return tokens;
+  }
+
+  /**
+   * Build a parse tree from tokens.
+   */
+  private buildTreeFromTokens(tokens: string[]): ParseTreeNode {
+    const children: ParseTreeNode[] = [];
+    let i = 0;
+
+    while (i < tokens.length) {
+      const token = tokens[i];
+      
+      if (token === 'function' || token === 'def') {
+        const funcNode = this.parseFunction(tokens, i);
+        children.push(funcNode.node);
+        i = funcNode.end;
+      } else if (token === 'const' || token === 'let' || token === 'var') {
+        const varNode = this.parseVariable(tokens, i);
+        children.push(varNode.node);
+        i = varNode.end;
+      } else if (token === 'if') {
+        const ifNode = this.parseIf(tokens, i);
+        children.push(ifNode.node);
+        i = ifNode.end;
+      } else {
+        children.push({
+          type: this.classifyToken(token),
+          text: token,
+          children: [],
+          start: i,
+          end: i + 1,
+        });
+        i++;
+      }
+    }
+
+    return {
+      type: 'Program',
+      children,
+      start: 0,
+      end: tokens.length,
+    };
+  }
+
+  private parseFunction(tokens: string[], start: number): { node: ParseTreeNode; end: number } {
+    const children: ParseTreeNode[] = [];
+    let i = start;
+
+    children.push({ type: 'Keyword', text: tokens[i], children: [], start: i, end: i + 1 });
+    i++;
+
+    if (i < tokens.length && /^[a-zA-Z_]/.test(tokens[i])) {
+      children.push({ type: 'Identifier', text: tokens[i], children: [], start: i, end: i + 1 });
+      i++;
+    }
+
+    if (i < tokens.length && tokens[i] === '(') {
+      const params = this.parseParenthesized(tokens, i);
+      children.push(params.node);
+      i = params.end;
+    }
+
+    if (i < tokens.length && tokens[i] === '{') {
+      const block = this.parseBlock(tokens, i);
+      children.push(block.node);
+      i = block.end;
+    }
+
+    return {
+      node: { type: 'FunctionDeclaration', children, start, end: i },
+      end: i,
+    };
+  }
+
+  private parseVariable(tokens: string[], start: number): { node: ParseTreeNode; end: number } {
+    const children: ParseTreeNode[] = [];
+    let i = start;
+
+    while (i < tokens.length && tokens[i] !== ';' && tokens[i] !== '\n') {
+      children.push({
+        type: this.classifyToken(tokens[i]),
+        text: tokens[i],
+        children: [],
+        start: i,
+        end: i + 1,
+      });
+      i++;
+    }
+
+    if (i < tokens.length && tokens[i] === ';') {
+      children.push({ type: 'Punctuation', text: ';', children: [], start: i, end: i + 1 });
+      i++;
+    }
+
+    return {
+      node: { type: 'VariableDeclaration', children, start, end: i },
+      end: i,
+    };
+  }
+
+  private parseIf(tokens: string[], start: number): { node: ParseTreeNode; end: number } {
+    const children: ParseTreeNode[] = [];
+    let i = start;
+
+    children.push({ type: 'Keyword', text: tokens[i], children: [], start: i, end: i + 1 });
+    i++;
+
+    if (i < tokens.length && tokens[i] === '(') {
+      const cond = this.parseParenthesized(tokens, i);
+      children.push(cond.node);
+      i = cond.end;
+    }
+
+    if (i < tokens.length && tokens[i] === '{') {
+      const block = this.parseBlock(tokens, i);
+      children.push(block.node);
+      i = block.end;
+    }
+
+    if (i < tokens.length && tokens[i] === 'else') {
+      children.push({ type: 'Keyword', text: 'else', children: [], start: i, end: i + 1 });
+      i++;
+      if (i < tokens.length && tokens[i] === '{') {
+        const elseBlock = this.parseBlock(tokens, i);
+        children.push(elseBlock.node);
+        i = elseBlock.end;
+      }
+    }
+
+    return {
+      node: { type: 'IfStatement', children, start, end: i },
+      end: i,
+    };
+  }
+
+  private parseParenthesized(tokens: string[], start: number): { node: ParseTreeNode; end: number } {
+    const children: ParseTreeNode[] = [];
+    let i = start;
+    let depth = 0;
+
+    while (i < tokens.length) {
+      if (tokens[i] === '(') depth++;
+      else if (tokens[i] === ')') {
+        depth--;
+        if (depth === 0) {
+          children.push({ type: 'Punctuation', text: ')', children: [], start: i, end: i + 1 });
+          i++;
+          break;
+        }
+      }
+      children.push({
+        type: this.classifyToken(tokens[i]),
+        text: tokens[i],
+        children: [],
+        start: i,
+        end: i + 1,
+      });
+      i++;
+    }
+
+    return {
+      node: { type: 'ParameterList', children, start, end: i },
+      end: i,
+    };
+  }
+
+  private parseBlock(tokens: string[], start: number): { node: ParseTreeNode; end: number } {
+    const children: ParseTreeNode[] = [];
+    let i = start;
+    let depth = 0;
+
+    while (i < tokens.length) {
+      if (tokens[i] === '{') depth++;
+      else if (tokens[i] === '}') {
+        depth--;
+        if (depth === 0) {
+          children.push({ type: 'Punctuation', text: '}', children: [], start: i, end: i + 1 });
+          i++;
+          break;
+        }
+      }
+      children.push({
+        type: this.classifyToken(tokens[i]),
+        text: tokens[i],
+        children: [],
+        start: i,
+        end: i + 1,
+      });
+      i++;
+    }
+
+    return {
+      node: { type: 'Block', children, start, end: i },
+      end: i,
+    };
+  }
+
+  private classifyToken(token: string): string {
+    if (/^(function|const|let|var|return|if|else|for|while|class|def|import|export|from|async|await)$/.test(token)) {
+      return 'Keyword';
+    }
+    if (/^(true|false|null|undefined|None|True|False)$/.test(token)) {
+      return 'BooleanLiteral';
+    }
+    if (/^".*"$|^'.*'$|^`.*`$/.test(token)) {
+      return 'StringLiteral';
+    }
+    if (/^\d+\.?\d*$/.test(token)) {
+      return 'NumberLiteral';
+    }
+    if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(token)) {
+      return 'Identifier';
+    }
+    if (/^[{}()\[\];,.:=<>!&|+\-*/%]$/.test(token)) {
+      return 'Punctuation';
+    }
+    if (/^(===|!==|==|!=|<=|>=|&&|\|\||=>|->)$/.test(token)) {
+      return 'Operator';
+    }
+    return 'Token';
+  }
+
+  /**
+   * Merge learned grammar into existing grammar.
+   */
+  private mergeGrammar(learned: PCFGGrammar): void {
+    for (const rule of learned.rules) {
+      const existing = this.rulesByLHS.get(rule.lhs);
+      if (existing) {
+        const match = existing.find(r => r.rhs.join(' ') === rule.rhs.join(' '));
+        if (match) {
+          match.count += rule.count;
+        } else {
+          existing.push(rule);
+          this.grammar.rules.push(rule);
+        }
+      } else {
+        this.rulesByLHS.set(rule.lhs, [rule]);
+        this.grammar.rules.push(rule);
+      }
+    }
+
+    for (const t of learned.terminals) {
+      this.grammar.terminals.add(t);
+    }
+    for (const nt of learned.nonTerminals) {
+      this.grammar.nonTerminals.add(nt);
+    }
+
+    this.normalizeRuleProbabilities();
+  }
+
+  /**
+   * Normalize rule probabilities after training.
+   */
+  private normalizeRuleProbabilities(): void {
+    for (const rules of this.rulesByLHS.values()) {
+      const total = rules.reduce((sum, r) => sum + r.count, 0);
+      for (const rule of rules) {
+        rule.probability = rule.count / total;
+      }
+    }
+  }
+
+  /**
+   * Sample a production from a non-terminal.
+   * @param nonTerminal The non-terminal to sample from
+   * @returns Generated string from the production
+   */
+  sampleProduction(nonTerminal: string): string {
+    const tree = this.deriveSymbol(nonTerminal, 0);
+    return this.treeToString(tree);
+  }
+
+  /**
    * Generate a derivation tree.
    */
   generate(): ParseTreeNode {

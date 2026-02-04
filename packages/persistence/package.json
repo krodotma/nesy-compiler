@@ -1,13 +1,8 @@
 {
   "name": "@nesy/persistence",
   "version": "0.1.0",
-  "description": "FalkorDB persistence layer for NeSy Compiler",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "test": "vitest"
-  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "dependencies": {
     "@nesy/core": "workspace:*"
   },

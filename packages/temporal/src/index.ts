@@ -16,14 +16,14 @@
  */
 
 // Core temporal analysis
-export * from './git-walker';
-export * from './temporal-signal';
-export * from './thrash-detector';
-export * from './blame-map';
-export * from './entelechy';
-export * from './edit-triplet-extractor';
+export * from './git-walker.js';
+export * from './temporal-signal.js';
+export * from './thrash-detector.js';
+export * from './blame-map.js';
+export * from './entelechy.js';
+export * from './edit-triplet-extractor.js';
 
 // Advanced temporal analysis (Steps 22-25)
-export * from './branch-reconciler';
-export * from './aleatoric-check';
-export * from './four-d-compiler';
+export * from './branch-reconciler.js';
+export * from './aleatoric-check.js';
+export * from './four-d-compiler.js';
