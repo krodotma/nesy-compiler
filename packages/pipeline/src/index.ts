@@ -9,5 +9,6 @@ export * from './stages/ground';
 export * from './stages/constrain';
 export * from './stages/verify';
 export * from './stages/emit';
+export * from './stages/graph-emit';
 export * from './ir';
 export * from './compiler';
