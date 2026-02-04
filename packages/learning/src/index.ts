@@ -1,26 +1,10 @@
 /**
  * @nesy/learning - Learning and adaptation for neurosymbolic compilation
  *
- * This package implements the generative learning components:
- *
- * 1. RLCF - Reinforcement Learning from Compiler Feedback
- *    - Compilers are perfect reward functions
- *    - Learn to fix errors iteratively
- *
- * 2. Generator - Draft/Refine Code Generation
- *    - PCFG skeleton (draft)
- *    - SLM fills logic (refine)
- *    - Compiler verification
- *
- * 3. PCFG Grammar - Probabilistic Context-Free Grammar
- *    - Learn code structure from examples
- *    - Convert to GBNF for constrained decoding
- *
- * 4. Training Loop - The Denoise Loop
- *    - observation → decompose(aleatoric, epistemic)
- *    - denoise_epistemic(learn more)
- *    - accept_aleatoric(maintain diversity)
- *    - evolve
+ * Generative learning components:
+ * - RLCF: Reinforcement Learning from Compiler Feedback
+ * - Generator: Draft/Refine Code Generation
+ * - Training Loop: The Denoise Loop
  */
 
 // Basic components
@@ -55,19 +39,6 @@ export {
   type GenerationConstraint,
   type SLMProvider,
 } from './generator.js';
-
-// PCFG Grammar - Probabilistic Context-Free Grammar
-export {
-  PCFGLearner,
-  PCFGGenerator,
-  pcfgToGBNF,
-  createTypeScriptPCFG,
-  createPythonPCFG,
-  type PCFGRule,
-  type PCFGGrammar,
-  type GBNFGrammar,
-  type ParseTreeNode,
-} from './pcfg-grammar.js';
 
 // Training Loop - The Denoise Loop
 export {
