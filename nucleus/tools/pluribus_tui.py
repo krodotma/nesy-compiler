@@ -16,6 +16,10 @@ from __future__ import annotations
 import sys
 import time
 import uuid
+import os
+import json
+import shutil
+import argparse
 from dataclasses import dataclass
 from pathlib import Path
 from datetime import datetime
@@ -65,7 +69,7 @@ try:
     from textual.app import App, ComposeResult
     from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
     from textual.reactive import reactive
-    from textual.screen import ModalScreen
+    from textual.screen import ModalScreen, Screen
     from textual.widgets import (
         Button, DataTable, Footer, Header, Static, Input, TabbedContent, TabPane, 
         Log, Tree, DirectoryTree, Label, Markdown
@@ -74,6 +78,13 @@ try:
 except ImportError:
     sys.stderr.write("ERROR: textual not installed. Run: pip install textual\n")
     sys.exit(1)
+
+from rich import box
+from rich.columns import Columns
+from rich.console import Group
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
 
 # Import service registry logic
 try:
@@ -257,7 +268,7 @@ class DynamicHeader(Static):
         }
         c = colors.get(mood, "white")
         self.styles.color = c
-        self.styles.border_bottom = f"solid {c}"
+        self.styles.border_bottom = ("solid", c)
 
 class GestaltBar(Static):
     """Compact gestalt status bar showing generation/build/lineage info."""
@@ -429,6 +440,642 @@ class DiffModal(ModalScreen):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss()
 
+
+class TopologyWidget(Static):
+    """Visualizes the current agent topology state."""
+
+    DEFAULT_CSS = """
+    TopologyWidget {
+        height: 10;
+        border: solid yellow;
+        padding: 1;
+    }
+    .topo-header {
+        text-style: bold;
+        color: yellow;
+        dock: top;
+    }
+    .topo-value {
+        text-align: center;
+        text-style: bold;
+        color: white;
+        margin-top: 1;
+    }
+    .topo-detail {
+        text-align: center;
+        color: gray;
+    }
+    """
+
+    topology = reactive("single")
+    fanout = reactive(1)
+    reason = reactive("default")
+
+    def compose(self) -> ComposeResult:
+        yield Label("Active Topology", classes="topo-header")
+        yield Label(f"{self.topology.upper()}", classes="topo-value", id="topo-main")
+        yield Label(f"Fanout: {self.fanout}", classes="topo-detail", id="topo-fanout")
+        yield Label(f"Reason: {self.reason}", classes="topo-detail", id="topo-reason")
+
+    def watch_topology(self, val: str) -> None:
+        try:
+            self.query_one("#topo-main", Label).update(val.upper())
+            color = "green" if val == "single" else "cyan" if val == "star" else "magenta"
+            self.styles.border = ("solid", color)
+            self.query_one(".topo-header").styles.color = color
+        except Exception:
+            pass
+
+    def watch_fanout(self, val: int) -> None:
+        try:
+            self.query_one("#topo-fanout", Label).update(f"Fanout: {val}")
+        except Exception:
+            pass
+
+    def watch_reason(self, val: str) -> None:
+        try:
+            self.query_one("#topo-reason", Label).update(f"Reason: {val}")
+        except Exception:
+            pass
+
+
+def _clamp(text: str, max_len: int) -> str:
+    if max_len <= 0:
+        return ""
+    if len(text) <= max_len:
+        return text
+    if max_len <= 3:
+        return text[:max_len]
+    return text[: max_len - 3] + "..."
+
+
+def _format_bytes(value: float) -> str:
+    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    size = float(value)
+    for unit in units:
+        if size < 1024.0 or unit == units[-1]:
+            precision = 0 if unit == "B" else 1
+            return f"{size:.{precision}f}{unit}"
+        size /= 1024.0
+    return f"{size:.1f}PB"
+
+
+def _format_age(seconds: float) -> str:
+    if seconds < 60:
+        return f"{int(seconds)}s"
+    minutes = seconds / 60.0
+    if minutes < 60:
+        return f"{int(minutes)}m"
+    hours = minutes / 60.0
+    if hours < 24:
+        return f"{int(hours)}h"
+    days = hours / 24.0
+    return f"{int(days)}d"
+
+
+def _parse_iso_ts(iso: str) -> float | None:
+    if not iso:
+        return None
+    try:
+        return time.mktime(time.strptime(iso, "%Y-%m-%dT%H:%M:%SZ"))
+    except Exception:
+        return None
+
+
+def _tail_lines(path: Path, max_lines: int) -> list[str]:
+    if max_lines <= 0 or not path.exists():
+        return []
+    chunk_size = 8192
+    data = b""
+    try:
+        with path.open("rb") as handle:
+            handle.seek(0, os.SEEK_END)
+            end = handle.tell()
+            while end > 0 and data.count(b"\n") <= max_lines:
+                start = max(0, end - chunk_size)
+                handle.seek(start)
+                data = handle.read(end - start) + data
+                end = start
+    except Exception:
+        return []
+    lines = [ln.decode("utf-8", errors="ignore") for ln in data.splitlines() if ln.strip()]
+    return lines[-max_lines:]
+
+
+def _tail_ndjson(path: Path, max_lines: int) -> list[dict]:
+    lines = _tail_lines(path, max_lines)
+    out: list[dict] = []
+    for line in lines:
+        try:
+            out.append(json.loads(line))
+        except Exception:
+            continue
+    return out
+
+
+class MotdScreen(Screen):
+    CSS = """
+    MotdScreen {
+        layout: vertical;
+    }
+    #motd-header {
+        height: 3;
+        padding: 0 1;
+        background: $surface;
+        color: $text;
+        border-bottom: solid $primary;
+    }
+    #motd-title {
+        text-style: bold;
+    }
+    #motd-tabs {
+        height: 1fr;
+    }
+    #motd-yt-scroll, #motd-semops-scroll {
+        height: 1fr;
+        padding: 1;
+    }
+    #motd-pulse-grid {
+        layout: grid;
+        grid-size: 3 3;
+        grid-columns: 1fr 1fr 1fr;
+        grid-rows: 1fr 1fr auto;
+        gap: 1;
+        padding: 1;
+        height: 1fr;
+    }
+    #motd-bus {
+        height: 1fr;
+    }
+    #motd-agents {
+        height: 1fr;
+    }
+    #motd-services {
+        height: 1fr;
+    }
+    #motd-tasks-scroll {
+        height: 1fr;
+        grid-column: 1 / span 3;
+        grid-row: 2;
+    }
+    #motd-resources {
+        height: 4;
+        grid-column: 1 / span 3;
+        grid-row: 3;
+    }
+    """
+
+    BINDINGS = [
+        Binding("escape", "back", "Back"),
+        Binding("left", "prev_tab", show=False),
+        Binding("right", "next_tab", show=False),
+        Binding("tab", "next_tab", show=False),
+        Binding("shift+tab", "prev_tab", show=False),
+    ]
+
+    def __init__(
+        self,
+        root: Path,
+        bus_dir: Path | None = None,
+        state_root: Path | None = None,
+        semops_path: Path | None = None,
+        registry: ServiceRegistry | None = None,
+    ) -> None:
+        super().__init__()
+        self.root = root
+        self.bus_dir = bus_dir
+        self.state_root = state_root or (bus_dir.parent if bus_dir else root / ".pluribus")
+        self.semops_path = semops_path or (root / "nucleus" / "specs" / "semops.json")
+        self.registry = registry
+        self._bus_events: list[dict] = []
+
+    def compose(self) -> ComposeResult:
+        yield Container(
+            Static(
+                "MOTD: Tab/Left/Right to switch views | Esc back | Esc Esc exit",
+                id="motd-title",
+            ),
+            id="motd-header",
+        )
+        with TabbedContent(id="motd-tabs"):
+            with TabPane("YouTube", id="motd-yt"):
+                yield ScrollableContainer(Static(id="motd-yt-content"), id="motd-yt-scroll")
+            with TabPane("SemOps", id="motd-semops"):
+                yield ScrollableContainer(Static(id="motd-semops-content"), id="motd-semops-scroll")
+            with TabPane("Pulse", id="motd-pulse"):
+                yield Container(
+                    Static(id="motd-bus"),
+                    Static(id="motd-agents"),
+                    Static(id="motd-services"),
+                    ScrollableContainer(Static(id="motd-tasks"), id="motd-tasks-scroll"),
+                    Static(id="motd-resources"),
+                    id="motd-pulse-grid",
+                )
+
+    def on_mount(self) -> None:
+        self.refresh_youtube()
+        self.refresh_semops()
+        self.refresh_pulse()
+        self.set_interval(2.0, self.refresh_pulse)
+        self.set_interval(15.0, self.refresh_youtube)
+        self.set_interval(20.0, self.refresh_semops)
+
+    def action_back(self) -> None:
+        self.app.pop_screen()
+
+    def action_next_tab(self) -> None:
+        self._cycle_tab(1)
+
+    def action_prev_tab(self) -> None:
+        self._cycle_tab(-1)
+
+    def _cycle_tab(self, delta: int) -> None:
+        try:
+            tabs = self.query_one("#motd-tabs", TabbedContent)
+            panes = list(tabs.query(TabPane))
+            pane_ids = [pane.id for pane in panes if pane.id]
+            if not pane_ids:
+                return
+            current = tabs.active
+            if current not in pane_ids:
+                tabs.active = pane_ids[0]
+                return
+            idx = pane_ids.index(current)
+            tabs.active = pane_ids[(idx + delta) % len(pane_ids)]
+        except Exception:
+            pass
+
+    def _events_path(self) -> Path | None:
+        if self.bus_dir:
+            return self.bus_dir / "events.ndjson"
+        candidate = self.root / ".pluribus" / "bus" / "events.ndjson"
+        if candidate.exists():
+            return candidate
+        fallback = self.root / ".pluribus_local" / "bus" / "events.ndjson"
+        return fallback if fallback.exists() else None
+
+    def _task_ledger_path(self) -> Path | None:
+        primary = self.state_root / "index" / "task_ledger.ndjson"
+        if primary.exists():
+            return primary
+        fallback = self.root / ".pluribus_local" / "index" / "task_ledger.ndjson"
+        return fallback if fallback.exists() else None
+
+    def _event_ts(self, evt: dict) -> float:
+        ts = evt.get("ts")
+        if isinstance(ts, (int, float)):
+            return float(ts)
+        iso = evt.get("iso") or evt.get("data", {}).get("iso")
+        parsed = _parse_iso_ts(str(iso)) if iso else None
+        return parsed or 0.0
+
+    def refresh_pulse(self) -> None:
+        events_path = self._events_path()
+        if events_path:
+            self._bus_events = _tail_ndjson(events_path, 240)
+        else:
+            self._bus_events = []
+        self._update_bus_panel()
+        self._update_agents_panel()
+        self._update_services_panel()
+        self._update_tasks_panel()
+        self._update_resources_panel()
+
+    def refresh_youtube(self) -> None:
+        cache_dir = Path(os.environ.get("MOTD_CURATE_CACHE_DIR", "/tmp"))
+        prefix = os.environ.get("MOTD_CURATE_PREFIX", "ingest_thumbs")
+        meta_path = cache_dir / f"{prefix}_meta.json"
+        config_path = Path(
+            os.environ.get(
+                "MOTD_CURATE_CONFIG",
+                str(Path.home() / ".config" / "motd-curate" / "sources.json"),
+            )
+        )
+
+        meta = {}
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except Exception:
+                meta = {}
+
+        topics: list[str] = []
+        if config_path.exists():
+            try:
+                cfg = json.loads(config_path.read_text(encoding="utf-8"))
+                topics_cfg = cfg.get("topics")
+                if isinstance(topics_cfg, dict):
+                    topics.extend([str(k) for k in topics_cfg.keys()])
+                elif isinstance(topics_cfg, list):
+                    for item in topics_cfg:
+                        if isinstance(item, dict):
+                            name = item.get("name") or item.get("topic")
+                            if name:
+                                topics.append(str(name))
+                        elif isinstance(item, str):
+                            topics.append(item)
+            except Exception:
+                topics = []
+
+        table = Table(box=box.SIMPLE, expand=True, show_header=True)
+        table.add_column("Slot", width=4)
+        table.add_column("Title", ratio=3)
+        table.add_column("Channel", ratio=2)
+        table.add_column("Dur", width=6)
+        table.add_column("Topic", ratio=2)
+
+        items = meta.get("items") if isinstance(meta.get("items"), list) else []
+        if items:
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                slot = str(item.get("slot", "?"))
+                title = _clamp(str(item.get("title") or "Untitled"), 48)
+                channel = _clamp(str(item.get("channel") or item.get("uploader") or ""), 24)
+                duration = _clamp(str(item.get("duration") or ""), 6)
+                topic = _clamp(str(item.get("topic") or ""), 18)
+                table.add_row(slot, title, channel, duration, topic)
+        else:
+            table.add_row("-", "No cached picks (run motd-curate update)", "", "", "")
+
+        topic_lines = topics[:18] if topics else ["No topics configured"]
+        topics_text = Text("Topics: " + ", ".join(topic_lines), style="dim")
+        generated = meta.get("generated_at")
+        generated_line = ""
+        if isinstance(generated, (int, float)):
+            generated_line = f"Cache: {time.strftime('%Y-%m-%d %H:%M', time.localtime(float(generated)))}"
+        elif isinstance(generated, str):
+            generated_line = f"Cache: {generated}"
+        if generated_line:
+            topics_text.append("\n" + generated_line, style="dim")
+
+        content = Group(table, topics_text)
+        try:
+            self.query_one("#motd-yt-content", Static).update(content)
+        except Exception:
+            pass
+
+    def refresh_semops(self) -> None:
+        ops = {}
+        if self.semops_path.exists():
+            try:
+                data = json.loads(self.semops_path.read_text(encoding="utf-8"))
+                ops = data.get("operators") or {}
+            except Exception:
+                ops = {}
+
+        table = Table(box=box.SIMPLE, expand=True, show_header=True)
+        table.add_column("KEY", width=8)
+        table.add_column("Domain", width=12)
+        table.add_column("Topic", width=20)
+        table.add_column("Summary", ratio=3)
+
+        if isinstance(ops, dict) and ops:
+            for key in sorted(ops.keys())[:28]:
+                op = ops.get(key, {})
+                domain = _clamp(str(op.get("domain") or ""), 12)
+                topic = _clamp(str(op.get("bus_topic") or ""), 24)
+                desc = _clamp(str(op.get("description") or ""), 64)
+                table.add_row(key, domain, topic, desc)
+        else:
+            table.add_row("-", "No SemOps loaded", "", "")
+
+        info = Text("PB SemOps cheat sheet (live from semops.json)", style="dim")
+        content = Group(info, table)
+        try:
+            self.query_one("#motd-semops-content", Static).update(content)
+        except Exception:
+            pass
+
+    def _update_bus_panel(self) -> None:
+        events = self._bus_events[-14:]
+        table = Table(box=box.SIMPLE, expand=True, show_header=True)
+        table.add_column("Time", width=8)
+        table.add_column("Topic", ratio=3)
+        table.add_column("Actor", ratio=1)
+        if events:
+            for evt in events:
+                iso = str(evt.get("iso") or "")[11:19]
+                if not iso:
+                    iso = _format_age(time.time() - self._event_ts(evt))
+                topic = _clamp(str(evt.get("topic") or ""), 36)
+                actor = _clamp(str(evt.get("actor") or ""), 14)
+                table.add_row(iso, topic, actor)
+        else:
+            table.add_row("--", "No bus activity", "")
+        panel = Panel(table, title="BUS (live)", border_style="cyan")
+        try:
+            self.query_one("#motd-bus", Static).update(panel)
+        except Exception:
+            pass
+
+    def _update_agents_panel(self) -> None:
+        counts: dict[str, int] = {}
+        last_seen: dict[str, float] = {}
+        for evt in self._bus_events:
+            actor = str(evt.get("actor") or "unknown")
+            counts[actor] = counts.get(actor, 0) + 1
+            last_seen[actor] = max(last_seen.get(actor, 0.0), self._event_ts(evt))
+
+        table = Table(box=box.SIMPLE, expand=True, show_header=True)
+        table.add_column("Agent", ratio=2)
+        table.add_column("Last", width=6)
+        table.add_column("Cnt", width=4)
+
+        if counts:
+            for actor in sorted(last_seen, key=lambda a: last_seen[a], reverse=True)[:12]:
+                age = _format_age(time.time() - last_seen[actor])
+                table.add_row(_clamp(actor, 18), age, str(counts.get(actor, 0)))
+        else:
+            table.add_row("--", "--", "0")
+
+        panel = Panel(table, title="AGENTS", border_style="green")
+        try:
+            self.query_one("#motd-agents", Static).update(panel)
+        except Exception:
+            pass
+
+    def _update_services_panel(self) -> None:
+        table = Table(box=box.SIMPLE, expand=True, show_header=True)
+        table.add_column("Service", ratio=2)
+        table.add_column("Status", ratio=1)
+        table.add_column("PID", width=6)
+
+        if self.registry:
+            try:
+                self.registry.load()
+                svc_map = {s.id: {"def": s, "inst": None} for s in self.registry.list_services()}
+                for inst in self.registry.list_instances():
+                    if inst.service_id in svc_map:
+                        svc_map[inst.service_id]["inst"] = inst
+                ordered = sorted(
+                    svc_map.items(),
+                    key=lambda item: 0
+                    if item[1]["inst"] and item[1]["inst"].status == "running"
+                    else 1,
+                )
+                for sid, info in ordered[:16]:
+                    inst = info["inst"]
+                    status = "stopped"
+                    pid = "-"
+                    if inst and inst.status == "running":
+                        status = "running"
+                        pid = str(inst.pid)
+                    elif inst and inst.status == "error":
+                        status = "error"
+                    table.add_row(_clamp(sid, 20), status, pid)
+            except Exception:
+                table.add_row("--", "registry error", "--")
+        else:
+            table.add_row("--", "no registry", "--")
+
+        panel = Panel(table, title="SERVICES", border_style="blue")
+        try:
+            self.query_one("#motd-services", Static).update(panel)
+        except Exception:
+            pass
+
+    def _update_tasks_panel(self) -> None:
+        ledger_path = self._task_ledger_path()
+        entries = _tail_ndjson(ledger_path, 400) if ledger_path else []
+        tasks: dict[tuple[str, str], dict] = {}
+        for entry in entries:
+            run_id = entry.get("run_id") or entry.get("meta", {}).get("run_id")
+            if not run_id:
+                continue
+            actor = str(entry.get("actor") or "unknown")
+            ts = entry.get("ts")
+            if not isinstance(ts, (int, float)):
+                ts = _parse_iso_ts(str(entry.get("iso") or "")) or 0.0
+            key = (actor, str(run_id))
+            if key not in tasks or ts >= tasks[key].get("_ts", 0.0):
+                entry["_ts"] = ts
+                tasks[key] = entry
+
+        bus_updates: dict[tuple[str, str], dict] = {}
+        for evt in self._bus_events:
+            topic = str(evt.get("topic") or "")
+            if not any(x in topic for x in ("task", "strp", "dialogos", "infercell")):
+                continue
+            data = evt.get("data") if isinstance(evt.get("data"), dict) else {}
+            req_id = data.get("req_id") or data.get("run_id") or evt.get("run_id")
+            if not req_id:
+                continue
+            actor = str(evt.get("actor") or "unknown")
+            ts = self._event_ts(evt)
+            key = (actor, str(req_id))
+            if key not in bus_updates or ts >= bus_updates[key].get("_ts", 0.0):
+                bus_updates[key] = {"_ts": ts, "topic": topic}
+
+        for key, info in bus_updates.items():
+            if key not in tasks:
+                tasks[key] = {
+                    "actor": key[0],
+                    "run_id": key[1],
+                    "status": "bus",
+                    "meta": {"desc": info.get("topic")},
+                    "_ts": info.get("_ts", 0.0),
+                }
+
+        by_actor: dict[str, list[dict]] = {}
+        for (actor, _), entry in tasks.items():
+            by_actor.setdefault(actor, []).append(entry)
+
+        panels = []
+        now = time.time()
+        for actor in sorted(by_actor.keys())[:6]:
+            entries = sorted(by_actor[actor], key=lambda e: e.get("_ts", 0.0), reverse=True)
+            lines = []
+            for entry in entries[:6]:
+                run_id = str(entry.get("run_id") or "")[:8]
+                status = str(entry.get("status") or "event")
+                ts = float(entry.get("_ts") or 0.0)
+                for key in ((actor, str(entry.get("run_id") or "")),):
+                    if key in bus_updates:
+                        ts = max(ts, bus_updates[key].get("_ts", ts))
+                age = now - ts if ts else 0.0
+                age_label = _format_age(age) if age else "--"
+                state = "ip" if status == "in_progress" else status[:8]
+                if status == "in_progress" and age > 900:
+                    state = "stalled"
+                meta = entry.get("meta") if isinstance(entry.get("meta"), dict) else {}
+                desc = meta.get("desc") or meta.get("step") or entry.get("topic") or ""
+                desc = _clamp(str(desc), 28)
+                line = f"{run_id:8} {state:8} {age_label:>4} {desc}"
+                lines.append(line)
+            if not lines:
+                lines = ["no tasks"]
+            body = Text("\n".join(lines))
+            panels.append(Panel(body, title=_clamp(actor, 18), border_style="magenta"))
+
+        repo_path = os.environ.get("PLURIBUS_TRILATERREPO") or str(self.root)
+        header = Text(f"trilaterrepo: {repo_path}", style="dim")
+        content = Group(header, Columns(panels, expand=True, equal=True) if panels else Text("No tasks", style="dim"))
+        panel = Panel(content, title="TASKS (live)", border_style="magenta")
+        try:
+            self.query_one("#motd-tasks", Static).update(panel)
+        except Exception:
+            pass
+
+    def _render_resource_meter(self, label: str, used: int, total: int, free: int) -> Text:
+        pct = (used / total * 100.0) if total else 0.0
+        color = "green" if pct < 70 else "yellow" if pct < 85 else "red"
+        filled = int((pct / 100.0) * 12)
+        filled = max(0, min(12, filled))
+        bar = Text()
+        bar.append("[", style="dim")
+        bar.append("#" * filled, style=color)
+        bar.append("-" * (12 - filled), style="dim")
+        bar.append("]", style="dim")
+
+        text = Text()
+        text.append(f"{label} {pct:>4.0f}%\n", style="cyan")
+        text.append_text(bar)
+        text.append(
+            f" { _format_bytes(used) }/{ _format_bytes(total) } free { _format_bytes(free) }",
+            style="dim",
+        )
+        return text
+
+    def _update_resources_panel(self) -> None:
+        candidates = [
+            Path("/"),
+            self.root,
+            Path("/pluribus"),
+            Path("/var/lib/pluribus"),
+            Path("/tmp"),
+        ]
+        if self.bus_dir:
+            candidates.append(self.bus_dir)
+
+        meters = []
+        seen_paths: set[str] = set()
+        for path in candidates:
+            if not path.exists():
+                continue
+            try:
+                label = str(path)
+                if label in seen_paths:
+                    continue
+                seen_paths.add(label)
+                usage = shutil.disk_usage(path)
+                label = _clamp(label, 14)
+                meters.append(self._render_resource_meter(label, usage.used, usage.total, usage.free))
+            except Exception:
+                continue
+        if len(meters) > 5:
+            meters = meters[:5]
+
+        if not meters:
+            content = Text("No storage metrics available", style="dim")
+        else:
+            content = Columns(meters, expand=True, equal=True)
+        panel = Panel(content, title="RESOURCES", border_style="yellow")
+        try:
+            self.query_one("#motd-resources", Static).update(panel)
+        except Exception:
+            pass
+
 class PluribusTUI(App):
     CSS = """
     Screen {
@@ -528,7 +1175,7 @@ class PluribusTUI(App):
     .plurichat-control-value {
         width: auto;
         text-style: bold;
-        color: $cyan;
+        color: cyan;
         margin-right: 2;
     }
     .plurichat-status-pane {
@@ -547,12 +1194,12 @@ class PluribusTUI(App):
 
     .muse-status {
         dock: top;
-        right: 1;
         width: auto;
         padding: 0 1;
         background: $surface;
         color: $text;
         text-style: bold;
+        text-align: right;
     }
     """
 
@@ -560,6 +1207,7 @@ class PluribusTUI(App):
         Binding("q", "quit", "Quit"),
         Binding("r", "refresh", "Refresh"),
         Binding("p", "promote", "Promote Artifact", show=True, key_display="p"),
+        Binding("escape", "escape", "Back", show=False),
     ]
 
     TITLE = "Pluribus Master Control"
@@ -584,10 +1232,12 @@ class PluribusTUI(App):
     # Plurichat State
     chat_state = reactive(None) # type: ChatState
     
-    def __init__(self, root: Path, bus_dir: Path | None = None):
+    def __init__(self, root: Path, bus_dir: Path | None = None, motd_mode: bool = False):
         super().__init__()
         self.started_at = datetime.now()
         self.root = root
+        self.motd_mode = motd_mode
+        self._esc_armed = False
         if resolve_bus_paths:
             self.bus_paths = resolve_bus_paths(str(bus_dir) if bus_dir else None)
             self.bus_dir = Path(self.bus_paths.active_dir)
@@ -611,7 +1261,7 @@ class PluribusTUI(App):
         self.chat_state = ChatState(bus_dir=self.bus_dir, actor=default_actor())
 
     ASCII_GENOME = [
-        """
+        r"""
   ____  _       _   _     _ _ _                 
  |  _ \| |     | | (_)   | (_) |                
  | |_) | |_   _| |_ _  __| |_| |_ ___  _ __ ___ 
@@ -619,11 +1269,11 @@ class PluribusTUI(App):
  | |_) | | |_| | |_| | (_| | | || (_) | |  \__ \\
  |____/|_|\__,_|\__|_|\__,_|_|\__\___/|_|  |___/
         """,
-        """
+        r"""
  █▀█ █   █ █ █▀█ ▀█▀ █▀▄ █ █ █▀
  █▀▀ █▄▄ █▄█ █▀▄ ▄█▄ █▄▀ █▄█ ▄█
         """,
-        """
+        r"""
  .--.  .    .  .---..---..---..---. .  . .---.
  |   ) |    |  |    |    |    |   | |  | |    
  |---' |    |  |--- |--- |--- |---' |  | `---.
@@ -645,9 +1295,9 @@ class PluribusTUI(App):
         color = colors.get(mood, "white")
         
         # Update styles dynamically
-        self.screen.styles.border = f"solid {color}"
+        self.screen.styles.border = ("solid", color)
         for widget in self.query(".metric-card"):
-            widget.styles.border = f"solid {color}"
+            widget.styles.border = ("solid", color)
         
         # Trigger header update
         try:
@@ -693,6 +1343,7 @@ class PluribusTUI(App):
                             Label(f"{self.sextet_balance}", classes="card-value", id="val-sextet"),
                             classes="metric-card"
                         ),
+                        TopologyWidget(id="topology-widget"),
                         id="metrics-grid"
                     ),
                     Button("Force Muse (Trigger Art Director)", id="btn-force-muse", variant="primary")
@@ -842,7 +1493,10 @@ class PluribusTUI(App):
     def on_mount(self) -> None:
         self.query_one("#svc-table", DataTable).add_columns("ID", "Name", "Status", "PID")
         self.query_one("#rhizome-artifacts", DataTable).add_columns("SHA", "Name", "Kind", "Created")
-        self.query_one("#git-log-table", DataTable).add_columns("SHA", "Message", "Author", "Date")
+        try:
+            self.query_one("#git-log-table", DataTable).add_columns("SHA", "Message", "Author", "Date")
+        except Exception:
+            pass
         self.query_one("#semops-table", DataTable).add_columns("KEY", "id", "domain", "category", "aliases", "tool", "bus_topic", "user")
         
         self.set_interval(1.0, self.poll_bus)
@@ -861,6 +1515,19 @@ class PluribusTUI(App):
         self.load_git_status()
         self.load_policy_doc()
         self.update_plurichat_status() # Initial call
+        if self.motd_mode:
+            try:
+                self.push_screen(
+                    MotdScreen(
+                        root=self.root,
+                        bus_dir=getattr(self, "bus_dir", None),
+                        state_root=getattr(self, "state_root", None),
+                        semops_path=getattr(self, "SEMOPS_PATH", None),
+                        registry=self.registry,
+                    )
+                )
+            except Exception:
+                pass
 
 
     def load_semops_table(self) -> None:
@@ -887,6 +1554,19 @@ class PluribusTUI(App):
                 self.query_one("#dialogos-log", Log).write(f"[red]SemOps load failed: {e}[/]")
             except Exception:
                 pass
+
+    def load_git_status(self) -> None:
+        """Populate the git log table if it exists."""
+        try:
+            self.query_one("#git-log-table", DataTable)
+        except Exception:
+            return
+
+    def update_plurichat_status(self) -> None:
+        return
+
+    def update_plurichat_agent_activity(self) -> None:
+        return
 
     def load_policy_doc(self) -> None:
         """Load foundation spec + policy map into the Policy tab."""
@@ -1379,6 +2059,18 @@ class PluribusTUI(App):
                                  self.notify(f"Promotion Failed: {data.get('errors')}", severity="error")
 
                         # Update metrics
+                        if topic == "agent.topology.chosen":
+                            topo = data.get("topology", "single")
+                            fanout = int(data.get("fanout", 1))
+                            reason = data.get("reason", "unknown")
+                            try:
+                                tw = self.query_one(TopologyWidget)
+                                tw.topology = topo
+                                tw.fanout = fanout
+                                tw.reason = reason
+                            except Exception:
+                                pass
+
                         if topic == "pluribus.check.report":
                             self.vor_cdi = float(data.get("vor_metrics", {}).get("cdi", 0.0))
                         
@@ -1463,10 +2155,28 @@ class PluribusTUI(App):
     def log_bus_event(self, msg: str, level: str) -> None:
         pass
 
+    def action_escape(self) -> None:
+        if isinstance(self.screen, MotdScreen):
+            self.pop_screen()
+            return
+        if self._esc_armed:
+            self.exit()
+            return
+        self._esc_armed = True
+        try:
+            self.notify("Press ESC again to exit", severity="warning", timeout=1.5)
+        except Exception:
+            pass
+        self.set_timer(1.5, self._reset_escape)
+
+    def _reset_escape(self) -> None:
+        self._esc_armed = False
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", default=os.environ.get("PLURIBUS_ROOT") or os.getcwd())
     parser.add_argument("--bus-dir", default=os.environ.get("PLURIBUS_BUS_DIR") or None)
+    parser.add_argument("--motd", action="store_true")
     args = parser.parse_args()
     
     root = Path(args.root).resolve()
@@ -1482,14 +2192,14 @@ def main():
     if resolve_bus_paths:
         try:
             bus_dir = Path(resolve_bus_paths(bus_dir_default).active_dir)
-            app = PluribusTUI(root, bus_dir)
+            app = PluribusTUI(root, bus_dir, motd_mode=args.motd)
             app.run()
             return
         except Exception as e:
             print(f"Bus resolution failed: {e}")
     
     # Fallback/Test mode
-    app = PluribusTUI(root, None)
+    app = PluribusTUI(root, None, motd_mode=args.motd)
     app.run()
 
 if __name__ == "__main__":
