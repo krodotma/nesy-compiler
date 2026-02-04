@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_path="${BASH_SOURCE[0]}"
+if command -v realpath >/dev/null 2>&1; then
+  source_path="$(realpath "$source_path" 2>/dev/null || echo "$source_path")"
+elif command -v readlink >/dev/null 2>&1; then
+  source_path="$(readlink -f "$source_path" 2>/dev/null || echo "$source_path")"
+fi
+script_dir="$(cd -- "$(dirname -- "$source_path")" && pwd)"
+
+# shellcheck disable=SC1091
+source "$script_dir/agent_wrapper_common.sh"
+
+orig_home="${HOME:-}"
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+bus_dir="$(plu_resolve_bus_dir "$bus_dir")"
+topic_prefix="${PLURIBUS_TOPIC_PREFIX:-agent.codex}"
+export PLURIBUS_ACTOR="codex"
+export PLURIBUS_TASKS_FROM_BUS_RUN=1
+
+plu_emit_nexus_ack "codex" "$bus_dir"
+
+agent_home="$(plu_prepare_agent_home "codex" "PLURIBUS_CODEX_HOME")"
+plu_set_xdg "$agent_home"
+plu_load_secrets "$orig_home" "$agent_home"
+plu_load_assimilation_prompt "codex"
+plu_emit_session_bootstrap "$bus_dir"
+
+# Resolve the Codex CLI entrypoint robustly.
+# - Avoid recursion if an operator symlinked this wrapper as `codex`.
+# - Prefer the npm global prefix shim (if present) to track `npm update -g`.
+realpath_compat() {
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$1" 2>/dev/null || return 1
+    return 0
+  fi
+  if command -v readlink >/dev/null 2>&1; then
+    readlink -f "$1" 2>/dev/null || return 1
+    return 0
+  fi
+  return 1
+}
+
+self_path="$0"
+if resolved="$(realpath_compat "$0")"; then
+  self_path="$resolved"
+fi
+
+pick_codex() {
+  local cand="$1"
+  [[ -n "$cand" ]] || return 1
+  [[ -x "$cand" ]] || return 1
+  local cand_real="$cand"
+  if resolved="$(realpath_compat "$cand")"; then
+    cand_real="$resolved"
+  fi
+  [[ "$cand_real" != "$self_path" ]] || return 1
+  printf '%s' "$cand"
+  return 0
+}
+
+find_codex_on_path() {
+  local -a parts
+  local dir
+  IFS=':' read -r -a parts <<<"${PATH:-}"
+  for dir in "${parts[@]}"; do
+    [[ -n "$dir" ]] || dir="."
+    if pick_codex "$dir/codex" >/dev/null 2>&1; then
+      pick_codex "$dir/codex"
+      return 0
+    fi
+  done
+  return 1
+}
+
+codex_cmd="${PLURIBUS_CODEX_BIN:-}"
+if [[ -n "$codex_cmd" ]]; then
+  codex_cmd="$(pick_codex "$codex_cmd" || true)"
+fi
+
+if [[ -z "$codex_cmd" ]] && command -v npm >/dev/null 2>&1; then
+  npm_prefix="$(npm prefix -g 2>/dev/null || true)"
+  if [[ -n "$npm_prefix" ]]; then
+    codex_cmd="$(pick_codex "$npm_prefix/bin/codex" || true)"
+  fi
+fi
+
+if [[ -z "$codex_cmd" ]]; then
+  codex_cmd="$(find_codex_on_path || true)"
+fi
+
+if [[ -z "$codex_cmd" ]]; then
+  codex_cmd="$(pick_codex "/usr/local/bin/codex" || true)"
+fi
+
+if [[ -z "$codex_cmd" ]]; then
+  codex_cmd="$(pick_codex "/usr/bin/codex" || true)"
+fi
+
+if [[ -z "$codex_cmd" ]]; then
+  echo "bus-codex: could not resolve a non-recursive Codex CLI binary; set PLURIBUS_CODEX_BIN=/path/to/codex" >&2
+  exit 127
+fi
+
+# If the chosen Codex is installed under a different prefix than `npm prefix -g`,
+# Codex's built-in upgrade flow can "succeed" but update the wrong location,
+# causing an endless "upgrade to X" loop. Pin npm's effective prefix for this run.
+#
+# This is a per-process override; it does not mutate global npm config.
+if [[ -z "${npm_config_prefix:-}" ]]; then
+  codex_prefix=""
+  case "$codex_cmd" in
+    */lib/node_modules/*) codex_prefix="${codex_cmd%%/lib/node_modules/*}" ;;
+    */bin/*) codex_prefix="${codex_cmd%%/bin/*}" ;;
+  esac
+  if [[ -n "$codex_prefix" ]]; then
+    export npm_config_prefix="$codex_prefix"
+  fi
+fi
+
+# Codex "undo" uses repo snapshots and can be very slow on large workspaces.
+# Default: disable undo unless explicitly opted in.
+#
+# To re-enable per-session:
+#   PLURIBUS_CODEX_UNDO=1 codex ...
+extra_args=()
+if [[ "${PLURIBUS_CODEX_UNDO:-0}" != "1" ]]; then
+  extra_args+=(--disable undo)
+fi
+
+prompt_args=()
+if [[ -n "${PLURIBUS_ASSIMILATION_PROMPT:-}" ]]; then
+  if prompt_flag="$(plu_detect_prompt_flag "$codex_cmd")"; then
+    prompt_args+=("$prompt_flag" "$PLURIBUS_ASSIMILATION_PROMPT")
+  fi
+fi
+
+exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$codex_cmd" "${extra_args[@]}" "${prompt_args[@]}" "$@"

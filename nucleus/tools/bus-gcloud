@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+topic_prefix="${PLURIBUS_TOPIC_PREFIX:-agent.gcloud}"
+
+# Keep gcloud config out of /root and out of agent homes for LLM CLIs.
+gcloud_home="${PLURIBUS_GCLOUD_HOME:-/pluribus/.pluribus/agent_homes/gcloud}"
+mkdir -p "$gcloud_home" "$gcloud_home/.config/gcloud" >/dev/null 2>&1 || true
+
+export HOME="$gcloud_home"
+export CLOUDSDK_CONFIG="${CLOUDSDK_CONFIG:-$gcloud_home/.config/gcloud}"
+
+exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- gcloud "$@"
+

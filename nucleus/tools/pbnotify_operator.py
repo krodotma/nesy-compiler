@@ -201,7 +201,7 @@ def publish_hexis(
     except Exception:
         import hexis_buffer  # type: ignore
 
-    msg = hexis_buffer.HexisNotifyMessage(
+    msg = hexis_buffer.HexisMessage(
         actor=actor,
         agent_type=agent_type,
         req_id=req_id,

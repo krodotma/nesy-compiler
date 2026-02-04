@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+topic_prefix="${PLURIBUS_TOPIC_PREFIX:-agent.jules}"
+export PLURIBUS_ACTOR="jules"
+export PLURIBUS_TASKS_FROM_BUS_RUN=1
+
+# Emit assimilation evidence (non-blocking).
+PYTHONDONTWRITEBYTECODE=1 python3 "$script_dir/nexus_ack.py" --agent claude --bus-dir "$bus_dir" >/dev/null 2>&1 || true
+
+# "Jules" is treated as a role profile running on Claude Code CLI by default.
+# Override with PLURIBUS_JULES_CMD if you have a dedicated `jules` binary.
+agent_home="${PLURIBUS_CLAUDE_HOME:-/pluribus/.pluribus/agent_homes/claude}"
+if [[ -d "$agent_home" ]]; then
+  export HOME="$agent_home"
+fi
+
+cmd="${PLURIBUS_JULES_CMD:-claude}"
+
+# Prefer Nexus Bridge system prompt for Claude-backed Jules.
+if [[ "$cmd" == "claude" && -f /pluribus/nexus_bridge/claude.md ]]; then
+  export PLURIBUS_JULES_APPEND_SYSTEM_PROMPT="$(cat /pluribus/nexus_bridge/claude.md)"
+fi
+
+# If called with no args, start interactive. Otherwise, run with --print for non-interactive.
+if [[ $# -gt 0 ]]; then
+  if [[ -n "${PLURIBUS_JULES_APPEND_SYSTEM_PROMPT:-}" ]]; then
+    exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$cmd" --append-system-prompt "$PLURIBUS_JULES_APPEND_SYSTEM_PROMPT" --print "$@"
+  fi
+  exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$cmd" --print "$@"
+fi
+
+if [[ -n "${PLURIBUS_JULES_APPEND_SYSTEM_PROMPT:-}" ]]; then
+  exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$cmd" --append-system-prompt "$PLURIBUS_JULES_APPEND_SYSTEM_PROMPT"
+fi
+exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$cmd"

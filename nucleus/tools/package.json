@@ -1,0 +1,9 @@
+{
+  "name": "nucleus-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "isomorphic-git": "^1.30.1"
+  }
+}
+

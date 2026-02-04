@@ -1,0 +1,19 @@
+{
+  "name": "pluribus-mastra-sample",
+  "version": 1,
+  "steps": [
+    {
+      "name": "service_registry_list",
+      "cmd": ["python3", "/pluribus/nucleus/tools/service_registry.py", "--root", "/pluribus", "list"]
+    },
+    {
+      "name": "hexis_status_emit",
+      "cmd": ["python3", "/pluribus/nucleus/tools/hexis_status.py", "--actor", "mastra-sample"]
+    },
+    {
+      "name": "hello_world",
+      "cmd": ["python3", "-c", "print('hello from mastra_bridge')"]
+    }
+  ]
+}
+

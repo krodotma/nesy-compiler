@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Convenience wrapper: semantic keyword as a command.
+# Usage:
+#   PLURIBUSCHECK ["message..."]
+#   PLURIBUSCHECK --message "..." --timeout-s 5 --expect-actors "codex,claude" --strict
+
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+
+if [[ $# -gt 0 && "${1:-}" == -* ]]; then
+  exec python3 /pluribus/pluribus_next/tools/pluribus_check.py --bus-dir "$bus_dir" trigger "$@"
+fi
+
+msg="${*:-Manual trigger}"
+exec python3 /pluribus/pluribus_next/tools/pluribus_check.py --bus-dir "$bus_dir" trigger --message "$msg"

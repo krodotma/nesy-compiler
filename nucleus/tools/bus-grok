@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$script_dir/agent_wrapper_common.sh"
+
+orig_home="${HOME:-}"
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+bus_dir="$(plu_resolve_bus_dir "$bus_dir")"
+topic_prefix="${PLURIBUS_TOPIC_PREFIX:-agent.grok}"
+export PLURIBUS_ACTOR="grok"
+export PLURIBUS_TASKS_FROM_BUS_RUN=1
+
+plu_emit_nexus_ack "grok" "$bus_dir"
+
+agent_home="$(plu_prepare_agent_home "grok" "PLURIBUS_GROK_HOME")"
+plu_set_xdg "$agent_home"
+plu_load_secrets "$orig_home" "$agent_home"
+plu_load_assimilation_prompt "grok"
+plu_emit_session_bootstrap "$bus_dir"
+
+prompt_args=()
+grok_cmd="${PLURIBUS_GROK_BIN:-}"
+if [[ -z "$grok_cmd" ]]; then
+  grok_cmd="$(command -v grok || true)"
+fi
+if [[ -z "$grok_cmd" ]]; then
+  echo "bus-grok: grok CLI not found; set PLURIBUS_GROK_BIN=/path/to/grok" >&2
+  exit 127
+fi
+if [[ -n "${PLURIBUS_ASSIMILATION_PROMPT:-}" ]]; then
+  if prompt_flag="$(plu_detect_prompt_flag "$grok_cmd")"; then
+    prompt_args+=("$prompt_flag" "$PLURIBUS_ASSIMILATION_PROMPT")
+  fi
+fi
+
+exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$grok_cmd" "${prompt_args[@]}" "$@"

@@ -1,0 +1,186 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+actor="${PLURIBUS_ACTOR:-${USER:-unknown}}"
+topic_prefix="${PLURIBUS_TOPIC_PREFIX:-run}"
+run_id="${PLURIBUS_RUN_ID:-}"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+bus_py="$script_dir/agent_bus.py"
+statusline_py="$script_dir/statusline.py"
+task_ledger_py="$script_dir/task_ledger.py"
+
+usage() {
+  cat <<'EOF'
+bus-run — wrap a command and emit append-only bus events
+
+Usage:
+  tools/bus-run [--bus-dir DIR] [--topic-prefix PREFIX] [--run-id ID] -- <command> [args...]
+
+Emits:
+  <prefix>.start  (includes cmd/cwd)
+  <prefix>.end    (includes exit_code/duration_s)
+EOF
+}
+
+cmd=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --bus-dir) bus_dir="$2"; shift 2 ;;
+    --topic-prefix) topic_prefix="$2"; shift 2 ;;
+    --run-id) run_id="$2"; shift 2 ;;
+    --help|-h) usage; exit 0 ;;
+    --) shift; cmd=("$@"); break ;;
+    *) echo "unknown arg: $1" >&2; usage; exit 2 ;;
+  esac
+done
+
+if [[ ${#cmd[@]} -eq 0 ]]; then
+  usage
+  exit 2
+fi
+
+if [[ -z "$run_id" ]]; then
+  run_id="$(PYTHONDONTWRITEBYTECODE=1 python3 "$bus_py" --bus-dir "$bus_dir" mk-run-id)"
+fi
+
+task_enabled=0
+task_actor="${PLURIBUS_TASK_ACTOR:-}"
+task_topic="${PLURIBUS_TASK_TOPIC:-}"
+if [[ "${PLURIBUS_TASKS_FROM_BUS_RUN:-0}" == "1" ]] && [[ -f "$task_ledger_py" ]]; then
+  task_enabled=1
+  if [[ -z "$task_actor" && "$topic_prefix" == agent.* ]]; then
+    task_actor="${topic_prefix#agent.}"
+    task_actor="${task_actor%%.*}"
+  fi
+  if [[ -z "$task_topic" && -n "$task_actor" ]]; then
+    task_topic="agent.${task_actor}.task"
+  fi
+  if [[ -z "$task_actor" || -z "$task_topic" ]]; then
+    task_enabled=0
+  fi
+fi
+
+emit_task() {
+  local status="$1"
+  local meta_json="$2"
+  if [[ "$task_enabled" != "1" ]]; then
+    return 0
+  fi
+  PYTHONDONTWRITEBYTECODE=1 python3 "$task_ledger_py" append \
+    --req-id "$run_id" \
+    --actor "$task_actor" \
+    --topic "$task_topic" \
+    --status "$status" \
+    --run-id "$run_id" \
+    --meta "$meta_json" \
+    --bus-dir "$bus_dir" \
+    >/dev/null || true
+}
+
+start_ts="$(
+  PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+import time
+print(time.time())
+PY
+)"
+
+start_data="$(
+  PYTHONDONTWRITEBYTECODE=1 python3 - "${cmd[@]}" <<'PY'
+import json, os, sys
+print(json.dumps({"cmd": sys.argv[1:], "cwd": os.getcwd()}, ensure_ascii=False))
+PY
+)"
+
+task_start_meta="$(
+  PLURIBUS_TOPIC_PREFIX="$topic_prefix" PYTHONDONTWRITEBYTECODE=1 python3 - "${cmd[@]}" <<'PY'
+import json, os, sys
+cmd = sys.argv[1:]
+desc = " ".join(cmd).strip() or "run"
+if len(desc) > 140:
+  desc = desc[:137] + "..."
+meta = {
+  "desc": desc,
+  "cmd": cmd,
+  "cwd": os.getcwd(),
+  "topic_prefix": os.environ.get("PLURIBUS_TOPIC_PREFIX"),
+  "source": "bus-run",
+  "progress": 0.0,
+}
+print(json.dumps(meta, ensure_ascii=False))
+PY
+)" || task_start_meta="{}"
+
+PYTHONDONTWRITEBYTECODE=1 python3 "$bus_py" --bus-dir "$bus_dir" pub \
+  --topic "${topic_prefix}.start" \
+  --kind log \
+  --level info \
+  --actor "$actor" \
+  --run-id "$run_id" \
+  --data "$start_data" \
+  >/dev/null
+
+emit_task "in_progress" "$task_start_meta"
+
+set +e
+"${cmd[@]}"
+exit_code=$?
+set -e
+
+end_ts="$(
+  PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+import time
+print(time.time())
+PY
+)"
+duration="$(
+  PYTHONDONTWRITEBYTECODE=1 python3 - <<PY
+s=float("$start_ts")
+e=float("$end_ts")
+print(max(0.0, e - s))
+PY
+)"
+
+task_end_status="completed"
+if [[ "$exit_code" -ne 0 ]]; then
+  task_end_status="abandoned"
+fi
+task_end_meta="$(
+  PYTHONDONTWRITEBYTECODE=1 python3 - "$exit_code" "$duration" <<'PY'
+import json, sys
+try:
+  exit_code = int(float(sys.argv[1]))
+except Exception:
+  exit_code = 1
+try:
+  duration = float(sys.argv[2])
+except Exception:
+  duration = 0.0
+meta = {
+  "exit_code": exit_code,
+  "duration_s": duration,
+  "source": "bus-run",
+  "progress": 1.0,
+}
+print(json.dumps(meta, ensure_ascii=False))
+PY
+)" || task_end_meta="{}"
+
+PYTHONDONTWRITEBYTECODE=1 python3 "$bus_py" --bus-dir "$bus_dir" pub \
+  --topic "${topic_prefix}.end" \
+  --kind log \
+  --level "$([[ $exit_code -eq 0 ]] && echo info || echo error)" \
+  --actor "$actor" \
+  --run-id "$run_id" \
+  --data "{\"exit_code\":$exit_code,\"duration_s\":$duration}" \
+  >/dev/null || true
+
+emit_task "$task_end_status" "$task_end_meta"
+
+if [[ "${PLURIBUS_STATUSLINE:-1}" != "0" ]] && [[ -f "$statusline_py" ]]; then
+  # Print a short, non-intrusive status summary to STDERR (keeps wrapped command STDOUT clean).
+  PLURIBUS_ACTOR="$actor" PYTHONDONTWRITEBYTECODE=1 python3 "$statusline_py" --bus-dir "$bus_dir" --emit-bus 1>&2 || true
+fi
+
+exit "$exit_code"

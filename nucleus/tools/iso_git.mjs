@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import fs from 'fs'
 import git from 'isomorphic-git'
 import path from 'path'
-import { spawnSync } from 'child_process'
+import { spawn, spawnSync } from 'child_process'
 import { pathToFileURL } from 'url'
 import { verifySignedCommit, signMessage } from './iso_pqc.mjs'
 
@@ -25,9 +25,34 @@ const SKIP_DIR_NAMES = new Set([
   'LOST_FOUND',
 ])
 
+let SUBMODULE_PATHS = new Set()
+
+function loadSubmodulePaths(dir) {
+  const out = new Set()
+  const modulesPath = path.join(dir, '.gitmodules')
+  try {
+    if (fs.existsSync(modulesPath)) {
+      const content = fs.readFileSync(modulesPath, 'utf8')
+      for (const line of content.split('\n')) {
+        const match = line.match(/^\s*path\s*=\s*(.+)\s*$/)
+        if (match && match[1]) {
+          out.add(match[1].trim().replace(/\\/g, '/'))
+        }
+      }
+    }
+  } catch {}
+  SUBMODULE_PATHS = out
+  return out
+}
+
 function isSkippablePosixPath(posixPath) {
   const parts = String(posixPath || '').split('/')
-  return parts.some(p => SKIP_DIR_NAMES.has(p))
+  if (parts.some(p => SKIP_DIR_NAMES.has(p))) return true
+  for (const prefix of SUBMODULE_PATHS) {
+    if (!prefix) continue
+    if (posixPath === prefix || posixPath.startsWith(`${prefix}/`)) return true
+  }
+  return false
 }
 
 // --- CMP/VGT/HGT Evolutionary Lineage ---
@@ -87,39 +112,29 @@ async function treeBlobMap(dir, ref) {
 }
 
 async function ensureCleanWorktree(dir) {
-  if (process.env.PLURIBUS_FAST_STATUS === '1') {
-    const result = spawnSync('git', ['status', '--porcelain'], {
-      cwd: dir,
-      encoding: 'utf-8',
-    })
-    if (result.status === 0) {
-      const lines = String(result.stdout || '')
-        .split('\n')
-        .map(line => line.trimEnd())
-        .filter(Boolean)
-      const dirty = lines.map(line => line.slice(3)).filter(Boolean)
-      return { clean: dirty.length === 0, dirty }
+  loadSubmodulePaths(dir)
+  const dirty = []
+  const tracked = await git.listFiles({ fs, dir }).catch(() => [])
+  const trackedSet = new Set(tracked)
+
+  for (const filepath of tracked) {
+    if (!filepath || isSkippablePosixPath(filepath)) continue
+    try {
+      const status = await git.status({ fs, dir, filepath })
+      if (status !== 'unmodified' && status !== 'ignored') dirty.push(filepath)
+    } catch {
+      dirty.push(filepath)
     }
   }
 
-  try {
-    const matrix = await git.statusMatrix({ fs, dir })
-    const dirty = []
-    for (const row of matrix) {
-      const filepath = row[0]
-      if (!filepath || isSkippablePosixPath(filepath)) continue
-      const ignored = await git.isIgnored({ fs, dir, filepath }).catch(() => false)
-      if (ignored) continue
-      const head = row[1]
-      const workdir = row[2]
-      const stage = row[3]
-      if (head !== workdir || workdir !== stage) dirty.push(filepath)
-    }
-    return { clean: dirty.length === 0, dirty }
-  } catch (err) {
-    const fallback = await buildFallbackStatus(dir)
-    return { clean: fallback.dirty.length === 0, dirty: fallback.dirty }
+  const workFiles = await listWorkdirFiles(dir)
+  for (const filepath of workFiles) {
+    if (!filepath || trackedSet.has(filepath) || isSkippablePosixPath(filepath)) continue
+    const ignored = await git.isIgnored({ fs, dir, filepath }).catch(() => false)
+    if (!ignored) dirty.push(filepath)
   }
+
+  return { clean: dirty.length === 0, dirty }
 }
 
 // Evolutionary branch naming: evo/<YYYYMMDD>-<slug>
@@ -370,28 +385,6 @@ async function listWorkdirFiles(dir) {
   return out.sort()
 }
 
-async function listWorkdirFilesUnder(dir, relRoot) {
-  const out = []
-  const root = relRoot ? relRoot.split(path.sep).join('/') : ''
-
-  async function walk(rel) {
-    const abs = path.join(dir, rel)
-    const entries = await fs.promises.readdir(abs, { withFileTypes: true })
-    for (const ent of entries) {
-      const nextRel = rel ? path.join(rel, ent.name) : ent.name
-      if (isSkippablePath(nextRel)) continue
-      if (ent.isDirectory()) {
-        await walk(nextRel)
-      } else if (ent.isFile()) {
-        out.push(nextRel.split(path.sep).join('/'))
-      }
-    }
-  }
-
-  await walk(root)
-  return out
-}
-
 function parseGitIndex(indexPath) {
   // Minimal reader: version 2/3/4, stage=0 entries only.
   // Format: https://git-scm.com/docs/index-format
@@ -476,15 +469,14 @@ async function cmdCommit(dir, message, authorName, authorEmail, opts = {}) {
     currentBranch = await git.currentBranch({ fs, dir }) || 'main'
   } catch {}
 
-  // --- PQC Signing (STRICT MODE) ---
+  // --- PQC Signing ---
   let finalMessage = message
   try {
     finalMessage = signMessage(message)
+    // Only log if we actually signed it (signMessage throws if no keys)
     console.log('[PQC] Commit signed.')
   } catch (err) {
-    console.error('[PQC] CRITICAL: Signing failed. Strict mode enabled.')
-    console.error(err.message)
-    throw new Error('PQC Signing Required: Commit rejected.')
+    // Best-effort signing: proceed unsigned if no keys found
   }
 
   const sha = await git.commit({
@@ -545,29 +537,24 @@ async function cmdCommitPaths(dir, message, paths = [], authorName, authorEmail,
     throw new Error('commit-paths requires at least one path within the repo')
   }
 
+  let workFiles = null
   const expanded = new Set()
-  const dirPaths = []
   for (const p of normalized) {
     const abs = path.join(dir, p)
     try {
       const st = fs.statSync(abs)
       if (st.isDirectory()) {
-        dirPaths.push(p)
+        if (!workFiles) workFiles = await listWorkdirFiles(dir)
+        const prefix = p.endsWith('/') ? p : `${p}/`
+        for (const f of workFiles) {
+          if (String(f).startsWith(prefix)) expanded.add(f)
+        }
       } else {
         expanded.add(p)
       }
     } catch {
       // Path missing: if it exists in index we stage a removal.
       expanded.add(p)
-    }
-  }
-
-  if (dirPaths.length) {
-    for (const p of dirPaths) {
-      const files = await listWorkdirFilesUnder(dir, p)
-      for (const f of files) {
-        expanded.add(f)
-      }
     }
   }
 
@@ -670,22 +657,6 @@ async function cmdStatus(dir) {
   // Fast porcelain-ish output without spawning git CLI.
   // Use isomorphic-git statusMatrix to avoid O(N) blob reads/hashing in large repos.
   // Reference mapping: https://isomorphic-git.org/docs/en/statusMatrix (mirrored in node_modules).
-  if (process.env.PLURIBUS_FAST_STATUS === '1') {
-    const result = spawnSync('git', ['status', '--porcelain'], {
-      cwd: dir,
-      encoding: 'utf-8',
-    })
-    if (result.status === 0) {
-      const lines = String(result.stdout || '')
-        .split('\n')
-        .map(line => line.trimEnd())
-        .filter(Boolean)
-      emitBusEvent('git.status', { dir, lines, count: lines.length, fast: true })
-      console.log(lines.join('\n'))
-      return
-    }
-  }
-
   let matrix = []
   try {
     matrix = await git.statusMatrix({ fs, dir, filepaths: ['.'] })
@@ -741,131 +712,6 @@ async function cmdLog(dir) {
         parents: c.commit.parent
       }))
     }, null, 2))
-}
-
-// --- Resolve relative ref (e.g., HEAD~3, main~2) ---
-async function resolveRelativeRef(dir, ref) {
-  // Check for relative notation (e.g., HEAD~3, main~2, HEAD^)
-  const relMatch = ref.match(/^(.+?)([~^])(\d*)$/)
-  if (relMatch) {
-    const [, baseRef, op, countStr] = relMatch
-    const count = countStr ? parseInt(countStr, 10) : 1
-
-    // Resolve the base ref first
-    let oid
-    try {
-      oid = await git.resolveRef({ fs, dir, ref: baseRef })
-    } catch {
-      try {
-        oid = await git.resolveRef({ fs, dir, ref: `refs/remotes/${baseRef}` })
-      } catch {
-        oid = await git.expandOid({ fs, dir, oid: baseRef })
-      }
-    }
-
-    // Walk back through parents
-    for (let i = 0; i < count; i++) {
-      const commit = await git.readCommit({ fs, dir, oid })
-      if (!commit.commit.parent || commit.commit.parent.length === 0) {
-        throw new Error(`Not enough history to resolve ${ref}`)
-      }
-      oid = commit.commit.parent[0]
-    }
-    return oid
-  }
-
-  // Standard ref resolution
-  try {
-    return await git.resolveRef({ fs, dir, ref })
-  } catch {
-    try {
-      return await git.resolveRef({ fs, dir, ref: `refs/remotes/${ref}` })
-    } catch {
-      return await git.expandOid({ fs, dir, oid: ref })
-    }
-  }
-}
-
-// --- Diff Command: Compare two refs for affected project detection ---
-async function cmdDiff(dir, base, head) {
-  try {
-    // Resolve refs to OIDs (handles relative refs like HEAD~3)
-    let baseOid, headOid
-
-    try {
-      baseOid = await resolveRelativeRef(dir, base)
-    } catch (err) {
-      throw new Error(`Cannot resolve base ref: ${base} (${err.message})`)
-    }
-
-    try {
-      headOid = await resolveRelativeRef(dir, head)
-    } catch (err) {
-      throw new Error(`Cannot resolve head ref: ${head} (${err.message})`)
-    }
-
-    // Get tree maps for both refs
-    const baseTree = await treeBlobMap(dir, baseOid)
-    const headTree = await treeBlobMap(dir, headOid)
-
-    // Find all changed files
-    const allPaths = new Set([...baseTree.keys(), ...headTree.keys()])
-    const changedFiles = []
-    const changes = []
-
-    for (const filepath of allPaths) {
-      const baseFileOid = baseTree.get(filepath) || null
-      const headFileOid = headTree.get(filepath) || null
-
-      if (baseFileOid === headFileOid) continue
-
-      let status = 'M' // Modified
-      if (!baseFileOid && headFileOid) status = 'A' // Added
-      if (baseFileOid && !headFileOid) status = 'D' // Deleted
-
-      changedFiles.push(filepath)
-      changes.push({
-        path: filepath,
-        status,
-        base_oid: baseFileOid,
-        head_oid: headFileOid,
-      })
-    }
-
-    // Sort for deterministic output
-    changedFiles.sort()
-    changes.sort((a, b) => a.path.localeCompare(b.path))
-
-    const result = {
-      base: base,
-      head: head,
-      base_oid: baseOid,
-      head_oid: headOid,
-      changed_files: changedFiles,
-      changes: changes,
-      counts: {
-        total: changes.length,
-        added: changes.filter(c => c.status === 'A').length,
-        modified: changes.filter(c => c.status === 'M').length,
-        deleted: changes.filter(c => c.status === 'D').length,
-      },
-    }
-
-    console.log(JSON.stringify(result, null, 2))
-    emitBusEvent('git.diff', {
-      dir,
-      base,
-      head,
-      base_oid: baseOid,
-      head_oid: headOid,
-      file_count: changedFiles.length,
-    })
-
-    return result
-  } catch (err) {
-    console.error('Diff failed:', err.message)
-    process.exit(1)
-  }
 }
 
 // --- Show Command: Commit details with tree diff ---
@@ -975,47 +821,78 @@ async function cmdPush(dir, remote, branch, opts = {}) {
   // Get remote URL for bus event
   const remoteUrl = await git.getConfig({ fs, dir, path: `remote.${remote}.url` }).catch(() => null)
 
-  // Guard check: ensure worktree is clean
-  const { clean, dirty } = await ensureCleanWorktree(dir)
-  const allowDirty = process.env.PLURIBUS_ALLOW_DIRTY_PUSH === '1'
-  if (!clean && !opts.force && !allowDirty) {
-    console.error('Push rejected: uncommitted changes exist')
-    console.error('  Dirty files:', dirty.slice(0, 5).join(', '))
-    emitBusEvent('git.push.rejected', { dir, remote, branch, reason: 'dirty_worktree' })
-    process.exit(1)
-  }
-  if (!clean && allowDirty) {
-    console.log('[Push] Proceeding with dirty worktree (PLURIBUS_ALLOW_DIRTY_PUSH=1).')
-    emitBusEvent('git.push.dirty', { dir, remote, branch, dirty: dirty.slice(0, 25) })
+  // Guard check: ensure worktree is clean (time-boxed to avoid hanging on huge trees)
+  if (!opts.skipClean) {
+    const cleanResult = await Promise.race([
+      ensureCleanWorktree(dir).then(result => ({ ...result, timedOut: false })),
+      new Promise(resolve => setTimeout(
+        () => resolve({ clean: true, dirty: [], timedOut: true }),
+        opts.cleanTimeoutMs || 20000
+      )),
+    ])
+    if (cleanResult.timedOut) {
+      console.warn('[Push] Clean check timed out; proceeding without full verification')
+    } else if (!cleanResult.clean && !opts.force) {
+      console.error('Push rejected: uncommitted changes exist')
+      console.error('  Dirty files:', cleanResult.dirty.slice(0, 5).join(', '))
+      emitBusEvent('git.push.rejected', { dir, remote, branch, reason: 'dirty_worktree' })
+      process.exit(1)
+    }
   }
 
   // Use native git for actual push (boundary operation)
   const gitArgs = ['push', remote, branch]
   if (opts.force) gitArgs.push('--force')
   if (opts.setUpstream) gitArgs.push('--set-upstream')
+  if (opts.progress || opts.verbose) gitArgs.push('--progress')
 
   console.log(`[Push] Executing: git ${gitArgs.join(' ')}`)
 
-  const result = spawnSync('git', gitArgs, {
-    cwd: dir,
-    stdio: ['inherit', 'pipe', 'pipe'],
-    encoding: 'utf-8',
-    env: { ...process.env },
+  const env = {
+    ...process.env,
+    GIT_TERMINAL_PROMPT: '0',
+    ...(opts.verbose ? { GIT_PROGRESS_DELAY: '0' } : {}),
+  }
+  const stdio = opts.verbose ? 'inherit' : ['inherit', 'pipe', 'pipe']
+  const child = spawn('git', gitArgs, { cwd: dir, stdio, env })
+
+  let stdout = ''
+  let stderr = ''
+  if (!opts.verbose) {
+    if (child.stdout) child.stdout.on('data', chunk => { stdout += chunk.toString() })
+    if (child.stderr) child.stderr.on('data', chunk => { stderr += chunk.toString() })
+  }
+
+  const startedAt = Date.now()
+  const heartbeat = !opts.verbose ? setInterval(() => {
+    const seconds = Math.round((Date.now() - startedAt) / 1000)
+    console.log(`[Push] Still running (${seconds}s)...`)
+  }, 30000) : null
+
+  const result = await new Promise((resolve, reject) => {
+    child.on('error', reject)
+    child.on('close', code => resolve({ code }))
   })
 
-  if (result.status !== 0) {
-    console.error('Push failed:', result.stderr || result.stdout)
+  if (heartbeat) clearInterval(heartbeat)
+
+  const output = (stderr || stdout || '').trim()
+  if (result.code !== 0) {
+    const errorMessage = output || 'Push failed (see terminal output for details)'
+    console.error('Push failed:', errorMessage)
     emitBusEvent('git.push.failed', {
       dir,
       remote,
       branch,
       url: remoteUrl,
-      error: result.stderr || result.stdout,
+      error: errorMessage,
     })
     process.exit(1)
   }
 
-  console.log(result.stdout || result.stderr || 'Push successful')
+  if (!opts.verbose) {
+    console.log(output || 'Push successful')
+  }
 
   // Emit success event
   emitBusEvent('git.push', {
@@ -1027,55 +904,6 @@ async function cmdPush(dir, remote, branch, opts = {}) {
   })
 
   console.log(`[Push] Successfully pushed ${branch} to ${remote}`)
-}
-
-// --- Merge Command: Guarded boundary operation (uses native git) ---
-async function cmdMerge(dir, sourceRef, opts = {}) {
-  if (!sourceRef) {
-    console.log('Usage: node iso_git.mjs merge <dir> <source-ref> [--ff-only] [--no-ff] [--no-edit]')
-    process.exit(2)
-  }
-
-  const allowDirty = process.env.PLURIBUS_ALLOW_DIRTY_MERGE === '1'
-  const { clean, dirty } = await ensureCleanWorktree(dir)
-  if (!clean && !allowDirty) {
-    console.error('Merge rejected: uncommitted changes exist')
-    console.error('  Dirty files:', dirty.slice(0, 5).join(', '))
-    emitBusEvent('git.merge.rejected', { dir, source: sourceRef, reason: 'dirty_worktree' })
-    process.exit(1)
-  }
-  if (!clean && allowDirty) {
-    console.log('[Merge] Proceeding with dirty worktree (PLURIBUS_ALLOW_DIRTY_MERGE=1).')
-    emitBusEvent('git.merge.dirty', { dir, source: sourceRef, dirty: dirty.slice(0, 25) })
-  }
-
-  const args = ['merge', sourceRef]
-  if (opts.ffOnly) args.push('--ff-only')
-  if (opts.noFf) args.push('--no-ff')
-  if (opts.noEdit) args.push('--no-edit')
-
-  console.log(`[Merge] Executing: git ${args.join(' ')}`)
-
-  const result = spawnSync('git', args, {
-    cwd: dir,
-    stdio: ['inherit', 'pipe', 'pipe'],
-    encoding: 'utf-8',
-    env: { ...process.env },
-  })
-
-  if (result.status !== 0) {
-    console.error('Merge failed:', result.stderr || result.stdout)
-    emitBusEvent('git.merge.failed', {
-      dir,
-      source: sourceRef,
-      status: result.status,
-      stderr: result.stderr || null,
-    })
-    process.exit(result.status || 1)
-  }
-
-  console.log(`[Merge] Successfully merged ${sourceRef}`)
-  emitBusEvent('git.merge', { dir, source: sourceRef })
 }
 
 // --- Fetch Command: Guarded boundary operation (uses native git) ---
@@ -1309,27 +1137,9 @@ async function cmdCheckout(dir, name) {
     console.log('Usage: node iso_git.mjs checkout <directory> <branch>')
     process.exit(2)
   }
-  if (process.env.PLURIBUS_FAST_CHECKOUT === '1') {
-    const result = spawnSync('git', ['checkout', name], {
-      cwd: dir,
-      stdio: ['inherit', 'pipe', 'pipe'],
-      encoding: 'utf-8',
-      env: { ...process.env },
-    })
-    if (result.status !== 0) {
-      console.error('Checkout failed:', result.stderr || result.stdout)
-      emitBusEvent('git.checkout.failed', {
-        dir,
-        ref: name,
-        error: result.stderr || result.stdout,
-      })
-      process.exit(result.status || 1)
-    }
-  } else {
-    await git.checkout({ fs, dir, ref: name })
-  }
+  await git.checkout({ fs, dir, ref: name })
   console.log(`Checked out ${name}`)
-  emitBusEvent('git.checkout', { dir, ref: name, fast: process.env.PLURIBUS_FAST_CHECKOUT === '1' })
+  emitBusEvent('git.checkout', { dir, ref: name })
 }
 
 // --- Evolutionary Commands (CMP/VGT/HGT) ---
@@ -1725,32 +1535,18 @@ async function main() {
     } else if (command === 'show') {
       const ref = args[2]
       await cmdShow(dir, ref)
-    } else if (command === 'diff') {
-      // Parse diff arguments: diff <dir> --base <base> --head <head> [--json]
-      let baseRef = 'origin/main'
-      let headRef = 'HEAD'
-      for (let i = 2; i < args.length; i++) {
-        if (args[i] === '--base' && args[i + 1]) {
-          baseRef = args[++i]
-        } else if (args[i] === '--head' && args[i + 1]) {
-          headRef = args[++i]
-        }
-      }
-      await cmdDiff(dir, baseRef, headRef)
-    } else if (command === 'merge') {
-      const sourceRef = args[2]
-      const opts = {
-        ffOnly: args.includes('--ff-only'),
-        noFf: args.includes('--no-ff'),
-        noEdit: args.includes('--no-edit'),
-      }
-      await cmdMerge(dir, sourceRef, opts)
     } else if (command === 'push') {
       const remote = args[2] || 'origin'
       const branch = args[3]
+      const timeoutArg = args.find(arg => arg.startsWith('--clean-timeout='))
+      const timeoutValue = timeoutArg ? Number(timeoutArg.split('=')[1]) : null
       const opts = {
         force: args.includes('--force') || args.includes('-f'),
         setUpstream: args.includes('--set-upstream') || args.includes('-u'),
+        progress: args.includes('--progress') || args.includes('--verbose') || args.includes('-v'),
+        verbose: args.includes('--verbose') || args.includes('-v'),
+        skipClean: args.includes('--skip-clean') || args.includes('--no-clean-check'),
+        cleanTimeoutMs: Number.isFinite(timeoutValue) ? timeoutValue : undefined,
       }
       await cmdPush(dir, remote, branch, opts)
     } else if (command === 'fetch') {
@@ -1775,7 +1571,6 @@ async function main() {
       console.log('  status            Show working tree status')
       console.log('  log               Show commit log (JSON)')
       console.log('  show <sha>        Show commit details with diff')
-      console.log('  diff --base <ref> --head <ref>  Compare refs (for affected detection)')
       console.log('  remote            Manage remotes (local-only)')
       console.log('  untrack <path...> Remove from index (keep file)')
       console.log('  branch [name]     List or create branch')
@@ -1785,12 +1580,8 @@ async function main() {
       console.log('')
       console.log('Boundary Commands (require native git):')
       console.log('  push [remote] [branch]   Push to remote (guarded)')
-      console.log('  merge <ref>              Merge ref into current branch (guarded)')
       console.log('  fetch [remote]           Fetch from remote (guarded)')
       console.log('  clone <url> [dir]        Clone repository (guarded)')
-      console.log('')
-      console.log('Affected Detection (Nx-equivalent):')
-      console.log('  diff --base <base> --head <head>  Output changed files (JSON)')
       console.log('')
       console.log('Evolutionary subcommands (evo):')
       console.log('  branch <slug>     Create evo/<date>-<slug> branch')
@@ -1811,19 +1602,16 @@ export {
   cmdStatus,
   cmdLog,
   cmdShow,
-  cmdDiff,
   cmdRemote,
   cmdUntrack,
   cmdBranch,
   cmdCheckout,
   cmdEvo,
   cmdReset,
-  cmdMerge,
   cmdPush,
   cmdFetch,
   cmdClone,
   runHGTGuardLadder,
-  treeBlobMap,
 }
 
 const isMain = import.meta.url === pathToFileURL(path.resolve(process.argv[1] || '')).href

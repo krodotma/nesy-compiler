@@ -1,0 +1,100 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://pluribus.local/schemas/rhizome_node_v1.json",
+    "title": "RhizomeNode",
+    "description": "A node in the Rhizome pre-git semantic DAG. DKIN v29 | PAIP v15",
+    "type": "object",
+    "required": [
+        "id",
+        "content_hash",
+        "source_path",
+        "created_iso"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Unique node identifier (16-char hex)",
+            "pattern": "^[a-f0-9]{16}$"
+        },
+        "content_hash": {
+            "type": "string",
+            "description": "SHA-256 hash of content",
+            "pattern": "^[a-f0-9]{64}$"
+        },
+        "source_path": {
+            "type": "string",
+            "description": "Original file path"
+        },
+        "tags": {
+            "type": "array",
+            "description": "Semantic tags for retrieval",
+            "items": {
+                "type": "string"
+            },
+            "default": []
+        },
+        "embedding": {
+            "type": [
+                "array",
+                "null"
+            ],
+            "description": "Vector embedding (384/768/1024 dims)",
+            "items": {
+                "type": "number"
+            },
+            "default": null
+        },
+        "parents": {
+            "type": "array",
+            "description": "Parent node IDs in DAG",
+            "items": {
+                "type": "string"
+            },
+            "default": []
+        },
+        "children": {
+            "type": "array",
+            "description": "Child node IDs in DAG",
+            "items": {
+                "type": "string"
+            },
+            "default": []
+        },
+        "created_iso": {
+            "type": "string",
+            "description": "ISO 8601 creation timestamp",
+            "format": "date-time"
+        },
+        "metadata": {
+            "type": "object",
+            "description": "Additional metadata",
+            "properties": {
+                "size": {
+                    "type": "integer"
+                },
+                "ingested_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "etymon": {
+                    "type": "string"
+                },
+                "portal_inception_id": {
+                    "type": "string"
+                },
+                "cmp_score": {
+                    "type": "number"
+                },
+                "lineage_path": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "additionalProperties": true,
+            "default": {}
+        }
+    },
+    "additionalProperties": false
+}

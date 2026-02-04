@@ -1,911 +1,451 @@
 #!/usr/bin/env python3
-"""
-agent_bus.py - Bus event emission (FalkorDB primary, NDJSON DR-only)
-
-Provides:
-- Append-only writes with fallback support
-- Optional partitioning and rotation
-- CLI for publish/tail/resolve
-"""
 from __future__ import annotations
 
 import argparse
-import atexit
-import contextlib
-import io
-import gzip
+import getpass
 import json
 import os
 import socket
 import sys
-import threading
 import time
 import uuid
-from collections import deque
-from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
+import zlib
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Generator, Optional
+
+sys.dont_write_bytecode = True
 
 try:
     import fcntl  # type: ignore
 except Exception:  # pragma: no cover
     fcntl = None  # type: ignore
 
-# Performance: Cache hostname and PID at module load (avoid syscalls per emit)
-_CACHED_HOSTNAME: str = ""
-_CACHED_PID: int = 0
-
-def _get_cached_hostname() -> str:
-    global _CACHED_HOSTNAME
-    if not _CACHED_HOSTNAME:
-        _CACHED_HOSTNAME = socket.gethostname()
-    return _CACHED_HOSTNAME
-
-def _get_cached_pid() -> int:
-    global _CACHED_PID
-    if not _CACHED_PID:
-        _CACHED_PID = os.getpid()
-    return _CACHED_PID
-
-# FalkorDB integration for real-time bus (NDJSON remains for DR)
-_FALKORDB_SERVICE = None
-_FALKORDB_CHECKED = False
-
-# Performance: Event batching for high-throughput scenarios
-_BATCH_BUFFER: list[tuple[str, str, bool, bool]] = []  # [(path, line, durable, rotate), ...]
-_BATCH_SIZE = int(os.environ.get("PLURIBUS_BUS_BATCH_SIZE", "0"))  # 0 = disabled
-_BATCH_FLUSH_MS = int(os.environ.get("PLURIBUS_BUS_BATCH_FLUSH_MS", "50"))
-_BATCH_LOCK = None  # Lazy init threading.Lock
-_BATCH_TIMER = None  # Background flush timer
-
-# Non-blocking ring buffer + spooler for NDJSON DR writes
-_SPOOLER = None  # Lazy init BusSpooler
-_SPOOLER_LOCK = threading.Lock()
+BUS_PARTITION_DEFAULT = "topics"
+BUS_PARTITION_CONFIG_ENV = "PLURIBUS_BUS_PARTITION_CONFIG"
+BUS_MIN_RETAIN_MB_DEFAULT = 100.0
+BUS_RETAIN_MB_DEFAULT = 100.0
+BUS_ROTATE_MB_DEFAULT = 100.0
+BUS_ROTATE_HEADROOM_MB_DEFAULT = 0.0
+_PARTITION_CONFIG_CACHE: dict | None = None
 
 
-@dataclass(frozen=True)
-class _SpoolItem:
-    path: str
-    line: str
-    rotate: bool
-    size_bytes: int
-
-
-class _BusSpooler:
-    def __init__(self, max_entries: int, max_bytes: int, flush_s: float, drop_policy: str):
-        self._max_entries = max(0, max_entries)
-        self._max_bytes = max(0, max_bytes)
-        self._flush_s = max(0.0, flush_s)
-        self._drop_policy = drop_policy
-        self._queue: deque[_SpoolItem] = deque()
-        self._bytes = 0
-        self._dropped = 0
-        self._lock = threading.Lock()
-        self._wake = threading.Event()
-        self._stop = threading.Event()
-        self._thread = threading.Thread(target=self._run, name="bus-spooler", daemon=True)
-        self._thread.start()
-
-    def enqueue(self, item: _SpoolItem) -> None:
-        with self._lock:
-            if not self._accept_item(item):
-                return
-            self._queue.append(item)
-            self._bytes += item.size_bytes
-        self._wake.set()
-
-    def flush(self) -> None:
-        self._drain()
-
-    def stats(self) -> dict[str, int]:
-        with self._lock:
-            return {"queued": len(self._queue), "bytes": self._bytes, "dropped": self._dropped}
-
-    def stop(self, timeout_s: float = 1.0) -> None:
-        self._stop.set()
-        self._wake.set()
-        self._thread.join(timeout_s)
-        self._drain()
-
-    def _accept_item(self, item: _SpoolItem) -> bool:
-        if self._max_entries <= 0 and self._max_bytes <= 0:
-            return True
-
-        if self._drop_policy == "newest":
-            if self._max_entries > 0 and len(self._queue) >= self._max_entries:
-                self._dropped += 1
-                return False
-            if self._max_bytes > 0 and (self._bytes + item.size_bytes) > self._max_bytes:
-                self._dropped += 1
-                return False
-            return True
-
-        # Default: drop oldest to retain newest
-        if self._max_entries > 0:
-            while len(self._queue) >= self._max_entries:
-                self._drop_oldest()
-        if self._max_bytes > 0:
-            while self._queue and (self._bytes + item.size_bytes) > self._max_bytes:
-                self._drop_oldest()
-            if not self._queue and (self._bytes + item.size_bytes) > self._max_bytes:
-                self._dropped += 1
-                return False
-        return True
-
-    def _drop_oldest(self) -> None:
-        if not self._queue:
-            return
-        dropped = self._queue.popleft()
-        self._bytes -= dropped.size_bytes
-        self._dropped += 1
-
-    def _run(self) -> None:
-        while not self._stop.is_set():
-            self._wake.wait(self._flush_s if self._flush_s > 0 else 0.05)
-            self._wake.clear()
-            self._drain()
-
-    def _drain(self) -> None:
-        with self._lock:
-            if not self._queue:
-                return
-            items = list(self._queue)
-            self._queue.clear()
-            self._bytes = 0
-
-        by_path: dict[str, list[str]] = {}
-        rotate_paths: set[str] = set()
-        for item in items:
-            by_path.setdefault(item.path, []).append(item.line)
-            if item.rotate:
-                rotate_paths.add(item.path)
-
-        for path, lines in by_path.items():
-            _append_line_direct(path, "".join(lines), durable=False)
-
-        for path in rotate_paths:
-            _apply_rotation_policy(path, durable=False)
-
-
-def _spooler_enabled() -> bool:
-    return _truthy_env(os.environ.get("PLURIBUS_BUS_SPOOLER"), True)
-
-
-def _spooler_config() -> tuple[int, int, float, str]:
-    def _int_env(name: str, default: int) -> int:
-        raw = os.environ.get(name)
-        if raw is None or raw == "":
-            return default
-        try:
-            return int(raw)
-        except ValueError:
-            return default
-
-    def _float_env(name: str, default: float) -> float:
-        raw = os.environ.get(name)
-        if raw is None or raw == "":
-            return default
-        try:
-            return float(raw)
-        except ValueError:
-            return default
-
-    max_entries = _int_env("PLURIBUS_BUS_SPOOLER_SIZE", 4096)
-    max_bytes = _int_env("PLURIBUS_BUS_SPOOLER_MAX_BYTES", 8 * 1024 * 1024)
-    flush_ms = _float_env("PLURIBUS_BUS_SPOOLER_FLUSH_MS", 25.0)
-    drop_policy = (os.environ.get("PLURIBUS_BUS_SPOOLER_DROP") or "oldest").strip().lower()
-    if drop_policy not in {"oldest", "newest"}:
-        drop_policy = "oldest"
-    return max_entries, max_bytes, max(0.0, flush_ms / 1000.0), drop_policy
-
-
-def _get_spooler() -> _BusSpooler:
-    global _SPOOLER
-    if _SPOOLER is not None:
-        return _SPOOLER
-    with _SPOOLER_LOCK:
-        if _SPOOLER is None:
-            max_entries, max_bytes, flush_s, drop_policy = _spooler_config()
-            _SPOOLER = _BusSpooler(max_entries, max_bytes, flush_s, drop_policy)
-            atexit.register(_SPOOLER.stop)
-    return _SPOOLER
-
-
-def flush_spooler() -> None:
-    if _SPOOLER is None:
-        return
-    _SPOOLER.flush()
-
-
-def _reset_spooler_for_tests() -> None:
-    global _SPOOLER
-    if _SPOOLER is None:
-        return
-    _SPOOLER.stop()
-    _SPOOLER = None
-
-def _get_falkordb_service():
-    """Get FalkorDB service, lazy-loaded. Returns None if unavailable."""
-    global _FALKORDB_SERVICE, _FALKORDB_CHECKED
-    if _FALKORDB_CHECKED:
-        return _FALKORDB_SERVICE
-    _FALKORDB_CHECKED = True
-
-    backend = os.environ.get("PLURIBUS_BUS_BACKEND", "both").lower()
-    if backend == "ndjson":
-        return None  # NDJSON-only mode
-
-    try:
-        from falkordb_bus_events import BusEventService
-        _FALKORDB_SERVICE = BusEventService()
-        if _FALKORDB_SERVICE.connect():
-            return _FALKORDB_SERVICE
-        else:
-            _FALKORDB_SERVICE = None
-    except Exception:
-        pass
-    return None
-
-EVENTS_FILE = "events.ndjson"
-BUS_FILE_MODE = 0o666
-_PARTITION_CONFIG_CACHE: Optional[dict[str, Any]] = None
-
-
-class EventKind:
-    REQUEST = "request"
-    RESPONSE = "response"
-    EVENT = "event"
-    ERROR = "error"
-
-
-class EventLevel:
-    DEBUG = "debug"
-    INFO = "info"
-    WARN = "warn"
-    ERROR = "error"
-
-
-@dataclass
-class BusEvent:
-    """Canonical bus event structure with optional lineage metadata."""
-    id: str
-    ts: float
-    iso: str
-    topic: str
-    kind: str
-    level: str
-    actor: str
-    data: dict
-    host: Optional[str] = None
-    pid: Optional[int] = None
-    trace_id: Optional[str] = None
-    run_id: Optional[str] = None
-    lineage_id: Optional[str] = None
-    parent_lineage_id: Optional[str] = None
-    mutation_op: Optional[str] = None
-
-    @classmethod
-    def create(
-        cls,
-        topic: str,
-        actor: str,
-        data: dict,
-        kind: str = EventKind.EVENT,
-        level: str = EventLevel.INFO,
-        lineage_id: Optional[str] = None,
-        parent_lineage_id: Optional[str] = None,
-        mutation_op: Optional[str] = None,
-    ) -> "BusEvent":
-        now = time.time()
-        return cls(
-            id=str(uuid.uuid4()),
-            ts=now,
-            iso=datetime.utcfromtimestamp(now).isoformat() + "Z",
-            topic=topic,
-            kind=kind,
-            level=level,
-            actor=actor,
-            data=data,
-            host=socket.gethostname(),
-            pid=os.getpid(),
-            lineage_id=lineage_id,
-            parent_lineage_id=parent_lineage_id,
-            mutation_op=mutation_op,
-        )
-
-
-@dataclass(frozen=True)
-class BusPaths:
-    """Resolved bus directories."""
-    active_dir: str
-    events_path: str
-    primary_dir: str
-    fallback_dir: Optional[str]
-
-    @property
-    def bus_dir(self) -> str:
-        return self.active_dir
-
-
-def _truthy_env(value: str | None, default: bool) -> bool:
+def _env_flag(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
     if value is None:
         return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+    return str(value).strip().lower() not in {"0", "false", "no", "off", ""}
 
 
-def _protocol_is_v1() -> bool:
-    protocol = (os.environ.get("PLURIBUS_PROTOCOL") or "").strip().lower()
-    if not protocol:
-        return False
-    return "v1" in protocol
-
-
-def _parse_since_arg(raw: str | None) -> Optional[float]:
+def _env_list(name: str, default: str) -> list[str]:
+    raw = os.environ.get(name)
+    if raw is None:
+        raw = default
     if not raw:
-        return None
-    value = raw.strip().lower()
+        return []
+    return [part.strip().lower() for part in raw.split(",") if part.strip()]
+
+
+def _env_int(name: str, default: int, *, minimum: int = 0) -> int:
+    value = os.environ.get(name)
     try:
-        if value.endswith("h"):
-            return time.time() - (float(value[:-1]) * 3600)
-        if value.endswith("d"):
-            return time.time() - (float(value[:-1]) * 86400)
-        if value.endswith("m"):
-            return time.time() - (float(value[:-1]) * 60)
-        return float(value)
-    except ValueError:
-        return None
+        parsed = int(value) if value is not None else default
+    except (TypeError, ValueError):
+        parsed = default
+    return max(parsed, minimum)
 
 
-def _ndjson_read_allowed() -> bool:
-    explicit = os.environ.get("PLURIBUS_NDJSON_READ")
-    if explicit is not None:
-        return _truthy_env(explicit, False)
-    mode = (os.environ.get("PLURIBUS_NDJSON_MODE") or "").strip().lower()
-    if not mode or mode in {"allow", "enabled", "on"}:
-        if _protocol_is_v1():
-            return _truthy_env(os.environ.get("PLURIBUS_DR_MODE"), False)
-        return True
-    if mode in {"dr", "disaster", "recovery"}:
-        return _truthy_env(os.environ.get("PLURIBUS_DR_MODE"), False)
-    if mode in {"off", "disabled", "deny", "no"}:
-        return False
-    return True
-
-
-def _ndjson_write_allowed() -> bool:
-    explicit = os.environ.get("PLURIBUS_NDJSON_WRITE")
-    if explicit is not None:
-        return _truthy_env(explicit, False)
-    mode = (os.environ.get("PLURIBUS_NDJSON_MODE") or "").strip().lower()
-    if not mode or mode in {"allow", "enabled", "on"}:
-        if _protocol_is_v1():
-            return _truthy_env(os.environ.get("PLURIBUS_DR_MODE"), False)
-        return True
-    if mode in {"dr", "disaster", "recovery"}:
-        return _truthy_env(os.environ.get("PLURIBUS_DR_MODE"), False)
-    if mode in {"off", "disabled", "deny", "no"}:
-        return False
-    return True
-
-
-def _require_ndjson_read_allowed() -> None:
-    if _ndjson_read_allowed():
-        return
-    raise RuntimeError(
-        "NDJSON reads are disabled (set PLURIBUS_DR_MODE=1 or PLURIBUS_NDJSON_MODE=allow)."
-    )
-
-
-def _tail_irk_fallback(paths: BusPaths, limit: int, since_ts: Optional[float], as_json: bool) -> int:
-    if not _ndjson_read_allowed():
-        sys.stderr.write(
-            "NDJSON reads are disabled (set PLURIBUS_DR_MODE=1 or PLURIBUS_NDJSON_MODE=allow).\n"
-        )
-        return 3
-    lines = _tail_lines(Path(paths.events_path), limit)
-    timeline: list[dict[str, Any]] = []
-    for line in lines:
-        try:
-            obj = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        ts = obj.get("ts")
-        if since_ts is not None and isinstance(ts, (int, float)) and ts < since_ts:
-            continue
-        timeline.append({
-            "id": obj.get("id"),
-            "topic": obj.get("topic"),
-            "actor": obj.get("actor"),
-            "ts": ts,
-            "trace_id": obj.get("trace_id"),
-        })
-    timeline.sort(key=lambda item: item.get("ts") or 0, reverse=True)
-    timeline = timeline[:limit]
-    if as_json:
-        print(json.dumps(timeline, ensure_ascii=False))
-    else:
-        for item in timeline:
-            print(json.dumps(item, ensure_ascii=False))
-    return 0
-
-
-def _default_bus_dir() -> Path:
-    root = os.environ.get("PLURIBUS_ROOT", "/pluribus")
-    return Path(os.environ.get("PLURIBUS_BUS_DIR") or (Path(root) / ".pluribus" / "bus"))
-
-
-def _default_fallback_bus_dir() -> Optional[Path]:
-    env = (os.environ.get("PLURIBUS_FALLBACK_BUS_DIR") or "").strip()
-    if env:
-        return Path(env)
-    root = os.environ.get("PLURIBUS_ROOT", "/pluribus")
-    return Path(root) / ".pluribus_local" / "bus"
-
-
-def _ensure_mode(path: Path, mode: int = BUS_FILE_MODE) -> None:
-    try:
-        os.chmod(path, mode)
-    except (PermissionError, OSError):
-        return
-
-
-def append_line(path: str, line: str, durable: bool, rotate: bool = False) -> None:
-    """Append a line to a file with optional batching/spooling for performance."""
-    global _BATCH_LOCK, _BATCH_TIMER
-
-    if _spooler_enabled() and not durable:
-        spooler = _get_spooler()
-        spooler.enqueue(_SpoolItem(path=path, line=line, rotate=rotate, size_bytes=len(line.encode("utf-8"))))
-        return
-
-    if durable and _spooler_enabled():
-        flush_spooler()
-
-    # Fast path: batching disabled or durable write requested
-    if _BATCH_SIZE <= 0 or durable:
-        _append_line_direct(path, line, durable)
-        if rotate:
-            _apply_rotation_policy(path, durable)
-        return
-
-    # Batching path: accumulate writes
-    if _BATCH_LOCK is None:
-        _BATCH_LOCK = threading.Lock()
-
-    with _BATCH_LOCK:
-        _BATCH_BUFFER.append((path, line, durable, rotate))
-
-        # Flush if batch is full
-        if len(_BATCH_BUFFER) >= _BATCH_SIZE:
-            _flush_batch()
-        elif _BATCH_TIMER is None and _BATCH_FLUSH_MS > 0:
-            # Schedule timed flush
-            def flush_timer():
-                global _BATCH_TIMER
-                with _BATCH_LOCK:
-                    _flush_batch()
-                    _BATCH_TIMER = None
-
-            _BATCH_TIMER = threading.Timer(_BATCH_FLUSH_MS / 1000.0, flush_timer)
-            _BATCH_TIMER.daemon = True
-            _BATCH_TIMER.start()
-
-
-def _flush_batch() -> None:
-    """Flush accumulated batch writes. Must be called with _BATCH_LOCK held."""
-    global _BATCH_BUFFER
-
-    if not _BATCH_BUFFER:
-        return
-
-    # Group by path for efficient multi-line writes
-    by_path: dict[str, list[str]] = {}
-    rotate_paths: set[str] = set()
-
-    for path, line, durable, rotate in _BATCH_BUFFER:
-        if path not in by_path:
-            by_path[path] = []
-        by_path[path].append(line)
-        if rotate:
-            rotate_paths.add(path)
-
-    _BATCH_BUFFER = []
-
-    # Write each path's accumulated lines
-    for path, lines in by_path.items():
-        combined = "".join(lines)
-        _append_line_direct(path, combined, durable=False)
-        if path in rotate_paths:
-            _apply_rotation_policy(path, durable=False)
-
-
-def _append_line_direct(path: str, line: str, durable: bool) -> None:
-    """Direct file append without batching."""
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(str(p), os.O_WRONLY | os.O_APPEND | os.O_CREAT, BUS_FILE_MODE)
-    try:
-        if fcntl is not None:
-            try:
-                fcntl.flock(fd, fcntl.LOCK_EX)
-            except OSError:
-                pass
-        os.write(fd, line.encode("utf-8"))
-        if durable:
-            os.fsync(fd)
-    finally:
-        if fcntl is not None:
-            try:
-                fcntl.flock(fd, fcntl.LOCK_UN)
-            except OSError:
-                pass
-        os.close(fd)
-    _ensure_mode(p)
-
-
-def _can_append_events(path: Path) -> bool:
-    try:
-        fd = os.open(str(path), os.O_WRONLY | os.O_APPEND | os.O_CREAT, BUS_FILE_MODE)
-    except OSError:
-        return False
-    try:
-        os.close(fd)
-    except OSError:
-        pass
-    _ensure_mode(path)
-    return True
-
-
-def _touch_events(path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        fd = os.open(str(path), os.O_WRONLY | os.O_APPEND | os.O_CREAT, BUS_FILE_MODE)
-        try:
-            os.close(fd)
-        except OSError:
-            pass
-    _ensure_mode(path)
-
-
-def resolve_bus_paths(bus_dir: Optional[str] = None) -> BusPaths:
-    primary = Path(bus_dir) if bus_dir else _default_bus_dir()
-    fallback = _default_fallback_bus_dir()
-
-    primary_events = primary / EVENTS_FILE
-    active = primary
-    fallback_dir: Optional[str] = None
-
-    if not _can_append_events(primary_events):
-        if fallback is not None:
-            fallback_events = fallback / EVENTS_FILE
-            _touch_events(fallback_events)
-            active = fallback
-            fallback_dir = str(fallback)
-        else:
-            _touch_events(primary_events)
-    else:
-        _touch_events(primary_events)
-
-    events_path = str(Path(active) / EVENTS_FILE)
-    return BusPaths(
-        active_dir=str(active),
-        events_path=events_path,
-        primary_dir=str(primary),
-        fallback_dir=fallback_dir,
-    )
-
-
-def _load_partition_config() -> dict[str, Any]:
+def _partition_config() -> dict:
     global _PARTITION_CONFIG_CACHE
     if _PARTITION_CONFIG_CACHE is not None:
         return _PARTITION_CONFIG_CACHE
-    config_path = (os.environ.get("PLURIBUS_BUS_PARTITION_CONFIG") or "").strip()
-    if not config_path:
+    path = (os.environ.get(BUS_PARTITION_CONFIG_ENV) or "").strip()
+    if not path:
         _PARTITION_CONFIG_CACHE = {}
         return _PARTITION_CONFIG_CACHE
     try:
-        data = json.loads(Path(config_path).read_text(encoding="utf-8"))
-        if not isinstance(data, dict):
-            data = {}
-    except Exception:
+        with open(path, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, ValueError):
+        data = {}
+    if not isinstance(data, dict):
         data = {}
     _PARTITION_CONFIG_CACHE = data
     return _PARTITION_CONFIG_CACHE
 
 
-def _topic_bucket(topic: str) -> str:
-    overrides = _load_partition_config().get("bucket_overrides") or {}
-    if isinstance(overrides, dict):
-        ordered = sorted(overrides.items(), key=lambda kv: len(kv[0]), reverse=True)
-        for prefix, bucket in ordered:
-            if topic.startswith(prefix):
-                return str(bucket)
+def _partition_config_section(section: str) -> dict:
+    cfg = _partition_config()
+    data = cfg.get(section) if isinstance(cfg, dict) else None
+    return data if isinstance(data, dict) else {}
 
-    t = (topic or "").lower()
-    if t.startswith("omega."):
+
+def _env_or_config_list(env_key: str, section: str, config_key: str, default: str) -> list[str]:
+    raw = os.environ.get(env_key)
+    if raw is None:
+        raw = _partition_config_section(section).get(config_key, default)
+    if isinstance(raw, list):
+        parts = [str(part).strip() for part in raw]
+        return [part.lower() for part in parts if part]
+    raw = default if raw is None else str(raw)
+    return [part.strip().lower() for part in raw.split(",") if part.strip()]
+
+
+def _env_or_config_int(env_key: str, section: str, config_key: str, default: int, *, minimum: int = 0) -> int:
+    raw = os.environ.get(env_key)
+    if raw is None:
+        raw = _partition_config_section(section).get(config_key, default)
+    try:
+        parsed = int(raw) if raw is not None else default
+    except (TypeError, ValueError):
+        parsed = default
+    return max(parsed, minimum)
+
+
+def _env_or_config_str(env_key: str, section: str, config_key: str, default: str) -> str:
+    raw = os.environ.get(env_key)
+    if raw is None:
+        raw = _partition_config_section(section).get(config_key, default)
+    return str(raw) if raw else default
+
+
+def _rotation_limits():
+    try:
+        retain_mb = float(os.environ.get("PLURIBUS_BUS_RETAIN_MB") or BUS_RETAIN_MB_DEFAULT)
+    except (TypeError, ValueError):
+        retain_mb = BUS_RETAIN_MB_DEFAULT
+    try:
+        min_retain_mb = float(os.environ.get("PLURIBUS_BUS_MIN_RETAIN_MB") or BUS_MIN_RETAIN_MB_DEFAULT)
+    except (TypeError, ValueError):
+        min_retain_mb = BUS_MIN_RETAIN_MB_DEFAULT
+    try:
+        rotate_mb = float(os.environ.get("PLURIBUS_BUS_ROTATE_MB") or BUS_ROTATE_MB_DEFAULT)
+    except (TypeError, ValueError):
+        rotate_mb = BUS_ROTATE_MB_DEFAULT
+    try:
+        headroom_mb = float(os.environ.get("PLURIBUS_BUS_HEADROOM_MB") or BUS_ROTATE_HEADROOM_MB_DEFAULT)
+    except (TypeError, ValueError):
+        headroom_mb = BUS_ROTATE_HEADROOM_MB_DEFAULT
+
+    retain_mb = max(retain_mb, min_retain_mb)
+    rotate_floor = retain_mb + max(0.0, headroom_mb)
+    rotate_mb = max(rotate_mb, rotate_floor)
+
+    retain_bytes = int(retain_mb * 1024 * 1024)
+    rotate_bytes = int(rotate_mb * 1024 * 1024)
+    return rotate_bytes, retain_bytes
+
+
+def _topic_bucket(topic: str) -> str:
+    override = _topic_bucket_override(topic)
+    if override:
+        return override
+    if topic.startswith("omega."):
         return "omega"
-    if t.startswith("qa."):
+    if topic.startswith("qa.") or topic.startswith("qa_"):
         return "qa"
-    if t.startswith("telemetry."):
+    if topic.startswith("telemetry."):
         return "telemetry"
-    if t.startswith("browser."):
+    if topic.startswith("browser."):
         return "browser"
-    if t.startswith("dashboard."):
+    if topic.startswith("dashboard."):
         return "dashboard"
-    if t.startswith("agent."):
+    if topic.startswith("agent."):
         return "agent"
-    if t.startswith("operator."):
+    if topic.startswith("operator."):
         return "operator"
-    if t.startswith("rd.tasks.") or t.startswith("task."):
+    if topic.startswith("rd.tasks.") or topic.startswith("task.") or topic.startswith("task_ledger.") or topic.endswith(".task"):
         return "task"
-    if t.startswith("a2a."):
+    if topic.startswith("a2a."):
         return "a2a"
-    if t.startswith("lens."):
+    if topic.startswith("lens.") or topic.startswith("collimator."):
         return "lens"
-    if t.startswith("dialogos."):
+    if topic.startswith("dialogos."):
         return "dialogos"
-    if t.startswith("infer_sync."):
+    if topic.startswith("infer_sync."):
         return "infer_sync"
-    if t.startswith("providers."):
+    if topic.startswith("providers.") or topic.startswith("provider."):
         return "providers"
     return "other"
 
 
-def _partition_enabled() -> bool:
-    return _truthy_env(os.environ.get("PLURIBUS_BUS_PARTITION"), True)
-
-
-def _partition_fanout() -> list[str]:
-    raw = (os.environ.get("PLURIBUS_BUS_PARTITION_FANOUT") or "topic,type").strip()
-    if not raw:
-        return []
-    parts = [p.strip().lower() for p in raw.replace(" ", ",").split(",") if p.strip()]
-    allowed = {"topic", "type", "eventtypes", "actor", "frequency"}
-    out: list[str] = []
-    for p in parts:
-        if p == "eventtypes":
-            p = "type"
-        if p in allowed and p not in out:
-            out.append(p)
-    return out
-
-
-def _partition_shards() -> int:
-    raw = (os.environ.get("PLURIBUS_BUS_PARTITION_SHARDS") or "1").strip()
-    try:
-        value = int(raw)
-    except ValueError:
-        value = 1
-    return max(1, value)
-
-
-def _frequency_bucket(_: dict) -> str:
-    return "hot"
-
-
-def _topic_segments(topic: str, bucket: str) -> list[str]:
-    parts = [p for p in (topic or "").split(".") if p]
-    if parts and parts[0] == bucket:
-        parts = parts[1:]
-    return parts or ["root"]
-
-
-def _write_partition(base: Path, parts: list[str], line: str, durable: bool) -> None:
-    path = base
-    for part in parts:
-        path = path / part
-    path = path / EVENTS_FILE
-    append_line(str(path), line, durable)
-
-
-def _emit_partitions(paths: BusPaths, payload: dict, line: str, durable: bool) -> None:
-    if not _partition_enabled():
-        return
-
-    fanout = _partition_fanout()
-    if not fanout:
-        return
-
-    topic = str(payload.get("topic") or "")
-    kind = str(payload.get("kind") or "log")
-    level = str(payload.get("level") or "info")
-    actor = str(payload.get("actor") or "unknown")
-    bucket = _topic_bucket(topic)
-    segments = _topic_segments(topic, bucket)
-
-    shard_count = _partition_shards()
-    shard_suffix: list[str] = []
-    if shard_count > 1:
-        shard = abs(hash(payload.get("id") or topic)) % shard_count
-        shard_suffix = [f"shard-{shard}"]
-
-    base_root = Path(paths.active_dir) / "topics"
-    for mode in fanout:
-        if mode == "topic":
-            base = base_root / "topic" / Path(*shard_suffix)
-            _write_partition(base / bucket, segments, line, durable)
-        elif mode == "type":
-            base = base_root / "eventtypes" / Path(*shard_suffix)
-            _write_partition(base / kind / level / bucket, segments, line, durable)
-        elif mode == "actor":
-            base = base_root / "actors" / Path(*shard_suffix)
-            _write_partition(base / actor / bucket, segments, line, durable)
-        elif mode == "frequency":
-            base = base_root / "frequency" / Path(*shard_suffix)
-            freq = _frequency_bucket(payload)
-            _write_partition(base / freq / bucket, segments, line, durable)
-
-
-def rotate_log_tail(
-    path: str,
-    *,
-    retain_bytes: int,
-    archive_dir: str,
-    durable: bool = False,
-) -> Optional[str]:
-    p = Path(path)
-    if not p.exists():
+def _topic_bucket_override(topic: str) -> str | None:
+    overrides = _partition_config().get("bucket_overrides")
+    if not isinstance(overrides, dict):
         return None
-    size = p.stat().st_size
+    cleaned = topic.strip(".")
+    for prefix in sorted(overrides.keys(), key=len, reverse=True):
+        if cleaned == prefix or cleaned.startswith(f"{prefix}."):
+            return _sanitize_segment(str(overrides[prefix]))
+    return None
+
+
+def _sanitize_segment(segment: str) -> str:
+    if not segment:
+        return "unknown"
+    cleaned = []
+    for ch in segment.strip():
+        if ch.isascii() and (ch.isalnum() or ch in "-_@+"):
+            cleaned.append(ch.lower())
+        else:
+            cleaned.append("_")
+    value = "".join(cleaned).strip("_")
+    return value or "unknown"
+
+
+def _topic_segments(topic: str, bucket: str, max_depth: int) -> list[str]:
+    raw = [seg for seg in topic.strip(".").split(".") if seg]
+    if raw and raw[0] == bucket:
+        raw = raw[1:]
+    segments = [_sanitize_segment(seg) for seg in raw]
+    if not segments:
+        segments = ["root"]
+    if max_depth > 0 and len(segments) > max_depth:
+        head = segments[: max_depth - 1]
+        tail = "_".join(segments[max_depth - 1 :])
+        segments = head + [tail]
+    return segments
+
+
+def _partition_shard(topic: str, bucket: str) -> str | None:
+    shards = _env_or_config_int("PLURIBUS_BUS_PARTITION_SHARDS", "partition", "shards", 4, minimum=1)
+    if shards <= 1:
+        return None
+    hot_buckets = _env_or_config_list(
+        "PLURIBUS_BUS_PARTITION_HOT_BUCKETS",
+        "partition",
+        "hot_buckets",
+        "dashboard,telemetry,omega,task,agent,operator,dialogos,providers,browser",
+    )
+    if hot_buckets and "*" not in hot_buckets and "all" not in hot_buckets and bucket not in hot_buckets:
+        return None
+    digest = zlib.crc32(topic.encode("utf-8")) & 0xFFFFFFFF
+    return f"{digest % shards:02d}"
+
+def _partition_frequency(bucket: str) -> str:
+    hot_buckets = _env_or_config_list(
+        "PLURIBUS_BUS_PARTITION_HOT_BUCKETS",
+        "partition",
+        "hot_buckets",
+        "dashboard,telemetry,omega,task,agent,operator,dialogos,providers,browser",
+    )
+    if hot_buckets and ("*" in hot_buckets or "all" in hot_buckets or bucket in hot_buckets):
+        return "hot"
+    cold_buckets = _env_or_config_list("PLURIBUS_BUS_PARTITION_COLD_BUCKETS", "partition", "cold_buckets", "other")
+    if cold_buckets and ("*" in cold_buckets or "all" in cold_buckets or bucket in cold_buckets):
+        return "cold"
+    return "warm"
+
+
+def _partition_paths(base_dir: str, *, topic: str, kind: str, level: str, actor: str) -> list[str]:
+    part_root = os.path.join(
+        base_dir,
+        _env_or_config_str("PLURIBUS_BUS_PARTITION_DIR", "partition", "dir", BUS_PARTITION_DEFAULT),
+    )
+    bucket = _sanitize_segment(_topic_bucket(topic))
+    max_depth = _env_or_config_int("PLURIBUS_BUS_PARTITION_MAX_DEPTH", "partition", "max_depth", 8, minimum=0)
+    segments = _topic_segments(topic, bucket, max_depth)
+    shard = _partition_shard(topic, bucket)
+    shard_seg = [shard] if shard else []
+
+    fanout = _env_or_config_list(
+        "PLURIBUS_BUS_PARTITION_FANOUT",
+        "partition",
+        "fanout",
+        "topic,type,actor,frequency",
+    )
+    paths: list[str] = []
+    for dim in fanout:
+        if dim in {"topic", "topics"}:
+            paths.append(os.path.join(part_root, "topic", bucket, *segments, *shard_seg, "events.ndjson"))
+        elif dim in {"type", "types", "eventtype", "eventtypes"}:
+            kind_seg = _sanitize_segment(kind or "unknown")
+            level_seg = _sanitize_segment(level or "info")
+            paths.append(
+                os.path.join(part_root, "eventtypes", kind_seg, level_seg, bucket, *segments, *shard_seg, "events.ndjson")
+            )
+        elif dim in {"actor", "actors"}:
+            actor_seg = _sanitize_segment(actor or "unknown")
+            paths.append(os.path.join(part_root, "actors", actor_seg, bucket, *segments, *shard_seg, "events.ndjson"))
+        elif dim in {"freq", "frequency", "rate", "hot"}:
+            tier = _partition_frequency(bucket)
+            paths.append(os.path.join(part_root, "frequency", tier, bucket, *segments, *shard_seg, "events.ndjson"))
+
+    if _env_flag("PLURIBUS_BUS_PARTITION_LEGACY", False):
+        paths.append(os.path.join(part_root, f"{bucket}.ndjson"))
+
+    seen = set()
+    ordered: list[str] = []
+    for path in paths:
+        if path in seen:
+            continue
+        seen.add(path)
+        ordered.append(path)
+    return ordered
+
+
+def _partition_archive_dir(base_dir: str, part_path: str) -> str:
+    part_root = Path(base_dir) / os.environ.get("PLURIBUS_BUS_PARTITION_DIR", BUS_PARTITION_DEFAULT)
+    try:
+        rel_dir = Path(part_path).resolve().parent.relative_to(part_root.resolve())
+    except Exception:
+        rel_dir = Path()
+    return os.path.join(base_dir, "archive", "partitions", str(rel_dir))
+
+
+def rotate_log_tail(path: str, *, retain_bytes: int, archive_dir: str, durable: bool = False) -> str | None:
+    if retain_bytes <= 0:
+        return None
+    try:
+        st = os.stat(path)
+    except OSError:
+        st = None
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        return None
     if size <= retain_bytes:
         return None
 
-    archive_root = Path(archive_dir)
-    archive_root.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    archive_path = archive_root / f"{p.stem}-{stamp}{p.suffix}.gz"
+    ensure_dir(archive_dir)
+    archive_name = f"{Path(path).stem}-{now_iso_utc().replace(':', '')}.ndjson.gz"
+    archive_path = os.path.join(archive_dir, archive_name)
 
-    cutoff = max(0, size - retain_bytes)
-    tail_bytes = b""
-    with p.open("rb") as src:
-        if cutoff > 0:
-            with gzip.open(archive_path, "wb") as gz:
-                remaining = cutoff
-                while remaining > 0:
-                    chunk = src.read(min(1024 * 1024, remaining))
-                    if not chunk:
-                        break
-                    gz.write(chunk)
-                    remaining -= len(chunk)
-        src.seek(cutoff)
-        tail_bytes = src.read()
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        if fcntl is not None:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+        with os.fdopen(fd, "rb", closefd=False) as f_in:
+            import gzip
+            import shutil
 
-    tmp_path = p.with_suffix(p.suffix + ".tmp")
-    with tmp_path.open("wb") as out:
-        out.write(tail_bytes)
+            f_in.seek(0)
+            with gzip.open(archive_path, "wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+
+            if size > retain_bytes:
+                f_in.seek(size - retain_bytes)
+            tail = f_in.read()
+            tmp_path = f"{path}.tmp"
+            with open(tmp_path, "wb") as f_tmp:
+                f_tmp.write(tail)
+                if durable:
+                    f_tmp.flush()
+                    os.fsync(f_tmp.fileno())
+            os.replace(tmp_path, path)
+            if st is not None:
+                try:
+                    os.chmod(path, st.st_mode & 0o777)
+                except OSError:
+                    pass
+                if os.geteuid() == 0:
+                    try:
+                        os.chown(path, st.st_uid, st.st_gid)
+                    except OSError:
+                        pass
+    finally:
+        try:
+            if fcntl is not None:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
+
+    return archive_path
+
+
+def now_iso_utc() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def default_actor() -> str:
+    return os.environ.get("PLURIBUS_ACTOR") or getpass.getuser()
+
+
+def ensure_dir(path: str) -> None:
+    os.makedirs(path, exist_ok=True)
+
+
+def json_load_maybe(value: str | None):
+    if value is None:
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    if value == "-":
+        return json.load(sys.stdin)
+    if value.startswith("@"):
+        file_path = Path(value[1:])
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+        return json.loads(file_path.read_text(encoding="utf-8"))
+    return json.loads(value)
+
+
+@dataclass(frozen=True)
+class BusPaths:
+    # active_dir is where we write for sure (may be the fallback)
+    active_dir: str
+    events_path: str
+    # primary_dir tracks the canonical bus (usually /pluribus/.pluribus/bus)
+    primary_dir: str
+    # fallback_dir is used when primary is not writable; kept for mirroring attempts
+    fallback_dir: str | None = None
+
+    # Back-compat alias: older callers expect `.bus_dir`.
+    @property
+    def bus_dir(self) -> str:
+        return self.active_dir
+
+
+def resolve_bus_paths(bus_dir: str | None) -> BusPaths:
+    # Prefer the repo-local system bus if available; fall back to user state dir.
+    default_bus = "/pluribus/.pluribus/bus"
+    state_home = os.environ.get("XDG_STATE_HOME") or os.path.join(os.path.expanduser("~"), ".local", "state")
+    if not os.path.exists(default_bus):
+        default_bus = os.path.join(state_home, "nucleus", "bus")
+    primary = bus_dir or os.environ.get("PLURIBUS_BUS_DIR") or default_bus
+    primary = os.path.abspath(primary)
+    workspace_root = Path(__file__).resolve().parents[2]
+    fallback = os.path.abspath(os.environ.get("PLURIBUS_FALLBACK_BUS_DIR") or str(workspace_root / ".pluribus_local" / "bus"))
+    active = primary
+
+    # Attempt to use the primary path; fallback if not writable
+    try:
+        os.makedirs(primary, exist_ok=True)
+        # Important: the bus may be a world-writable file inside a non-writable directory.
+        # Test writability by opening the actual events file for append (not by creating a temp file).
+        primary_events = os.path.join(primary, "events.ndjson")
+        fd = os.open(primary_events, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+        os.close(fd)
+    except (PermissionError, OSError):
+        # Fallback to local workspace bus (avoids total failure in sandboxed contexts)
+        if fallback != primary:
+            sys.stderr.write(f"WARN: Bus path '{primary}' is not writable. Falling back to '{fallback}'.\n")
+        active = fallback
+        os.makedirs(active, exist_ok=True)
+
+    return BusPaths(
+        active_dir=active,
+        events_path=os.path.join(active, "events.ndjson"),
+        primary_dir=primary,
+        fallback_dir=(fallback if active != primary else None),
+    )
+
+
+def append_line(path: str, line: str, durable: bool) -> None:
+    ensure_dir(os.path.dirname(path))
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+    try:
+        if fcntl is not None:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+        os.write(fd, line.encode("utf-8"))
         if durable:
-            out.flush()
-            os.fsync(out.fileno())
-    os.replace(tmp_path, p)
-    _ensure_mode(p)
-    return str(archive_path)
-
-
-def _rotation_limits() -> tuple[int, int, int, int]:
-    # Defaults: rotate at 90MB, cap at 100MB, retain tail at rotate threshold.
-    def _float_env(name: str, default: float) -> float:
-        raw = os.environ.get(name)
-        if raw is None or raw == "":
-            return default
+            os.fsync(fd)
+    finally:
         try:
-            return float(raw)
-        except ValueError:
-            return default
-
-    rotate_mb = _float_env("PLURIBUS_BUS_ROTATE_MB", 90.0)
-    cap_mb = _float_env("PLURIBUS_BUS_CAP_MB", 100.0)
-    retain_raw = os.environ.get("PLURIBUS_BUS_RETAIN_MB")
-    if retain_raw is None or retain_raw == "":
-        retain_mb = rotate_mb
-    else:
-        retain_mb = _float_env("PLURIBUS_BUS_RETAIN_MB", rotate_mb)
-    archive_retain_mb = _float_env("PLURIBUS_BUS_ARCHIVE_RETAIN_MB", 0.0)
-
-    rotate_mb = max(0.0, rotate_mb)
-    retain_mb = max(0.0, retain_mb)
-    cap_mb = max(0.0, cap_mb)
-    if cap_mb > 0:
-        retain_mb = min(retain_mb, cap_mb)
-
-    return (
-        int(rotate_mb * 1024 * 1024),
-        int(retain_mb * 1024 * 1024),
-        int(cap_mb * 1024 * 1024),
-        int(archive_retain_mb * 1024 * 1024),
-    )
-
-
-def _prune_archives(archive_dir: Path, retain_bytes: int) -> None:
-    if retain_bytes <= 0 or not archive_dir.exists():
-        return
-    entries = [p for p in archive_dir.glob("*.gz") if p.is_file()]
-    if not entries:
-        return
-    entries.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-    kept = 0
-    for entry in entries:
-        size = entry.stat().st_size
-        if kept < retain_bytes:
-            kept += size
-            continue
-        try:
-            entry.unlink()
-        except OSError:
-            continue
-
-
-def _apply_rotation_policy(events_path: str, durable: bool) -> None:
-    if not _truthy_env(os.environ.get("PLURIBUS_BUS_ROTATE"), True):
-        return
-    rotate_bytes, retain_bytes, cap_bytes, archive_retain_bytes = _rotation_limits()
-    if rotate_bytes <= 0 and cap_bytes <= 0:
-        return
-    target = Path(events_path)
-    if not target.exists():
-        return
-    size = target.stat().st_size
-    if size <= 0:
-        return
-    should_rotate = rotate_bytes > 0 and size >= rotate_bytes
-    should_cap = cap_bytes > 0 and size > cap_bytes
-    if not (should_rotate or should_cap):
-        return
-    if retain_bytes <= 0 and cap_bytes > 0:
-        retain_bytes = cap_bytes
-    if retain_bytes <= 0:
-        return
-    archive_dir = target.parent / "archive"
-    rotate_log_tail(
-        str(target),
-        retain_bytes=retain_bytes,
-        archive_dir=str(archive_dir),
-        durable=durable,
-    )
-    if archive_retain_bytes > 0:
-        _prune_archives(archive_dir, archive_retain_bytes)
-
-
-def _maybe_rotate(paths: BusPaths, durable: bool) -> None:
-    _apply_rotation_policy(paths.events_path, durable)
-
-
-def _emit_payload(paths: BusPaths, payload: dict, durable: bool) -> str:
-    """Emit event to FalkorDB (primary) and/or NDJSON (DR).
-
-    Backend modes (PLURIBUS_BUS_BACKEND env var):
-    - 'both' (default): Write to FalkorDB + NDJSON
-    - 'falkordb': Write to FalkorDB only (fastest, no DR)
-    - 'ndjson': Write to NDJSON only (legacy mode)
-    """
-    backend = os.environ.get("PLURIBUS_BUS_BACKEND", "both").lower()
-
-    # Write to FalkorDB if enabled
-    if backend in ("both", "falkordb"):
-        service = _get_falkordb_service()
-        if service:
-            try:
-                service.record_event_dict(payload)
-            except Exception:
-                pass  # Graceful degradation - NDJSON still available
-
-    # Write to NDJSON for DR unless falkordb-only mode
-    ndjson_allowed = _ndjson_write_allowed() or backend == "ndjson"
-    if backend != "falkordb" and ndjson_allowed:
-        line = json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
-        append_line(paths.events_path, line, durable, rotate=True)
-
-        if paths.primary_dir and paths.primary_dir != paths.active_dir:
-            primary_events = Path(paths.primary_dir) / EVENTS_FILE
-            if _can_append_events(primary_events):
-                append_line(str(primary_events), line, durable, rotate=True)
-
-        _emit_partitions(paths, payload, line, durable)
-    elif backend != "falkordb" and not ndjson_allowed:
-        # DR-only policy: avoid NDJSON writes unless explicitly enabled.
-        pass
-
-    return str(payload.get("id"))
+            if fcntl is not None:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
 
 
 def emit_event(
@@ -915,331 +455,216 @@ def emit_event(
     kind: str,
     level: str,
     actor: str,
-    data: dict,
-    trace_id: Optional[str] = None,
-    run_id: Optional[str] = None,
-    durable: bool = False,
+    data,
+    trace_id: str | None,
+    run_id: str | None,
+    durable: bool,
 ) -> str:
-    """Emit an event to the bus.
-
-    Performance optimizations:
-    - Cached hostname/PID to avoid syscalls
-    - Compact JSON serialization
-    - Optional batching via PLURIBUS_BUS_BATCH_SIZE env var
-    """
-    now = time.time()
+    event_id = str(uuid.uuid4())
+    partition_enabled = _env_flag("PLURIBUS_BUS_PARTITION", True)
+    rotate_enabled = _env_flag("PLURIBUS_BUS_ROTATE", True)
+    rotate_bytes, retain_bytes = _rotation_limits()
     payload = {
-        "id": str(uuid.uuid4()),
-        "ts": now,
-        "iso": datetime.now(timezone.utc).isoformat() + "Z",
+        "id": event_id,
+        "ts": time.time(),
+        "iso": now_iso_utc(),
         "topic": topic,
         "kind": kind,
         "level": level,
         "actor": actor,
-        "protocol": "v1",
-        "host": _get_cached_hostname(),  # Performance: cached
-        "pid": _get_cached_pid(),  # Performance: cached
+        "host": socket.gethostname(),
+        "pid": os.getpid(),
+        "trace_id": trace_id,
+        "run_id": run_id,
         "data": data,
     }
-    if trace_id:
-        payload["trace_id"] = trace_id
-    if run_id:
-        payload["run_id"] = run_id
-    return _emit_payload(paths, payload, durable)
+    line = json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
+    append_line(paths.events_path, line, durable=durable)
+    if rotate_enabled:
+        try:
+            if os.path.getsize(paths.events_path) > rotate_bytes:
+                rotate_log_tail(
+                    paths.events_path,
+                    retain_bytes=retain_bytes,
+                    archive_dir=os.path.join(paths.active_dir, "archive"),
+                    durable=False,
+                )
+        except OSError:
+            pass
+
+    # Best-effort mirror to the primary bus if we were forced onto a fallback.
+    if paths.fallback_dir and paths.primary_dir != paths.active_dir:
+        primary_events = os.path.join(paths.primary_dir, "events.ndjson")
+        try:
+            append_line(primary_events, line, durable=False)
+            if rotate_enabled and os.path.getsize(primary_events) > rotate_bytes:
+                rotate_log_tail(
+                    primary_events,
+                    retain_bytes=retain_bytes,
+                    archive_dir=os.path.join(paths.primary_dir, "archive"),
+                    durable=False,
+                )
+        except Exception:
+            # Mirror failures are non-fatal; keep the fallback event.
+            pass
+
+    if partition_enabled:
+        part_paths = _partition_paths(base_dir=paths.active_dir, topic=topic, kind=kind, level=level, actor=actor)
+        for part_path in part_paths:
+            append_line(part_path, line, durable=durable)
+            if rotate_enabled:
+                try:
+                    if os.path.getsize(part_path) > rotate_bytes:
+                        rotate_log_tail(
+                            part_path,
+                            retain_bytes=retain_bytes,
+                            archive_dir=_partition_archive_dir(paths.active_dir, part_path),
+                            durable=False,
+                        )
+                except OSError:
+                    pass
+        if paths.fallback_dir and paths.primary_dir != paths.active_dir:
+            primary_parts = _partition_paths(
+                base_dir=paths.primary_dir, topic=topic, kind=kind, level=level, actor=actor
+            )
+            for primary_part in primary_parts:
+                try:
+                    append_line(primary_part, line, durable=False)
+                    if rotate_enabled and os.path.getsize(primary_part) > rotate_bytes:
+                        rotate_log_tail(
+                            primary_part,
+                            retain_bytes=retain_bytes,
+                            archive_dir=_partition_archive_dir(paths.primary_dir, primary_part),
+                            durable=False,
+                        )
+                except Exception:
+                    pass
+    return event_id
 
 
-def emit_bus_event(
-    topic: str,
-    actor: str,
-    data: dict,
-    kind: str = EventKind.EVENT,
-    level: str = EventLevel.INFO,
-    lineage_id: Optional[str] = None,
-    parent_lineage_id: Optional[str] = None,
-    mutation_op: Optional[str] = None,
-) -> str:
-    paths = resolve_bus_paths(None)
-    payload = BusEvent.create(
-        topic,
-        actor,
-        data,
-        kind=kind,
-        level=level,
-        lineage_id=lineage_id,
-        parent_lineage_id=parent_lineage_id,
-        mutation_op=mutation_op,
+def cmd_pub(args: argparse.Namespace) -> int:
+    paths = resolve_bus_paths(args.bus_dir)
+    data = json_load_maybe(args.data) if args.data is not None else None
+    emit_event(
+        paths,
+        topic=args.topic,
+        kind=args.kind,
+        level=args.level,
+        actor=args.actor,
+        data=data,
+        trace_id=args.trace_id,
+        run_id=args.run_id,
+        durable=args.durable,
     )
-    return _emit_payload(paths, asdict(payload), durable=False)
+    return 0
 
 
-def iter_lines_follow(path: str, sleep_s: float = 0.25) -> Generator[str, None, None]:
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("a+", encoding="utf-8") as handle:
-        handle.seek(0, os.SEEK_END)
+def iter_lines_follow(path: str, poll_s: float = 0.25):
+    ensure_dir(os.path.dirname(path))
+    if not os.path.exists(path):
+        open(path, "a", encoding="utf-8").close()
+    with open(path, "r", encoding="utf-8", errors="replace") as f:
+        f.seek(0, os.SEEK_END)
         while True:
-            line = handle.readline()
+            line = f.readline()
             if line:
-                yield line.rstrip("\n")
-            else:
-                time.sleep(sleep_s)
-
-
-def _tail_lines(path: Path, limit: int) -> list[str]:
-    if limit <= 0 or not path.exists():
-        return []
-    buf: deque[str] = deque(maxlen=limit)
-    with path.open("r", encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            if line:
-                buf.append(line.rstrip("\n"))
-    return list(buf)
-
-
-def default_actor() -> str:
-    return os.environ.get("PLURIBUS_ACTOR") or os.environ.get("CAGENT_ID") or os.environ.get("USER") or "unknown"
-
-
-def get_agent_id() -> str:
-    return os.environ.get("CAGENT_ID", "unknown")
-
-
-class AgentBus:
-    """Append-only NDJSON bus wrapper for older integrations."""
-
-    def __init__(self, bus_dir: Optional[Path] = None):
-        self.paths = resolve_bus_paths(str(bus_dir) if bus_dir else None)
-        self.events_file = Path(self.paths.events_path)
-
-    def emit(self, event: BusEvent) -> str:
-        payload = asdict(event)
-        payload.setdefault("host", socket.gethostname())
-        payload.setdefault("pid", os.getpid())
-        return _emit_payload(self.paths, payload, durable=False)
-
-    def tail(self, n: int = 10) -> list[BusEvent]:
-        _require_ndjson_read_allowed()
-        lines = _tail_lines(self.events_file, n)
-        events: list[BusEvent] = []
-        for line in lines:
-            try:
-                data = json.loads(line)
-                events.append(BusEvent(**data))
-            except (json.JSONDecodeError, TypeError):
+                yield line
                 continue
-        return events
-
-    def watch(self, topic_filter: Optional[str] = None) -> Generator[BusEvent, None, None]:
-        _require_ndjson_read_allowed()
-        for line in iter_lines_follow(str(self.events_file)):
-            try:
-                data = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if topic_filter and not str(data.get("topic", "")).startswith(topic_filter):
-                continue
-            try:
-                yield BusEvent(**data)
-            except TypeError:
-                continue
-
-    def query(self, topic_filter: Optional[str] = None, limit: int = 100) -> list[BusEvent]:
-        _require_ndjson_read_allowed()
-        events: list[BusEvent] = []
-        if not self.events_file.exists():
-            return events
-        with self.events_file.open("r", encoding="utf-8", errors="replace") as handle:
-            for line in handle:
-                try:
-                    data = json.loads(line.strip())
-                except json.JSONDecodeError:
-                    continue
-                if topic_filter and not str(data.get("topic", "")).startswith(topic_filter):
-                    continue
-                try:
-                    events.append(BusEvent(**data))
-                except TypeError:
-                    continue
-                if len(events) >= limit:
-                    break
-        return events
+            time.sleep(poll_s)
 
 
-# Topic constants
-class Topics:
-    CAGENT_BOOTSTRAP_START = "cagent.bootstrap.start"
-    CAGENT_BOOTSTRAP_COMPLETE = "cagent.bootstrap.complete"
-    CAGENT_TASK_START = "cagent.task.start"
-    CAGENT_TASK_UPDATE = "cagent.task.update"
-    CAGENT_TASK_COMPLETE = "cagent.task.complete"
-    CAGENT_TASK_RESUME = "cagent.task.resume"
-    CAGENT_DELEGATE_REQUEST = "cagent.delegate.request"
-    CAGENT_ESCALATE_REQUEST = "cagent.escalate.request"
-
-    DIALOGOS_SUBMIT = "dialogos.submit"
-    DIALOGOS_CELL = "dialogos.cell"
-    DIALOGOS_ERROR = "dialogos.error"
-    DIALOGOS_TIMEOUT = "dialogos.timeout"
-
-    PAIP_CLONE_CREATED = "paip.clone.created"
-    PAIP_CLONE_SYNCED = "paip.clone.synced"
-    PAIP_CLONE_DELETED = "paip.clone.deleted"
-    PAIP_ORPHAN_DETECTED = "paip.orphan.detected"
-
-    AMBER_PRESERVATION_START = "amber.preservation.start"
-    AMBER_PRESERVATION_COMPLETE = "amber.preservation.complete"
-
-    OPERATOR_COMMAND = "operator.command"
-    OPERATOR_RESPONSE = "operator.response"
-
-
-def _parse_json_arg(raw: str) -> Any:
-    try:
-        return json.loads(raw)
-    except Exception:
-        return raw
-
-
-def _filter_event(obj: dict, args: argparse.Namespace) -> bool:
-    if args.topic and not str(obj.get("topic", "")).startswith(args.topic):
+def matches_filters(obj: dict, *, topic: str | None, actor: str | None, run_id: str | None) -> bool:
+    if topic and obj.get("topic") != topic:
         return False
-    if args.actor and obj.get("actor") != args.actor:
+    if actor and obj.get("actor") != actor:
         return False
-    if args.kind and obj.get("kind") != args.kind:
-        return False
-    if args.level and obj.get("level") != args.level:
+    if run_id and obj.get("run_id") != run_id:
         return False
     return True
 
 
-def main(argv: Optional[list[str]] = None) -> int:
-    ap = argparse.ArgumentParser(prog="agent_bus.py", description="Append-only bus")
-    ap.add_argument("--bus-dir", help="Override bus directory")
-    sub = ap.add_subparsers(dest="cmd", required=True)
-
-    pub = sub.add_parser("pub", help="Publish event")
-    pub.add_argument("--topic", required=True)
-    pub.add_argument("--kind", required=True)
-    pub.add_argument("--level", required=True)
-    pub.add_argument("--actor", default=default_actor())
-    pub.add_argument("--data", default="{}")
-    pub.add_argument("--trace-id")
-    pub.add_argument("--run-id")
-    pub.add_argument("--durable", action="store_true")
-
-    tail = sub.add_parser("tail", help="Tail events")
-    tail.add_argument("--limit", type=int, default=50)
-    tail.add_argument("--topic")
-    tail.add_argument("--actor")
-    tail.add_argument("--kind")
-    tail.add_argument("--level")
-    tail.add_argument("--raw", action="store_true")
-    tail.add_argument("--follow", action="store_true")
-
-    tail_irk = sub.add_parser("tail-irk", help="Tail IRKG event timeline (no NDJSON)")
-    tail_irk.add_argument("--limit", type=int, default=50)
-    tail_irk.add_argument("--since", help="Time window (e.g., 1h, 24h, 7d)")
-    tail_irk.add_argument("--json", action="store_true", help="Output JSON array (default JSON lines)")
-    tail_irk.add_argument("--fallback-ndjson", action="store_true", help="Allow NDJSON fallback when IRKG is unavailable")
-
-    resolve = sub.add_parser("resolve", help="Resolve bus directory")
-    resolve.add_argument("--events-path", action="store_true")
-    resolve.add_argument("--json", action="store_true")
-
-    sub.add_parser("mk-run-id", help="Generate run id")
-
-    args = ap.parse_args(argv)
-
+def cmd_tail(args: argparse.Namespace) -> int:
     paths = resolve_bus_paths(args.bus_dir)
-
-    if args.cmd == "pub":
-        data = _parse_json_arg(args.data)
-        event_id = emit_event(
-            paths,
-            topic=args.topic,
-            kind=args.kind,
-            level=args.level,
-            actor=args.actor,
-            data=data if isinstance(data, dict) else {"message": data},
-            trace_id=args.trace_id,
-            run_id=args.run_id,
-            durable=args.durable,
-        )
-        print(event_id)
-        return 0
-
-    if args.cmd == "tail":
-        if not _ndjson_read_allowed():
-            sys.stderr.write(
-                "NDJSON reads are disabled (set PLURIBUS_DR_MODE=1 or PLURIBUS_NDJSON_MODE=allow).\n"
-            )
-            return 3
-        lines = iter_lines_follow(paths.events_path) if args.follow else _tail_lines(Path(paths.events_path), args.limit)
-        for line in lines:
-            if args.raw:
-                print(line)
-                continue
-            try:
-                obj = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            if not _filter_event(obj, args):
-                continue
-            print(json.dumps(obj, ensure_ascii=False))
-        return 0
-
-    if args.cmd == "tail-irk":
-        fallback_enabled = args.fallback_ndjson or _truthy_env(os.environ.get("PLURIBUS_IRKG_FALLBACK"), False)
+    for line in iter_lines_follow(paths.events_path, poll_s=args.poll):
         try:
-            from nucleus.tools.falkordb_bus_events import BusEventService
-        except Exception as exc:
-            if fallback_enabled:
-                since_ts = _parse_since_arg(args.since)
-                return _tail_irk_fallback(paths, args.limit, since_ts, args.json)
-            sys.stderr.write(f"IRKG tail unavailable: {exc}\n")
-            return 2
+            obj = json.loads(line)
+        except Exception:
+            continue
+        if not matches_filters(obj, topic=args.topic, actor=args.actor, run_id=args.run_id):
+            continue
+        sys.stdout.write(line if args.raw else json.dumps(obj, indent=2, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+    return 0
 
-        since_ts = _parse_since_arg(args.since)
-        if args.since and since_ts is None:
-            sys.stderr.write("Invalid --since value (use 1h, 24h, 7d, or epoch seconds).\n")
-            return 2
 
-        service = BusEventService()
-        err_sink = io.StringIO() if fallback_enabled else None
-        with contextlib.redirect_stderr(err_sink) if err_sink else contextlib.nullcontext():
-            timeline = service.get_event_timeline(since_ts=since_ts, limit=args.limit)
-        if not service._connected:
-            if fallback_enabled:
-                return _tail_irk_fallback(paths, args.limit, since_ts, args.json)
-            sys.stderr.write("IRKG unavailable and NDJSON fallback disabled.\n")
-            return 3
-        if args.json:
-            print(json.dumps(timeline, ensure_ascii=False))
-        else:
-            for item in timeline:
-                print(json.dumps(item, ensure_ascii=False))
+def cmd_mk_run_id(_: argparse.Namespace) -> int:
+    sys.stdout.write(str(uuid.uuid4()) + "\n")
+    return 0
+
+
+def cmd_resolve(args: argparse.Namespace) -> int:
+    paths = resolve_bus_paths(args.bus_dir)
+    if args.json:
+        sys.stdout.write(
+            json.dumps(
+                {
+                    "active_dir": paths.active_dir,
+                    "events_path": paths.events_path,
+                    "primary_dir": paths.primary_dir,
+                    "fallback_dir": paths.fallback_dir,
+                },
+                ensure_ascii=False,
+            )
+            + "\n"
+        )
         return 0
-
-    if args.cmd == "resolve":
-        if args.json:
-            print(json.dumps({
-                "active_dir": paths.active_dir,
-                "primary_dir": paths.primary_dir,
-                "fallback_dir": paths.fallback_dir,
-                "events_path": paths.events_path,
-            }, ensure_ascii=False))
-        elif args.events_path:
-            print(paths.events_path)
-        else:
-            print(paths.active_dir)
+    if args.events_path:
+        sys.stdout.write(paths.events_path + "\n")
         return 0
+    sys.stdout.write(paths.active_dir + "\n")
+    return 0
 
-    if args.cmd == "mk-run-id":
-        print(str(uuid.uuid4()))
-        return 0
 
-    return 1
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="agent_bus.py", description="Append-only agent IPC bus (NDJSON).")
+    p.add_argument("--bus-dir", default=None, help="Bus directory (default: $PLURIBUS_BUS_DIR or ./.pluribus/bus)")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    pub = sub.add_parser("pub", help="Publish one event.")
+    pub.add_argument("--topic", required=True, help="Stable dot-name topic, e.g. tests.unit.start")
+    pub.add_argument("--kind", default="log", choices=["log", "request", "response", "artifact", "metric"])
+    pub.add_argument("--level", default="info", choices=["debug", "info", "warn", "error"])
+    pub.add_argument("--actor", default=default_actor())
+    pub.add_argument("--trace-id", default=None)
+    pub.add_argument("--run-id", default=None)
+    pub.add_argument("--data", default=None, help="JSON string, or '-' to read JSON from stdin")
+    pub.add_argument("--durable", action="store_true", help="fsync after append")
+    pub.set_defaults(func=cmd_pub)
+
+    tail = sub.add_parser("tail", help="Tail events (follow).")
+    tail.add_argument("--topic", default=None)
+    tail.add_argument("--actor", default=None)
+    tail.add_argument("--run-id", default=None)
+    tail.add_argument("--raw", action="store_true", help="Print raw NDJSON lines")
+    tail.add_argument("--poll", type=float, default=0.25, help="Poll interval seconds")
+    tail.set_defaults(func=cmd_tail)
+
+    mk = sub.add_parser("mk-run-id", help="Print a new run id (uuid4).")
+    mk.set_defaults(func=cmd_mk_run_id)
+
+    resolve = sub.add_parser("resolve", help="Resolve and print the active bus path.")
+    resolve.add_argument("--json", action="store_true", help="Print JSON with active/primary/fallback and events_path.")
+    resolve.add_argument("--events-path", action="store_true", help="Print the resolved events.ndjson path.")
+    resolve.set_defaults(func=cmd_resolve)
+
+    return p
+
+
+def main(argv: list[str]) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    return int(args.func(args))
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$script_dir/agent_wrapper_common.sh"
+
+orig_home="${HOME:-}"
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+bus_dir="$(plu_resolve_bus_dir "$bus_dir")"
+topic_prefix="${PLURIBUS_TOPIC_PREFIX:-agent.claude}"
+export PLURIBUS_ACTOR="claude"
+export PLURIBUS_TASKS_FROM_BUS_RUN=1
+
+plu_emit_nexus_ack "claude" "$bus_dir"
+
+agent_home="$(plu_prepare_agent_home "claude" "PLURIBUS_CLAUDE_HOME")"
+plu_set_xdg "$agent_home"
+plu_load_secrets "$orig_home" "$agent_home"
+plu_load_assimilation_prompt "claude"
+plu_emit_session_bootstrap "$bus_dir"
+
+prompt_args=()
+claude_cmd="$(command -v claude || echo claude)"
+if [[ -n "${PLURIBUS_ASSIMILATION_PROMPT:-}" ]]; then
+  if prompt_flag="$(plu_detect_prompt_flag "$claude_cmd")"; then
+    prompt_args+=("$prompt_flag" "$PLURIBUS_ASSIMILATION_PROMPT")
+  fi
+fi
+
+exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- claude "${prompt_args[@]}" "$@"

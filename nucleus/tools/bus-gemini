@@ -1,37 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
-. "${SCRIPT_DIR}/agent_wrapper_common.sh" "gemini"
+source "$script_dir/agent_wrapper_common.sh"
 
-# Enforce OAuth-only Gemini CLI by stripping API-key env overrides.
-unset GEMINI_API_KEY
-unset GOOGLE_API_KEY
+orig_home="${HOME:-}"
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+bus_dir="$(plu_resolve_bus_dir "$bus_dir")"
+topic_prefix="${PLURIBUS_TOPIC_PREFIX:-agent.gemini}"
+export PLURIBUS_ACTOR="gemini"
+export PLURIBUS_TASKS_FROM_BUS_RUN=1
 
-# Ensure Gemini CLI has ample JS heap to avoid OOM crashes.
-GEMINI_MAX_OLD_SPACE_MB="${PLURIBUS_GEMINI_MAX_OLD_SPACE_MB:-6288}"
-if [[ "${NODE_OPTIONS:-}" =~ --max-old-space-size=([0-9]+) ]]; then
-  current="${BASH_REMATCH[1]}"
-  if [[ "$current" =~ ^[0-9]+$ ]] && (( current < GEMINI_MAX_OLD_SPACE_MB )); then
-    NODE_OPTIONS="${NODE_OPTIONS/--max-old-space-size=$current/--max-old-space-size=$GEMINI_MAX_OLD_SPACE_MB}"
+plu_emit_nexus_ack "gemini" "$bus_dir"
+
+node20_home="${orig_home:-$HOME}"
+if [[ -n "$node20_home" ]] && [[ -d "$node20_home/.local/node20/bin" ]]; then
+  export PATH="$node20_home/.local/node20/bin:$PATH"
+fi
+
+agent_home="$(plu_prepare_agent_home "gemini" "PLURIBUS_GEMINI_HOME")"
+plu_set_xdg "$agent_home"
+plu_load_secrets "$orig_home" "$agent_home"
+plu_load_assimilation_prompt "gemini"
+plu_emit_session_bootstrap "$bus_dir"
+
+prompt_args=()
+gemini_cmd="$(command -v gemini || echo gemini)"
+if [[ -n "${PLURIBUS_ASSIMILATION_PROMPT:-}" ]]; then
+  if prompt_flag="$(plu_detect_prompt_flag "$gemini_cmd")"; then
+    prompt_args+=("$prompt_flag" "$PLURIBUS_ASSIMILATION_PROMPT")
   fi
-else
-  if [[ -n "${NODE_OPTIONS:-}" ]]; then
-    NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=${GEMINI_MAX_OLD_SPACE_MB}"
-  else
-    NODE_OPTIONS="--max-old-space-size=${GEMINI_MAX_OLD_SPACE_MB}"
-  fi
-fi
-export NODE_OPTIONS="$(echo "${NODE_OPTIONS:-}" | xargs)"
-
-if [ -x /root/.local/node20/bin/gemini ]; then
-  exec /root/.local/node20/bin/gemini "$@"
 fi
 
-if [ -x /usr/bin/gemini ]; then
-  exec /usr/bin/gemini "$@"
-fi
-
-echo "gemini CLI not found at /root/.local/node20/bin/gemini or /usr/bin/gemini" >&2
-exit 127
+exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- gemini "${prompt_args[@]}" "$@"

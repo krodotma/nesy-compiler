@@ -1,0 +1,162 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://pluribus.local/schemas/etymon_manifest_v1.json",
+    "title": "Etymon Manifest",
+    "description": "Registry of the 16 user domains as portal inception seeds. DKIN v29",
+    "version": "1.0.0",
+    "protocol": "DKIN v29 | PAIP v15 | Citizen v1",
+    "created_iso": "2026-01-01T19:20:00Z",
+    "etymons": [
+        {
+            "etymon_id": "aiwa.re",
+            "domain": "neurosymbolic DNA-hyperautomata",
+            "description": "Transcendent neuro-symbolic architecture + hypersphere compute",
+            "entelecheia_target": "Autonomous intelligence emergence",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P0"
+        },
+        {
+            "etymon_id": "avtr.you",
+            "domain": "anthropometric avatar",
+            "description": "Human measurement to AI avatar synthesis pipeline",
+            "entelecheia_target": "Perfect human-AI embodiment",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P1"
+        },
+        {
+            "etymon_id": "boddah.org",
+            "domain": "Cobain AI epistolary",
+            "description": "Posthumous AI continuation via epistolary format",
+            "entelecheia_target": "Artistic legacy preservation",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P2"
+        },
+        {
+            "etymon_id": "chadai.dev",
+            "domain": "dev stack distill",
+            "description": "Developer stack curation and distillation pipeline",
+            "entelecheia_target": "Optimal development environment emergence",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P1"
+        },
+        {
+            "etymon_id": "cinemacloud.co",
+            "domain": "whitelabel player",
+            "description": "Cloud cinema distribution and player infrastructure",
+            "entelecheia_target": "Universal content distribution",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P1"
+        },
+        {
+            "etymon_id": "kareem.movie",
+            "domain": "human-AI film",
+            "description": "Collaborative human-AI film production",
+            "entelecheia_target": "New cinema paradigm",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P0"
+        },
+        {
+            "etymon_id": "kro.ma",
+            "domain": "SKY browser edge compute",
+            "description": "Edge computing via browser-native infrastructure",
+            "entelecheia_target": "Decentralized compute fabric",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P0"
+        },
+        {
+            "etymon_id": "mindlike.org",
+            "domain": "cognitive design patterns",
+            "description": "Design patterns for cognitive architectures",
+            "entelecheia_target": "Mind-compatible interfaces",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P1"
+        },
+        {
+            "etymon_id": "mirrorstudios.co",
+            "domain": "synthetic movie studio",
+            "description": "AI-native film production studio",
+            "entelecheia_target": "Autonomous content creation",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P1"
+        },
+        {
+            "etymon_id": "nsphe.re",
+            "domain": "hypersphere theory",
+            "description": "Hyperspherical computation and geometry theory",
+            "entelecheia_target": "Geometric intelligence foundations",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P0"
+        },
+        {
+            "etymon_id": "oooo.art",
+            "domain": "photo/video portfolio",
+            "description": "Creative portfolio and exhibition platform",
+            "entelecheia_target": "Artistic digital presence",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P2"
+        },
+        {
+            "etymon_id": "oooo.video",
+            "domain": "UGC AR/VR/3D",
+            "description": "User-generated immersive content platform",
+            "entelecheia_target": "Democratized spatial media",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P1"
+        },
+        {
+            "etymon_id": "qredit.net",
+            "domain": "QR-based ecash",
+            "description": "QR-code based electronic cash system",
+            "entelecheia_target": "Frictionless value transfer",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P1"
+        },
+        {
+            "etymon_id": "qride.org",
+            "domain": "non-TNC disruption",
+            "description": "Alternative to traditional ride-sharing networks",
+            "entelecheia_target": "Equitable transportation",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P2"
+        },
+        {
+            "etymon_id": "selfagency.org",
+            "domain": "autonomous services",
+            "description": "Self-directing autonomous service agents",
+            "entelecheia_target": "Agent autonomy framework",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P0"
+        },
+        {
+            "etymon_id": "superllm.dev",
+            "domain": "FoX chromatic learning",
+            "description": "Field of X chromatic multi-modal learning",
+            "entelecheia_target": "Universal model architecture",
+            "seed_vector_dim": 768,
+            "status": "active",
+            "priority": "P0"
+        }
+    ],
+    "totals": {
+        "registered": 16,
+        "active": 16,
+        "p0": 5,
+        "p1": 7,
+        "p2": 4
+    }
+}

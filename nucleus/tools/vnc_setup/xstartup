@@ -1,0 +1,29 @@
+#!/bin/bash
+# VNC Startup Script for Pluribus Browser Authentication
+# This script runs when the VNC session starts
+
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+
+# Start dbus session
+eval $(dbus-launch --sh-syntax)
+export DBUS_SESSION_BUS_ADDRESS
+
+# Set display
+export DISPLAY=:1
+
+# Start a lightweight window manager
+# openbox is minimal and works well for browser auth
+if command -v openbox &> /dev/null; then
+    openbox &
+elif command -v fluxbox &> /dev/null; then
+    fluxbox &
+elif command -v twm &> /dev/null; then
+    twm &
+fi
+
+# Start an xterm for debugging/commands
+xterm -geometry 80x24+10+10 -title "Pluribus VNC Terminal" &
+
+echo "VNC session ready for browser authentication"
+echo "Launch browser with: firefox or chromium-browser"

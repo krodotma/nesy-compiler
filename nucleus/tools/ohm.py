@@ -8,12 +8,17 @@ import argparse
 import shutil
 import subprocess
 import shlex
-from meta_learner.feedback_handler import handle_feedback
+import uuid
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+try:
+    from nucleus.tools import agent_bus
+except Exception:
+    agent_bus = None
 
 # Configuration
 BUS_DIR = os.environ.get("PLURIBUS_BUS_DIR", "/pluribus/.pluribus/bus")
@@ -21,6 +26,8 @@ BUS_FILE = os.path.join(BUS_DIR, "events.ndjson")
 MAX_LOG_LINES = 1000
 TAIL_BOOTSTRAP_BYTES = 2_000_000  #  2MB to capture recent metrics
 STATUS_REFRESH_S = 5.0
+DEFAULT_REFRESH_S = 5.0
+BUS_SIZE_WARN_MB_DEFAULT = 100.0
 WAVE_WIDTH = 48
 HEARTBEAT_PATTERN = "__/\\__"
 LEDGER_TAIL_BYTES = 2_000_000
@@ -28,19 +35,31 @@ LEDGER_TAIL_LINES = 5000
 TASK_ACTIVE_STATUSES = {"in_progress", "blocked", "run", "running"}
 TASK_DONE_STATUSES = {"completed", "abandoned", "failed", "done", "fail"}
 TASK_COMPLETE_KEEP_S = 60
+TASK_STALE_DEFAULT_S = 6 * 60 * 60
 TASK_PROGRESS_HISTORY_MAX = 20
 TASK_PROGRESS_MIN_DELTA = 0.01
 TASK_PROGRESS_BAR_WIDTH = 18
 TMUX_RIGHT_PCT_DEFAULT = 35
 TMUX_LEFT_MIN_COLS_DEFAULT = 110
 TMUX_LEFT_MIN_ROWS_DEFAULT = 40
+AGENT_ACTIVE_DEFAULT_S = 5 * 60
+OHM_EMIT_INTERVAL_DEFAULT_S = 30.0
+OHM_STATUS_TOPIC_DEFAULT = "ohm.status"
+OHM_ALERT_TOPIC_DEFAULT = "ohm.alert"
+ART_TICK_INTERVAL_S = 8640.0  # 144 minutes (10/day)
+COLLAB_DEDUPE_MAX = 5000
 
 OMEGA_TOPICS = {
     "omega.heartbeat",
     "omega.queue.depth",
     "omega.pending.pairs",
+    "omega.metrics.velocity",
+    "omega.metrics.latency",
+    "omega.metrics.entropy",
     "omega.providers.scan",
+    "omega.providers.health",
     "omega.health",
+    "omega.health.composite",
     "omega.guardian.cycle",
     "omega.guardian.warn",
     "omega.dispatcher.ready",
@@ -75,6 +94,52 @@ class OmegaHeartMonitor:
         self.task_entry_ids = set()
         self.task_ledger_path = None
         self.task_ledger_mtime = 0.0
+        self.task_ledger_offset = 0
+        self.task_ledger_inode = None
+        self.task_ledger_partial = b""
+
+        refresh_env = os.environ.get("OHM_REFRESH_S")
+        try:
+            self.refresh_s = float(refresh_env) if refresh_env else DEFAULT_REFRESH_S
+        except (TypeError, ValueError):
+            self.refresh_s = DEFAULT_REFRESH_S
+        if self.refresh_s <= 0:
+            self.refresh_s = DEFAULT_REFRESH_S
+        self.refresh_s = max(0.5, self.refresh_s)
+        warn_env = os.environ.get("OHM_BUS_WARN_MB")
+        try:
+            self.bus_warn_mb = float(warn_env) if warn_env else BUS_SIZE_WARN_MB_DEFAULT
+        except (TypeError, ValueError):
+            self.bus_warn_mb = BUS_SIZE_WARN_MB_DEFAULT
+        if self.bus_warn_mb <= 0:
+            self.bus_warn_mb = BUS_SIZE_WARN_MB_DEFAULT
+        stale_env = os.environ.get("OHM_TASK_STALE_S")
+        try:
+            self.task_stale_s = float(stale_env) if stale_env else TASK_STALE_DEFAULT_S
+        except (TypeError, ValueError):
+            self.task_stale_s = TASK_STALE_DEFAULT_S
+        active_env = os.environ.get("OHM_AGENT_ACTIVE_S")
+        try:
+            self.agent_active_s = float(active_env) if active_env else AGENT_ACTIVE_DEFAULT_S
+        except (TypeError, ValueError):
+            self.agent_active_s = AGENT_ACTIVE_DEFAULT_S
+        self.show_stale_tasks = os.environ.get("OHM_SHOW_STALE_TASKS") == "1"
+        self.agent_expanded = os.environ.get("OHM_AGENT_EXPAND") == "1"
+        emit_env = os.environ.get("OHM_EMIT_S")
+        try:
+            self.emit_interval_s = float(emit_env) if emit_env else OHM_EMIT_INTERVAL_DEFAULT_S
+        except (TypeError, ValueError):
+            self.emit_interval_s = OHM_EMIT_INTERVAL_DEFAULT_S
+        if self.emit_interval_s <= 0:
+            self.emit_interval_s = OHM_EMIT_INTERVAL_DEFAULT_S
+        self.emit_interval_s = max(1.0, self.emit_interval_s)
+        self.emit_topic = os.environ.get("OHM_EMIT_TOPIC", OHM_STATUS_TOPIC_DEFAULT)
+        self.alert_topic = os.environ.get("OHM_ALERT_TOPIC", OHM_ALERT_TOPIC_DEFAULT)
+        self.emit_alerts = os.environ.get("OHM_EMIT_ALERTS") == "1"
+        self._last_emit_ts = 0.0
+        self._last_alert_ts = 0.0
+        self._last_art_tick_ts = 0.0
+        self._last_alert_state = None
 
         self.metrics = {
             "agents": set(),
@@ -85,10 +150,16 @@ class OmegaHeartMonitor:
             "responses": collections.deque(maxlen=50),
             "a2a_requests": 0,
             "a2a_responses": 0,
+            "collab_requests": 0,
+            "collab_responses": 0,
             "events_seen": 0,
             "provider_activity": collections.Counter(),  # v1.13: Per-provider event counts
             "agent_last_seen": {},  # v1.14: {actor: last_ts} for agent heartbeat monitoring
         }
+        self.collab_request_ids: set[str] = set()
+        self.collab_request_order = collections.deque()
+        self.collab_response_ids: set[str] = set()
+        self.collab_response_order = collections.deque()
 
         self.event_counters = collections.Counter()
 
@@ -98,8 +169,9 @@ class OmegaHeartMonitor:
             "dispatch": {"tick": 0, "sent": 0, "denied": 0, "errors": 0, "last_ts": 0.0, "pending_total": 0},
             "queue": {"count": 0, "last_ts": 0.0, "pending_requests": 0, "total_events": 0},
             "pairs": {"count": 0, "last_ts": 0.0, "total": 0, "oldest_age_s": 0.0},
-            "providers": {"count": 0, "last_ts": 0.0, "providers": {}},
-            "health": {"count": 0, "last_ts": 0.0, "status": "unknown"},
+            "providers": {"count": 0, "last_ts": 0.0, "providers": {}, "details": {}, "health_score": None},
+            "health": {"count": 0, "last_ts": 0.0, "status": "unknown", "score": None},
+            "metrics": {"velocity": {}, "latency": {}, "entropy": {}},
         }
 
         self.set_filter(filter_name or os.environ.get("OHM_FILTER"))
@@ -138,6 +210,51 @@ class OmegaHeartMonitor:
         except Exception:
             return []
 
+    def _remember_collab_id(self, req_id: str, ids: set[str], order: collections.deque) -> bool:
+        if req_id in ids:
+            return False
+        if len(order) >= COLLAB_DEDUPE_MAX:
+            old = order.popleft()
+            ids.discard(old)
+        ids.add(req_id)
+        order.append(req_id)
+        return True
+
+    def _read_task_ledger_lines(self):
+        path = self.task_ledger_path or self._resolve_task_ledger_path()
+        if not path or not os.path.exists(path):
+            return []
+        self.task_ledger_path = path
+        try:
+            st = os.stat(path)
+            inode = getattr(st, "st_ino", None)
+            if self.task_ledger_inode is None:
+                self.task_ledger_inode = inode
+            if inode is not None and self.task_ledger_inode is not None and inode != self.task_ledger_inode:
+                self.task_ledger_offset = 0
+                self.task_ledger_partial = b""
+                self.task_ledger_inode = inode
+            if st.st_size < self.task_ledger_offset:
+                self.task_ledger_offset = 0
+                self.task_ledger_partial = b""
+            with open(path, "rb") as handle:
+                if self.task_ledger_offset == 0 and st.st_size > LEDGER_TAIL_BYTES:
+                    self.task_ledger_offset = st.st_size - LEDGER_TAIL_BYTES
+                handle.seek(self.task_ledger_offset, os.SEEK_SET)
+                chunk = handle.read()
+                self.task_ledger_offset = handle.tell()
+            if not chunk:
+                return []
+            data = self.task_ledger_partial + chunk
+            lines = data.split(b"\n")
+            if data and not data.endswith(b"\n"):
+                self.task_ledger_partial = lines.pop()
+            else:
+                self.task_ledger_partial = b""
+            return lines
+        except Exception:
+            return []
+
     def _bootstrap_task_ledger(self):
         self.task_ledger_path = self._resolve_task_ledger_path()
         if not self.task_ledger_path:
@@ -154,9 +271,31 @@ class OmegaHeartMonitor:
                 continue
             self._ingest_task_entry(entry)
         try:
+            st = os.stat(self.task_ledger_path)
+            self.task_ledger_inode = getattr(st, "st_ino", None)
+            self.task_ledger_offset = st.st_size
+            self.task_ledger_partial = b""
+        except Exception:
+            self.task_ledger_offset = 0
+        try:
             self.task_ledger_mtime = os.path.getmtime(self.task_ledger_path)
         except Exception:
             self.task_ledger_mtime = 0.0
+
+    def tail_task_ledger(self):
+        lines = self._read_task_ledger_lines()
+        if not lines:
+            return
+        for raw in lines:
+            if not raw:
+                continue
+            try:
+                entry = json.loads(raw.decode("utf-8", errors="replace"))
+            except Exception:
+                continue
+            if not isinstance(entry, dict):
+                continue
+            self._ingest_task_entry(entry)
 
     def _ingest_task_entry(self, entry):
         if not isinstance(entry, dict):
@@ -240,15 +379,71 @@ class OmegaHeartMonitor:
         else:
             state["completed_ts"] = None
 
+    def _is_task_stale(self, info, now: float) -> bool:
+        if not self.task_stale_s or self.task_stale_s <= 0:
+            return False
+        status = str(info.get("status", "unknown")).lower()
+        if status not in TASK_ACTIVE_STATUSES:
+            return False
+        last_ts = info.get("last_ts") or info.get("ts") or 0.0
+        if not last_ts:
+            return False
+        return (now - last_ts) > self.task_stale_s
+
+    def _agent_task_counts(self, now: float) -> collections.Counter:
+        counts = collections.Counter()
+        for info in self.task_state.values():
+            status = str(info.get("status", "unknown")).lower()
+            if status not in TASK_ACTIVE_STATUSES:
+                continue
+            if self._is_task_stale(info, now):
+                continue
+            actor = info.get("actor") or "unknown"
+            counts[actor] += 1
+        return counts
+
     def _task_counts(self):
         counts = collections.Counter()
         active = {}
+        stale = 0
+        now = time.time()
         for task_id, info in self.task_state.items():
             status = str(info.get("status", "unknown")).lower()
+            if self._is_task_stale(info, now):
+                stale += 1
+                if self.show_stale_tasks:
+                    active[task_id] = dict(info, status="stale")
+                continue
             counts[status] += 1
             if status in TASK_ACTIVE_STATUSES:
                 active[task_id] = info
+        if stale:
+            counts["stale"] = stale
         return counts, active
+
+    def _prune_tasks(self, now=None) -> None:
+        if not self.task_state:
+            return
+        now = now or time.time()
+        stale_cutoff = None
+        if self.task_stale_s and self.task_stale_s > 0:
+            stale_cutoff = self.task_stale_s + TASK_COMPLETE_KEEP_S
+
+        for run_id, info in list(self.task_state.items()):
+            status = str(info.get("status", "unknown")).lower()
+            last_ts = info.get("last_ts") or info.get("ts") or 0.0
+            completed_ts = info.get("completed_ts") or last_ts
+            if status in TASK_DONE_STATUSES:
+                if completed_ts and (now - completed_ts) > TASK_COMPLETE_KEEP_S:
+                    self.task_state.pop(run_id, None)
+                continue
+            if stale_cutoff is not None and status in TASK_ACTIVE_STATUSES:
+                if last_ts and (now - last_ts) > stale_cutoff:
+                    self.task_state.pop(run_id, None)
+                continue
+            if status not in TASK_ACTIVE_STATUSES and status not in TASK_DONE_STATUSES:
+                if last_ts and (now - last_ts) > TASK_COMPLETE_KEEP_S:
+                    self.task_state.pop(run_id, None)
 
     def _build_filters(self):
         def _match_topic(prefixes, entry):
@@ -414,11 +609,14 @@ class OmegaHeartMonitor:
         for task_id, info in self.task_state.items():
             status = str(info.get("status", "unknown")).lower()
             done = status in TASK_DONE_STATUSES
+            is_stale = self._is_task_stale(info, now)
+            if is_stale and not self.show_stale_tasks:
+                continue
             if done:
                 completed_ts = info.get("completed_ts") or info.get("last_ts") or info.get("ts") or 0.0
                 if not completed_ts or (now - completed_ts) > TASK_COMPLETE_KEEP_S:
                     continue
-            elif status not in TASK_ACTIVE_STATUSES:
+            elif status not in TASK_ACTIVE_STATUSES and not is_stale:
                 continue
 
             progress = info.get("progress")
@@ -434,7 +632,11 @@ class OmegaHeartMonitor:
             else:
                 eta = self._task_eta_seconds(info)
                 eta_str = self._format_duration(eta) if eta is not None else "--"
-            status_tag = "RUN" if status == "in_progress" else ("BLK" if status == "blocked" else "DONE")
+            if is_stale:
+                status_tag = "STL"
+                status = "stale"
+            else:
+                status_tag = "RUN" if status == "in_progress" else ("BLK" if status == "blocked" else "DONE")
             actor = info.get("actor") or "unknown"
             desc = info.get("desc") or ""
 
@@ -446,7 +648,7 @@ class OmegaHeartMonitor:
             if len(line) > max_line:
                 line = line[: max_line - 3] + "..."
 
-            order = 0 if status == "in_progress" else (1 if status == "blocked" else 2)
+            order = 0 if status == "in_progress" else (1 if status == "blocked" else (2 if status == "stale" else 3))
             sort_ts = info.get("last_ts") or info.get("ts") or 0
             rows.append(
                 {
@@ -577,6 +779,7 @@ class OmegaHeartMonitor:
             data = {}
         actor = entry.get("actor") or entry.get("sender") or data.get("sender") or "Unknown"
         level = entry.get("level", "")
+        kind = entry.get("kind", "")
         ts = entry.get("ts") or entry.get("timestamp") or time.time()
 
         self.metrics["events_seen"] += 1
@@ -590,26 +793,63 @@ class OmegaHeartMonitor:
             self.metrics["provider_activity"][provider] += 1
 
         if topic in {"task.dispatch", "rd.tasks.dispatch"}:
-            self.metrics["tasks_started"] += 1
-            task_id = data.get("req_id") or data.get("task_id") or data.get("id") or f"task-{self.metrics['tasks_started']}"
-            target = data.get("target") or data.get("target_agent") or data.get("target_agent_id") or "N/A"
-            self.metrics["active_tasks"][task_id] = {
-                "agent": target,
-                "sender": actor,
-                "timestamp": ts,
-            }
-            self.metrics["dispatches"].append({"id": task_id, "target": target})
+            if topic == "task.dispatch":
+                task_id = data.get("task_id") or data.get("req_id")
+                target = data.get("target_agent") or data.get("target")
+                desc = data.get("instruction") or data.get("intent") or data.get("desc")
+            else:
+                task_id = data.get("req_id") or data.get("task_id")
+                target = data.get("target") or data.get("target_agent") or data.get("target_agent_id")
+                desc = data.get("intent") or data.get("desc")
+            if task_id:
+                task_entry = {
+                    "id": entry.get("id") or f"dispatch:{task_id}",
+                    "run_id": task_id,
+                    "status": "in_progress",
+                    "actor": target or actor,
+                    "ts": ts,
+                    "meta": {"desc": desc} if desc else {},
+                }
+                self._ingest_task_entry(task_entry)
+                self.metrics["dispatches"].append({"id": task_id, "target": target or actor})
+            self.omega["dispatch"]["tick"] += 1
+            self.omega["dispatch"]["last_ts"] = ts
         elif topic in {"rd.tasks.response", "task.complete"}:
-            self.metrics["tasks_completed"] += 1
             task_id = data.get("req_id") or data.get("task_id") or data.get("id")
-            if task_id in self.metrics["active_tasks"]:
-                del self.metrics["active_tasks"][task_id]
+            status = data.get("status")
+            if not isinstance(status, str):
+                status = "completed"
+            if task_id:
+                task_entry = {
+                    "id": entry.get("id") or f"response:{task_id}",
+                    "run_id": task_id,
+                    "status": status,
+                    "actor": data.get("sender") or actor,
+                    "ts": ts,
+                    "meta": {"desc": data.get("type")} if isinstance(data.get("type"), str) else {},
+                }
+                self._ingest_task_entry(task_entry)
             self.metrics["responses"].append(entry)
+            self.omega["dispatch"]["sent"] += 1
 
         if topic == "a2a.negotiate.request":
             self.metrics["a2a_requests"] += 1
         elif topic == "a2a.negotiate.response":
             self.metrics["a2a_responses"] += 1
+        elif topic.startswith(("agent.collab", "cagent.collab")):
+            req_id = data.get("req_id") or data.get("request_id")
+            if kind == "request":
+                if isinstance(req_id, str) and req_id:
+                    if self._remember_collab_id(req_id, self.collab_request_ids, self.collab_request_order):
+                        self.metrics["collab_requests"] += 1
+                else:
+                    self.metrics["collab_requests"] += 1
+            elif kind == "response":
+                if isinstance(req_id, str) and req_id:
+                    if self._remember_collab_id(req_id, self.collab_response_ids, self.collab_response_order):
+                        self.metrics["collab_responses"] += 1
+                else:
+                    self.metrics["collab_responses"] += 1
 
         if topic == "task_ledger.append":
             entry = data.get("entry")
@@ -623,6 +863,14 @@ class OmegaHeartMonitor:
             if topic == "omega.heartbeat":
                 self.omega["heartbeat"]["count"] += 1
                 self._record_heartbeat(ts, data)
+                
+                # COMPLIANCE ENFORCEMENT (v26)
+                compliance = data.get("_auom_compliance")
+                if compliance:
+                    actor = entry.get("actor", "unknown")
+                    for check in compliance.get("checks", []):
+                        msg = f"![Violation] {actor} failed {check['law']}"
+                        self.log_buffer.append(msg)
             elif topic == "omega.guardian.cycle":
                 self.omega["guardian"]["count"] += 1
                 self.omega["guardian"]["last_ts"] = ts
@@ -649,25 +897,59 @@ class OmegaHeartMonitor:
                 self.omega["pairs"]["count"] += 1
                 self.omega["pairs"]["last_ts"] = ts
                 self.omega["pairs"]["total"] = data.get("total", self.omega["pairs"]["total"])
-                oldest = 0.0
-                by_pair = data.get("by_pair", {}) if isinstance(data.get("by_pair"), dict) else {}
-                for info in by_pair.values():
-                    if not isinstance(info, dict):
-                        continue
-                    oldest = max(oldest, float(info.get("oldest_age_s", 0.0)))
-                self.omega["pairs"]["oldest_age_s"] = oldest
+                oldest = data.get("oldest_age_s")
+                if oldest is None:
+                    oldest = 0.0
+                    by_pair = data.get("by_pair", {}) if isinstance(data.get("by_pair"), dict) else {}
+                    by_topic = data.get("by_topic", {}) if isinstance(data.get("by_topic"), dict) else {}
+                    for info in list(by_pair.values()) + list(by_topic.values()):
+                        if not isinstance(info, dict):
+                            continue
+                        oldest = max(oldest, float(info.get("oldest_age_s", 0.0)))
+                try:
+                    self.omega["pairs"]["oldest_age_s"] = float(oldest)
+                except (TypeError, ValueError):
+                    self.omega["pairs"]["oldest_age_s"] = 0.0
+                by_topic = data.get("by_topic", {}) if isinstance(data.get("by_topic"), dict) else {}
+                pending_dispatch = 0
+                for key in ("rd.tasks.dispatch", "task.dispatch"):
+                    val = by_topic.get(key)
+                    if isinstance(val, dict):
+                        pending_dispatch += int(val.get("pending_total") or val.get("total") or val.get("count") or 0)
+                    elif isinstance(val, (int, float)):
+                        pending_dispatch += int(val)
+                if pending_dispatch:
+                    self.omega["dispatch"]["pending_total"] = pending_dispatch
             elif topic == "omega.providers.scan":
                 self.omega["providers"]["count"] += 1
                 self.omega["providers"]["last_ts"] = ts
                 providers = data.get("providers") if isinstance(data.get("providers"), dict) else {}
-                self.omega["providers"]["providers"] = providers
+                self.omega["providers"]["details"] = providers
+                self.omega["providers"]["providers"] = self._normalize_provider_status(providers)
+            elif topic == "omega.providers.health":
+                self.omega["providers"]["count"] += 1
+                self.omega["providers"]["last_ts"] = ts
+                providers = data.get("providers") if isinstance(data.get("providers"), dict) else {}
+                self.omega["providers"]["details"] = providers
+                self.omega["providers"]["health_score"] = data.get("health_score", self.omega["providers"]["health_score"])
+                self.omega["providers"]["providers"] = self._normalize_provider_status(providers)
             elif topic == "omega.health":
                 self.omega["health"]["count"] += 1
                 self.omega["health"]["last_ts"] = ts
                 self.omega["health"]["status"] = data.get("status", self.omega["health"]["status"])
+                self.omega["health"]["score"] = data.get("score", self.omega["health"]["score"])
+            elif topic == "omega.health.composite":
+                self.omega["health"]["count"] += 1
+                self.omega["health"]["last_ts"] = ts
+                self.omega["health"]["status"] = data.get("status", self.omega["health"]["status"])
+                self.omega["health"]["score"] = data.get("score", self.omega["health"]["score"])
+            elif topic == "omega.metrics.velocity":
+                self.omega["metrics"]["velocity"] = data
+            elif topic == "omega.metrics.latency":
+                self.omega["metrics"]["latency"] = data
+            elif topic == "omega.metrics.entropy":
+                self.omega["metrics"]["entropy"] = data
 
-        # Emit feedback to MetaLearner
-        handle_feedback({"topic": topic, "actor": actor, "level": level, "data": data, "ts": ts})
         summary = self._summarize_event(topic, actor, level, data)
         self.log_buffer.append(
             {
@@ -675,6 +957,133 @@ class OmegaHeartMonitor:
                 "level": level,
                 "summary": summary,
             }
+        )
+
+    def _emit_bus_event(self, *, topic: str, kind: str, level: str, data: dict) -> None:
+        if not topic:
+            return
+        if agent_bus is not None:
+            paths = agent_bus.resolve_bus_paths(BUS_DIR)
+            agent_bus.emit_event(
+                paths,
+                topic=topic,
+                kind=kind,
+                level=level,
+                actor=os.environ.get("PLURIBUS_ACTOR", "ohm"),
+                data=data,
+                trace_id=None,
+                run_id=None,
+                durable=False,
+            )
+            return
+        try:
+            Path(BUS_FILE).parent.mkdir(parents=True, exist_ok=True)
+            event = {
+                "id": str(uuid.uuid4()),
+                "ts": time.time(),
+                "iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "topic": topic,
+                "kind": kind,
+                "level": level,
+                "actor": os.environ.get("PLURIBUS_ACTOR", "ohm"),
+                "data": data,
+            }
+            with open(BUS_FILE, "a", encoding="utf-8") as handle:
+                handle.write(json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n")
+        except Exception:
+            return
+
+    def _status_payload(self) -> dict:
+        task_counts, active_tasks = self._task_counts()
+        bus_mb = self._bus_size_mb()
+        bus_warn = bool(self.bus_warn_mb) and bus_mb >= self.bus_warn_mb
+        active_services, total_services = self._service_counts()
+        inactive_services = [
+            unit
+            for unit in self.service_units
+            if self.service_status.get(unit, {}).get("active") != "active"
+        ]
+        # v1.16: Calculate live agent count for status payload
+        now = time.time()
+        live_agent_count = 0
+        for actor in self.metrics["agents"]:
+            last_ts = self.metrics["agent_last_seen"].get(actor, 0)
+            if last_ts:
+                if isinstance(last_ts, str):
+                    try:
+                        from datetime import datetime
+                        dt = datetime.fromisoformat(last_ts.replace('Z', '+00:00'))
+                        last_ts = dt.timestamp()
+                    except (ValueError, TypeError):
+                        continue
+                if (now - float(last_ts)) <= self.agent_active_s:
+                    live_agent_count += 1
+        return {
+            "bus_size_mb": round(bus_mb, 2),
+            "bus_warn": bus_warn,
+            "services": {
+                "active": active_services,
+                "total": total_services,
+                "inactive": inactive_services[:12],
+            },
+            "tasks": {
+                "counts": dict(task_counts),
+                "active": len(active_tasks),
+                "dispatched": self.metrics["tasks_started"],
+                "completed": self.metrics["tasks_completed"],
+            },
+            "agents": {
+                "seen": len(self.metrics["agents"]),
+                "live": live_agent_count,
+                "last_seen": self.metrics["agent_last_seen"],
+            },
+            "a2a": {
+                "requests": self.metrics["a2a_requests"],
+                "responses": self.metrics["a2a_responses"],
+            },
+            "collab": {
+                "requests": self.metrics["collab_requests"],
+                "responses": self.metrics["collab_responses"],
+            },
+            "omega": {
+                "queue": self.omega.get("queue", {}),
+                "dispatch": self.omega.get("dispatch", {}),
+                "pairs": self.omega.get("pairs", {}),
+                "providers": self.omega.get("providers", {}),
+                "health": self.omega.get("health", {}),
+            },
+        }
+
+    def _emit_status(self, *, force: bool = False) -> None:
+        now = time.time()
+        if not force and (now - self._last_emit_ts) < self.emit_interval_s:
+            return
+        self._last_emit_ts = now
+        payload = self._status_payload()
+        self._emit_bus_event(topic=self.emit_topic, kind="metric", level="info", data=payload)
+        if not self.emit_alerts:
+            return
+        alert_state = {
+            "bus_warn": payload["bus_warn"],
+            "inactive_services": payload["services"]["inactive"],
+            "stale_tasks": payload["tasks"]["counts"].get("stale", 0),
+        }
+        if alert_state != self._last_alert_state or (now - self._last_alert_ts) > (self.emit_interval_s * 4):
+            self._last_alert_state = alert_state
+            self._last_alert_ts = now
+            level = "warn" if payload["bus_warn"] or alert_state["inactive_services"] else "info"
+            self._emit_bus_event(topic=self.alert_topic, kind="log", level=level, data=alert_state)
+
+    def _emit_art_tick(self) -> None:
+        now = time.time()
+        if (now - self._last_art_tick_ts) < ART_TICK_INTERVAL_S:
+            return
+        self._last_art_tick_ts = now
+        self._emit_bus_event(
+            topic="art.director.tick",
+            kind="trigger",
+            level="info",
+            data={"source": "ohm", "interval_s": ART_TICK_INTERVAL_S}
         )
 
     def tail_bus(self):
@@ -693,10 +1102,45 @@ class OmegaHeartMonitor:
                 continue
             self._process_entry(entry)
 
+    def _bus_size_mb(self, path=None) -> float:
+        path = path or BUS_FILE
+        try:
+            size = os.path.getsize(path)
+        except (OSError, TypeError):
+            return 0.0
+        return size / (1024 * 1024)
+
+    def _bus_size_label(self):
+        mb = self._bus_size_mb()
+        warn = bool(self.bus_warn_mb) and mb >= self.bus_warn_mb
+        label = f"BUS: {mb:.1f}MB"
+        if warn:
+            label += " (rotate)"
+        return label, warn
+
+    def _normalize_provider_status(self, providers: dict) -> dict:
+        normalized = {}
+        for name, value in providers.items():
+            if isinstance(value, dict):
+                ok = value.get("available")
+                if ok is None:
+                    ok = value.get("healthy")
+                if ok is None:
+                    ok = value.get("ok")
+                if ok is None:
+                    status = str(value.get("status", "")).lower()
+                    ok = status in {"ok", "healthy", "available"}
+                normalized[name] = bool(ok) if ok is not None else False
+            else:
+                normalized[name] = bool(value)
+        return normalized
+
     def _provider_string(self) -> str:
         providers = self.omega["providers"].get("providers", {})
         if not providers:
             return "n/a"
+        if any(isinstance(value, dict) for value in providers.values()):
+            providers = self._normalize_provider_status(providers)
         parts = []
         for name, ok in sorted(providers.items()):
             parts.append(f"{name}:{'on' if ok else 'off'}")
@@ -908,6 +1352,12 @@ class OmegaHeartMonitor:
         cmd = [sys.executable, os.path.abspath(__file__), "--cli"]
         if filter_name:
             cmd.extend(["--filter", filter_name])
+        if self.refresh_s:
+            cmd.extend(["--interval", f"{self.refresh_s}"])
+        if self.agent_expanded:
+            cmd.append("--agents-full")
+        if self.show_stale_tasks:
+            cmd.append("--show-stale-tasks")
         return cmd
 
     def _tmux_attach_command(self, session_name):
@@ -1001,74 +1451,116 @@ class OmegaHeartMonitor:
             print(f"tmux split failed: {exc}")
             return 1
 
-    def _agent_dashboard_lines(self, width: int = 60, max_agents: int = 10) -> list:
-        """
-        Generate agent dashboard lines for v1.14 grid layout.
-        Shows agents grouped by category with last-activity time.
-        """
+    def _agent_dashboard_lines(self, width: int = 60, max_agents: int = 10, show_all: bool = False) -> list:
+        """Return agent dashboard lines with last-seen and active task counts."""
         now = time.time()
         last_seen = self.metrics.get("agent_last_seen", {})
-        
-        # Agent categories with glyphs
-        CATS = {
-            "models": ("🧠", ["claude", "codex", "gemini", "glm", "chatgpt", "qwen", "claude-opus", "claude-codex", "claude-reviewer", "claude-hygiene"]),
-            "infrastructure": ("⚙", ["omega", "omega_guardian", "bus-mirror", "bus-mirror-reverse", "world-router"]),
-            "qa": ("✓", ["qa-live-checker", "smoketest", "ui-benchmark"]),
-            "dialogos": ("💬", ["dialogosd", "dialogos-indexer", "dialogos-search"]),
-            "dashboard": ("📊", ["dashboard", "dashboard-telemetry", "load-timing"]),
-            "browser": ("🌐", ["browser_daemon", "Antigravity"]),
-        }
-        
-        lines = []
-        
-        for actor in self.metrics.get("agents", set()):
+        task_counts = self._agent_task_counts(now)
+
+        known_agents = []
+        for meta in AGENT_TAXONOMY.values():
+            known_agents.extend(meta["agents"])
+        known_set = set(known_agents)
+        seen_agents = set(self.metrics.get("agents", set()))
+        unknown_agents = sorted(seen_agents - known_set)
+
+        def _age_info(actor: str):
             last_ts = last_seen.get(actor, 0)
-            age_s = now - last_ts if last_ts > 0 else float('inf')
-            
-            # Find category
-            glyph = "?"
-            for cat, (g, agents) in CATS.items():
-                if actor in agents:
-                    glyph = g
-                    break
-            
-            # Format age
-            if age_s == float('inf'):
-                age_str = "never"
-            elif age_s < 60:
-                age_str = f"{int(age_s)}s"
-            elif age_s < 3600:
-                age_str = f"{int(age_s/60)}m"
-            elif age_s < 86400:
-                age_str = f"{age_s/3600:.1f}h"
-            else:
-                age_str = f"{age_s/86400:.1f}d"
-            
-            # Color based on age
+            if not last_ts:
+                return None, "never"
+            # Handle string timestamps (ISO format) or numeric
+            if isinstance(last_ts, str):
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(last_ts.replace('Z', '+00:00'))
+                    last_ts = dt.timestamp()
+                except (ValueError, TypeError):
+                    return None, "never"
+            age_s = max(0.0, now - float(last_ts))
             if age_s < 60:
-                status = "🟢"
-            elif age_s < 300:
-                status = "🟡"
-            elif age_s < 3600:
-                status = "🟠"
+                return age_s, f"{int(age_s)}s"
+            if age_s < 3600:
+                return age_s, f"{int(age_s/60)}m"
+            if age_s < 86400:
+                return age_s, f"{age_s/3600:.1f}h"
+            return age_s, f"{age_s/86400:.1f}d"
+
+        def _status_icon(age_s):
+            if age_s is None:
+                return "⚫"
+            if age_s < 60:
+                return "🟢"
+            if age_s < 300:
+                return "🟡"
+            if age_s < 3600:
+                return "🟠"
+            return "🔴"
+
+        def _format_agent(actor: str):
+            _, glyph, _, _ = categorize_agent(actor)
+            age_s, age_str = _age_info(actor)
+            status = _status_icon(age_s)
+            tasks = task_counts.get(actor, 0)
+            task_str = f" t{tasks:>2}" if tasks else "    "
+            label = f"{glyph} {actor[:18]:<18} {status} {age_str:>6}{task_str}"
+            if len(label) > width:
+                label = label[: width - 3] + "..."
+            return {"label": label, "actor": actor, "age": age_s if age_s is not None else float("inf")}
+
+        lines = []
+        if show_all:
+            for cat, meta in AGENT_TAXONOMY.items():
+                agents = meta.get("agents", [])
+                active_count = 0
+                for agent in agents:
+                    last_ts = last_seen.get(agent, 0)
+                    if last_ts and (now - last_ts) <= self.agent_active_s:
+                        active_count += 1
+                header = f"{meta.get('glyph', '?')} {cat} r{meta.get('ring', '?')} {active_count}/{len(agents)} active"
+                lines.append({"label": header[:width], "actor": cat, "age": -1, "is_header": True})
+                for agent in agents:
+                    lines.append(_format_agent(agent))
+            if unknown_agents:
+                lines.append({"label": "❔ other", "actor": "other", "age": -1, "is_header": True})
+                for agent in unknown_agents:
+                    lines.append(_format_agent(agent))
+        else:
+            for actor in seen_agents:
+                lines.append(_format_agent(actor))
+            lines.sort(key=lambda x: x.get("age", float("inf")))
+
+        if max_agents and len(lines) > max_agents:
+            lines = lines[:max_agents]
+        return lines
+
+    def _operator_lines(self, width: int = 60) -> list:
+        if not SEMANTIC_OPERATORS:
+            return []
+        tokens = [f"{meta['glyph']}{name}" for name, meta in SEMANTIC_OPERATORS.items()]
+        lines = []
+        current = ""
+        for token in tokens:
+            if current and (len(current) + 1 + len(token)) > width:
+                lines.append(current)
+                current = token
             else:
-                status = "🔴"
-            
-            label = f"{glyph} {actor[:18]:<18} {status} {age_str:>6}"
-            lines.append({"label": label, "actor": actor, "age": age_s})
-        
-        # Sort by age (most recent first), take top N
-        lines.sort(key=lambda x: x["age"])
-        return lines[:max_agents]
+                current = token if not current else f"{current} {token}"
+        if current:
+            lines.append(current)
+        return lines
 
 
     def print_cli_status(self, clear: bool = True):
         """Prints a compact CLI status (non-curses mode)."""
+        self.tail_task_ledger()
         self.tail_bus()
+        self._prune_tasks()
         self._refresh_services()
         self._update_wave()
         task_counts, active_tasks = self._task_counts()
         self.metrics["active_tasks"] = active_tasks
+        if self.omega["dispatch"]["pending_total"] < len(active_tasks):
+            self.omega["dispatch"]["pending_total"] = len(active_tasks)
 
         term_size = shutil.get_terminal_size(fallback=(120, 40))
         cols = max(60, term_size.columns)
@@ -1126,22 +1618,43 @@ class OmegaHeartMonitor:
         dispatch_age = self._format_age(dispatch["last_ts"])
         queue_age = self._format_age(queue["last_ts"])
         health_age = self._format_age(health["last_ts"])
+        bus_label, bus_warn = self._bus_size_label()
 
         # Header
-        header_text = "OMEGA HEART MONITOR (OHM) v1.14 - CLI Mode (Elite)"
+        header_text = "OMEGA HEART MONITOR (OHM) v1.16.0 - CLI Mode (Elite)"
         header = header_text.center(inner_width)
         print(border_top)
         print(f"{NEON_CYAN}{BOLD}║{header}║{RESET}")
         print(border_mid)
 
         agents = list(self.metrics["agents"])
-        active_count = len(active_tasks)
+        known_agents = set()
+        for meta in AGENT_TAXONOMY.values():
+            known_agents.update(meta.get("agents", []))
+        active_task_count = len(active_tasks)
+        # v1.16: Count "live" agents - those seen within agent_active_s window
+        now = time.time()
+        live_agent_count = 0
+        for actor in agents:
+            last_ts = self.metrics["agent_last_seen"].get(actor, 0)
+            if last_ts:
+                # Handle string timestamps (ISO format) or numeric
+                if isinstance(last_ts, str):
+                    try:
+                        from datetime import datetime
+                        dt = datetime.fromisoformat(last_ts.replace('Z', '+00:00'))
+                        last_ts = dt.timestamp()
+                    except (ValueError, TypeError):
+                        continue
+                if (now - float(last_ts)) <= self.agent_active_s:
+                    live_agent_count += 1
         print(
-            f"{NEON_CYAN}║{RESET} {NEON_MAGENTA}AGENTS:{RESET} {len(agents):<3} "
-            f"{NEON_CYAN}│{RESET} {NEON_GREEN}ACTIVE:{RESET} {active_count:<3} "
+            f"{NEON_CYAN}║{RESET} {NEON_MAGENTA}AGENTS:{RESET} {len(agents):<3} ({NEON_GREEN}{live_agent_count} live{RESET}) "
+            f"{NEON_CYAN}│{RESET} {NEON_GREEN}TASKS:{RESET} {active_task_count:<3} "
             f"{NEON_CYAN}│{RESET} {NEON_YELLOW}DISPATCHED:{RESET} {self.metrics['tasks_started']:<4} "
             f"{NEON_CYAN}│{RESET} {NEON_GREEN}COMPLETED:{RESET} {self.metrics['tasks_completed']:<4} "
-            f"{NEON_CYAN}│{RESET} {NEON_MAGENTA}A2A:{RESET} {self.metrics['a2a_requests']}/{self.metrics['a2a_responses']}")
+            f"{NEON_CYAN}│{RESET} {NEON_MAGENTA}A2A:{RESET} {self.metrics['a2a_requests']}/{self.metrics['a2a_responses']} "
+            f"{NEON_CYAN}│{RESET} {NEON_BLUE}COLLAB:{RESET} {self.metrics['collab_requests']}/{self.metrics['collab_responses']}")
 
         agent_str = ', '.join(agents[:5]) + ('...' if len(agents) > 5 else '')
         print(f"{NEON_CYAN}║{RESET} {NEON_YELLOW}Agents:{RESET} [{agent_str}]")
@@ -1152,6 +1665,8 @@ class OmegaHeartMonitor:
             f"done {task_counts.get('completed', 0)} "
             f"fail {task_counts.get('abandoned', 0)}"
         )
+        if task_counts.get("stale", 0):
+            tasks_line += f" stale {task_counts['stale']}"
         print(f"{NEON_CYAN}║{RESET} {NEON_BLUE}Tasks:{RESET} {NEON_WHITE}{tasks_line}{RESET}")
 
         task_rows_env = os.environ.get("OHM_TASK_ROWS")
@@ -1172,6 +1687,8 @@ class OmegaHeartMonitor:
                     row_color = NEON_GREEN
                 elif status == "blocked":
                     row_color = NEON_ORANGE
+                elif status == "stale":
+                    row_color = NEON_RED
                 else:
                     row_color = NEON_CYAN
                 print(f"{NEON_CYAN}║{RESET}   {row_color}{row['line']}{RESET}")
@@ -1197,6 +1714,8 @@ class OmegaHeartMonitor:
         print(
             f"{NEON_CYAN}║{RESET} {NEON_BLUE}QUEUE:{RESET} pending {NEON_WHITE}{queue['pending_requests']}{RESET} "
             f"events {NEON_WHITE}{queue['total_events']}{RESET} last {NEON_WHITE}{queue_age}{RESET}")
+        bus_color = NEON_RED if bus_warn else NEON_CYAN
+        print(f"{NEON_CYAN}║{RESET} {bus_color}{bus_label}{RESET}")
         health_status = str(health['status']).lower()
         health_color = NEON_GREEN if health_status in {"nominal", "ok", "healthy"} else (NEON_ORANGE if health_status in {"degraded", "warn", "warning"} else NEON_RED)
         print(
@@ -1212,11 +1731,25 @@ class OmegaHeartMonitor:
             print(f"{NEON_CYAN}║{RESET} {NEON_MAGENTA}ACTIVITY:{RESET} {NEON_WHITE}{prov_str}{RESET}")
 
         # v1.14: Agent Dashboard grid cell
-        agent_lines = self._agent_dashboard_lines(max_agents=5)
+        agent_lines = self._agent_dashboard_lines(
+            max_agents=(0 if self.agent_expanded else 5),
+            show_all=self.agent_expanded,
+            width=max(10, inner_width - 4),
+        )
         if agent_lines:
-            print(f"{NEON_CYAN}║{RESET} {NEON_CYAN}AGENTS (Ctrl-A expand):{RESET}")
-            for aline in agent_lines[:5]:
-                print(f"{NEON_CYAN}║{RESET}   {NEON_WHITE}{aline['label']}{RESET}")
+            print(f"{NEON_CYAN}║{RESET} {NEON_CYAN}AGENTS (Ctrl-A in curses):{RESET}")
+            for aline in agent_lines:
+                label = aline.get("label", "")
+                if aline.get("is_header"):
+                    print(f"{NEON_CYAN}║{RESET}   {BOLD}{NEON_WHITE}{label}{RESET}")
+                else:
+                    print(f"{NEON_CYAN}║{RESET}   {NEON_WHITE}{label}{RESET}")
+        if self.agent_expanded:
+            op_lines = self._operator_lines(width=max(10, inner_width - 4))
+            if op_lines:
+                print(f"{NEON_CYAN}║{RESET} {NEON_MAGENTA}OPERATORS:{RESET}")
+                for line in op_lines:
+                    print(f"{NEON_CYAN}║{RESET}   {NEON_WHITE}{line}{RESET}")
 
         svc_active, svc_total = self._service_counts()
         if svc_total == 0:
@@ -1298,7 +1831,7 @@ class OmegaHeartMonitor:
             print(f"{NEON_CYAN}║{RESET} {color}{line}{RESET}")
 
         print(border_bottom)
-        print(f"{NEON_CYAN}Press Ctrl+C to exit. Refreshing every 1s...{RESET}")
+        print(f"{NEON_CYAN}Press Ctrl+C to exit. Refreshing every {self.refresh_s:.0f}s...{RESET}")
 
     def run_cli_mode(self, iterations=None):
         """Runs in CLI mode (non-curses)."""
@@ -1306,12 +1839,32 @@ class OmegaHeartMonitor:
         try:
             while self.running:
                 self.print_cli_status(clear=True)
-                time.sleep(1)
+                self._emit_art_tick()
+                time.sleep(self.refresh_s)
                 count += 1
                 if iterations and count >= iterations:
                     break
         except KeyboardInterrupt:
             print("\nOHM Stopped.")
+
+    def run_daemon_mode(self):
+        """Runs headless and emits OHM status to the bus."""
+        try:
+            while self.running:
+                self.tail_task_ledger()
+                self.tail_bus()
+                self._prune_tasks()
+                self._refresh_services()
+                self._update_wave()
+                task_counts, active_tasks = self._task_counts()
+                self.metrics["active_tasks"] = active_tasks
+                if self.omega["dispatch"]["pending_total"] < len(active_tasks):
+                    self.omega["dispatch"]["pending_total"] = len(active_tasks)
+                self._emit_status()
+                self._emit_art_tick()
+                time.sleep(self.refresh_s)
+        except KeyboardInterrupt:
+            return
 
     def run_curses_mode(self):
         """Runs in full curses TUI mode."""
@@ -1335,7 +1888,7 @@ class OmegaHeartMonitor:
             curses.curs_set(0)
 
             while self.running:
-                stdscr.clear()
+                stdscr.erase()
 
                 try:
                     c = stdscr.getch()
@@ -1343,6 +1896,8 @@ class OmegaHeartMonitor:
                         self.running = False
                     elif c == ord('M'):
                         self.maximized = not self.maximized
+                    elif c == 1:
+                        self.agent_expanded = not self.agent_expanded
                     elif c == ord('t'):
                         self.filter_index = (self.filter_index + 1) % len(self.filters)
                     elif ord('1') <= c < ord('1') + len(self.filters):
@@ -1352,11 +1907,17 @@ class OmegaHeartMonitor:
                 except Exception:
                     pass
 
+                self.tail_task_ledger()
                 self.tail_bus()
+                self._prune_tasks()
                 self._refresh_services()
                 self._update_wave()
                 task_counts, active_tasks = self._task_counts()
                 self.metrics["active_tasks"] = active_tasks
+                if self.omega["dispatch"]["pending_total"] < len(active_tasks):
+                    self.omega["dispatch"]["pending_total"] = len(active_tasks)
+
+                self._emit_art_tick()
 
                 rows, cols = stdscr.getmaxyx()
 
@@ -1375,6 +1936,7 @@ class OmegaHeartMonitor:
                 dispatch_age = self._format_age(dispatch["last_ts"])
                 queue_age = self._format_age(queue["last_ts"])
                 health_age = self._format_age(health["last_ts"])
+                bus_label, bus_warn = self._bus_size_label()
 
                 health_status = str(health["status"]).lower()
                 if health_status in {"nominal", "ok", "healthy"}:
@@ -1392,19 +1954,66 @@ class OmegaHeartMonitor:
                 else:
                     svc_color = curses.color_pair(5)
 
+                known_agents = set()
+                for meta in AGENT_TAXONOMY.values():
+                    known_agents.update(meta.get("agents", []))
+                # v1.16: Count "live" agents - those seen within agent_active_s window
+                seen_agents = list(self.metrics["agents"])
+                curses_now = time.time()
+                live_agent_count = 0
+                for actor in seen_agents:
+                    last_ts = self.metrics["agent_last_seen"].get(actor, 0)
+                    if last_ts:
+                        # Handle string timestamps (ISO format) or numeric
+                        if isinstance(last_ts, str):
+                            try:
+                                from datetime import datetime
+                                dt = datetime.fromisoformat(last_ts.replace('Z', '+00:00'))
+                                last_ts = dt.timestamp()
+                            except (ValueError, TypeError):
+                                continue
+                        if (curses_now - float(last_ts)) <= self.agent_active_s:
+                            live_agent_count += 1
+                task_line = (
+                    f"Tasks: run {task_counts.get('in_progress', 0)} blocked {task_counts.get('blocked', 0)} "
+                    f"planned {task_counts.get('planned', 0)} done {task_counts.get('completed', 0)} "
+                    f"fail {task_counts.get('abandoned', 0)}"
+                )
+                if task_counts.get("stale", 0):
+                    task_line += f" stale {task_counts['stale']}"
+
                 lines = [
-                    ("OMEGA HEART MONITOR (v1.14)", curses.color_pair(1) | curses.A_BOLD),
+                    ("OMEGA HEART MONITOR (v1.16.0)", curses.color_pair(1) | curses.A_BOLD),
                     (f"Heartbeat: {hb['count']} cycle {hb['cycle']} last {hb_age} bpm {stats['bpm']:.1f} avg {stats['avg']:.1f}s jitter {stats['jitter']:.1f}s", curses.color_pair(3)),
                     (f"Guardian: {guardian['count']} warns {guardian['warn']} last {guardian_age} warn {guardian_warn_age}", curses.color_pair(2)),
                     (f"Dispatch: ticks {dispatch['tick']} sent {dispatch['sent']} pend {dispatch['pending_total']} denied {dispatch['denied']} err {dispatch['errors']} last {dispatch_age}", curses.color_pair(5)),
                     (f"Queue: pending {queue['pending_requests']} events {queue['total_events']} last {queue_age}", curses.color_pair(6)),
+                    (bus_label, curses.color_pair(4) if bus_warn else curses.color_pair(1)),
                     (f"Pairs: pending {pairs['total']} oldest {pairs['oldest_age_s']:.1f}s | Health: {health['status']} last {health_age}", health_color),
                     (f"Providers: {self._provider_string()}", curses.color_pair(1)),
                     (f"Pulse: {wave}", curses.color_pair(1)),
                     (f"Services: {self._services_summary()}", svc_color),
-                    (f"Tasks: run {task_counts.get('in_progress', 0)} blocked {task_counts.get('blocked', 0)} planned {task_counts.get('planned', 0)} done {task_counts.get('completed', 0)} fail {task_counts.get('abandoned', 0)}", curses.color_pair(6)),
-                    (f"Agents: {len(self.metrics['agents'])} Active tasks: {len(active_tasks)}", curses.color_pair(7)),
+                    (task_line, curses.color_pair(6)),
+                    (f"Agents: {len(self.metrics['agents'])} ({live_agent_count} live) | Tasks: {len(active_tasks)} | Dispatched: {self.metrics['tasks_started']} | Completed: {self.metrics['tasks_completed']}", curses.color_pair(7)),
                 ]
+                if self.agent_expanded:
+                    lines.append(("Agents (expanded)", curses.color_pair(7) | curses.A_BOLD))
+                    agent_lines = self._agent_dashboard_lines(
+                        max_agents=max(5, rows - len(lines) - 2),
+                        show_all=True,
+                        width=max(10, cols - 6),
+                    )
+                    for aline in agent_lines:
+                        label = aline.get("label", "")
+                        attr = curses.color_pair(7)
+                        if aline.get("is_header"):
+                            attr |= curses.A_BOLD
+                        lines.append((f"  {label}", attr))
+                    op_lines = self._operator_lines(width=max(10, cols - 6))
+                    if op_lines:
+                        lines.append(("Operators", curses.color_pair(2) | curses.A_BOLD))
+                        for line in op_lines:
+                            lines.append((f"  {line}", curses.color_pair(7)))
                 if self.maximized:
                     for svc in self._service_detail_lines(width=max(10, cols - 6)):
                         active = svc.get("active", "")
@@ -1478,9 +2087,113 @@ class OmegaHeartMonitor:
                     pass
 
                 stdscr.refresh()
-                time.sleep(0.5)
+                time.sleep(self.refresh_s)
 
         curses.wrapper(main)
+
+
+# v1.13: Bootstrap status helpers (agent normalization compliance)
+def check_bootstrap_compliance() -> dict:
+    """Check if agent wrappers are properly configured per bootstrap doctor."""
+    import shutil
+    from pathlib import Path
+
+    wrappers = ["bus-claude", "bus-codex", "bus-gemini", "bus-qwen"]
+    tools_dir = Path(__file__).parent
+
+    status = {"compliant": 0, "missing": 0, "agents": {}}
+    for wrapper in wrappers:
+        path = tools_dir / wrapper
+        agent = wrapper.replace("bus-", "")
+        if path.exists():
+            content = path.read_text(errors="replace")[:2000]
+            uses_common = "agent_wrapper_common.sh" in content
+            status["agents"][agent] = {"exists": True, "uses_common": uses_common}
+            if uses_common:
+                status["compliant"] += 1
+            else:
+                status["missing"] += 1
+        else:
+            status["agents"][agent] = {"exists": False, "uses_common": False}
+            status["missing"] += 1
+
+    return status
+
+
+# =============================================================================
+# v1.14: AGENT TAXONOMY AND SEMANTIC OPERATOR GRAMMAR
+# =============================================================================
+
+AGENT_TAXONOMY = {
+    "infrastructure": {
+        "glyph": "⚙",
+        "ring": 0,
+        "agents": ["omega", "omega_guardian", "bus-mirror", "bus-mirror-reverse", "world-router"],
+        "color": "cyan",
+    },
+    "models": {
+        "glyph": "🧠",
+        "ring": 1,
+        "agents": ["claude", "codex", "gemini", "chatgpt", "qwen", "claude-opus", "claude-codex", "claude-reviewer", "claude-hygiene"],
+        "color": "magenta",
+    },
+    "qa": {
+        "glyph": "✓",
+        "ring": 2,
+        "agents": ["qa-live-checker", "smoketest", "ui-benchmark", "ui-benchmark-full"],
+        "color": "green",
+    },
+    "dialogos": {
+        "glyph": "💬",
+        "ring": 2,
+        "agents": ["dialogosd", "dialogos-indexer", "dialogos-search"],
+        "color": "yellow",
+    },
+    "dashboard": {
+        "glyph": "📊",
+        "ring": 2,
+        "agents": ["dashboard", "dashboard-telemetry", "dashboard-user", "dashboard/crush", "load-timing"],
+        "color": "blue",
+    },
+    "browser": {
+        "glyph": "🌐",
+        "ring": 3,
+        "agents": ["browser_daemon", "Antigravity"],
+        "color": "orange",
+    },
+    "ephemeral": {
+        "glyph": "⚡",
+        "ring": 3,
+        "agents": ["root", "unknown", "test", "test-user", "test-actor", "test_claude"],
+        "color": "dim",
+    },
+}
+
+SEMANTIC_OPERATORS = {
+    "PLURIBUS": {"glyph": "Ω", "ring": 0, "desc": "Kernel-level modality"},
+    "PBLOCK": {"glyph": "⛔", "ring": 0, "desc": "Milestone freeze"},
+    "PBDEEP": {"glyph": "🔬", "ring": 0, "desc": "Deep forensic audit"},
+    "OITERATE": {"glyph": "∞", "ring": 1, "desc": "Omega-loop with Büchi liveness"},
+    "CKIN": {"glyph": "📥", "ring": 1, "desc": "Check-in status"},
+    "DKIN": {"glyph": "📋", "ring": 1, "desc": "Dashboard status"},
+    "REALAGENTS": {"glyph": "🤖", "ring": 1, "desc": "Deep implementation dispatch"},
+    "PBPAIR": {"glyph": "👥", "ring": 1, "desc": "Paired model consultation"},
+    "PBLANES": {"glyph": "🛤", "ring": 1, "desc": "Multi-agent lane coordination"},
+    "ITERATE": {"glyph": "↻", "ring": 2, "desc": "Non-blocking iteration"},
+    "PBEPORT": {"glyph": "📡", "ring": 2, "desc": "Compact bus liveness"},
+    "PBTEST": {"glyph": "🧪", "ring": 2, "desc": "Neurosymbolic TDD"},
+    "PBCLITEST": {"glyph": "⌨", "ring": 2, "desc": "CLI verification"},
+    "CRUSH": {"glyph": "💥", "ring": 2, "desc": "CLI LLM integration"},
+    "BEAM": {"glyph": "✏", "ring": 2, "desc": "Discourse ledger append"},
+}
+
+
+def categorize_agent(actor: str) -> tuple:
+    """Return (category, glyph, ring, color) for an actor."""
+    for cat, meta in AGENT_TAXONOMY.items():
+        if actor in meta["agents"]:
+            return (cat, meta["glyph"], meta["ring"], meta["color"])
+    return ("unknown", "?", 3, "dim")
 
 
 if __name__ == "__main__":
@@ -1491,12 +2204,37 @@ if __name__ == "__main__":
     parser.add_argument("--filter", help="Initial filter tab (name or 1-based index)")
     parser.add_argument("--split", action="store_true", help="Launch tmux split view with OHM on the left")
     parser.add_argument("--session", help="tmux session to attach in right pane (optional)")
+    parser.add_argument("--interval", type=float, help="Refresh interval seconds (default: OHM_REFRESH_S or 5)")
+    parser.add_argument("--agents-full", action="store_true", help="Show full agent taxonomy in CLI output")
+    parser.add_argument("--show-stale-tasks", action="store_true", help="Show stale tasks in ACTIVE TASKS")
+    parser.add_argument("--task-stale-s", type=float, help="Seconds before active tasks are marked stale")
+    parser.add_argument("--daemon", action="store_true", help="Run headless and emit OHM status to the bus")
+    parser.add_argument("--emit-interval", type=float, help="Seconds between OHM status emissions")
+    parser.add_argument("--emit-topic", help="Bus topic for OHM status emissions")
+    parser.add_argument("--emit-alerts", action="store_true", help="Emit OHM alert events on warnings")
     args = parser.parse_args()
 
     ohm = OmegaHeartMonitor(filter_name=args.filter)
+    if args.interval:
+        ohm.refresh_s = max(0.5, args.interval)
+    if args.task_stale_s is not None:
+        ohm.task_stale_s = args.task_stale_s
+    if args.agents_full:
+        ohm.agent_expanded = True
+    if args.show_stale_tasks:
+        ohm.show_stale_tasks = True
+    if args.emit_interval:
+        ohm.emit_interval_s = max(1.0, float(args.emit_interval))
+    if args.emit_topic:
+        ohm.emit_topic = args.emit_topic
+    if args.emit_alerts:
+        ohm.emit_alerts = True
 
     if args.split:
         sys.exit(ohm.run_tmux_split(session_name=args.session, filter_name=args.filter))
+
+    if args.daemon:
+        sys.exit(ohm.run_daemon_mode())
 
     # Auto-detect: use CLI mode if not in a TTY
     if args.cli or args.once or not sys.stdout.isatty():
@@ -1511,116 +2249,3 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Curses mode failed ({e}), falling back to CLI mode...")
             ohm.run_cli_mode()
-
-# v1.13: Bootstrap status helpers (agent normalization compliance)
-def check_bootstrap_compliance() -> dict:
-    """Check if agent wrappers are properly configured per bootstrap doctor."""
-    import shutil
-    from pathlib import Path
-    
-    wrappers = ["bus-claude", "bus-codex", "bus-gemini", "bus-qwen", "bus-glm"]
-    tools_dir = Path(__file__).parent
-    
-    status = {"compliant": 0, "missing": 0, "agents": {}}
-    for wrapper in wrappers:
-        path = tools_dir / wrapper
-        agent = wrapper.replace("bus-", "")
-        if path.exists():
-            # Check if uses common helper
-            content = path.read_text(errors="replace")[:2000]
-            uses_common = "agent_wrapper_common.sh" in content
-            status["agents"][agent] = {"exists": True, "uses_common": uses_common}
-            if uses_common:
-                status["compliant"] += 1
-            else:
-                status["missing"] += 1
-        else:
-            status["agents"][agent] = {"exists": False, "uses_common": False}
-            status["missing"] += 1
-    
-    return status
-
-# =============================================================================
-# v1.14: AGENT TAXONOMY AND SEMANTIC OPERATOR GRAMMAR
-# =============================================================================
-
-# Agent Categories (Semantic Operator Grammar)
-AGENT_TAXONOMY = {
-    # Ring 0 - Kernel Infrastructure
-    "infrastructure": {
-        "glyph": "⚙",
-        "ring": 0,
-        "agents": ["omega", "omega_guardian", "bus-mirror", "bus-mirror-reverse", "world-router"],
-        "color": "cyan",
-    },
-    # Ring 1 - Model Providers
-    "models": {
-        "glyph": "🧠",
-        "ring": 1,
-        "agents": ["claude", "codex", "gemini", "glm", "chatgpt", "qwen", "claude-opus", "claude-codex", "claude-reviewer", "claude-hygiene"],
-        "color": "magenta",
-    },
-    # Ring 2 - QA and Verification
-    "qa": {
-        "glyph": "✓",
-        "ring": 2,
-        "agents": ["qa-live-checker", "smoketest", "ui-benchmark", "ui-benchmark-full"],
-        "color": "green",
-    },
-    # Ring 2 - Dialogos (LLM Routing)
-    "dialogos": {
-        "glyph": "💬",
-        "ring": 2,
-        "agents": ["dialogosd", "dialogos-indexer", "dialogos-search"],
-        "color": "yellow",
-    },
-    # Ring 2 - Dashboard/UI
-    "dashboard": {
-        "glyph": "📊",
-        "ring": 2,
-        "agents": ["dashboard", "dashboard-telemetry", "dashboard-user", "dashboard/crush", "load-timing"],
-        "color": "blue",
-    },
-    # Ring 3 - Browser/External
-    "browser": {
-        "glyph": "🌐",
-        "ring": 3,
-        "agents": ["browser_daemon", "Antigravity"],
-        "color": "orange",
-    },
-    # Ring 3 - Ephemeral/Test
-    "ephemeral": {
-        "glyph": "⚡",
-        "ring": 3,
-        "agents": ["root", "unknown", "test", "test-user", "test-actor", "test_claude"],
-        "color": "dim",
-    },
-}
-
-# Semantic Operators from SKILLS.md mapped to glyphs
-SEMANTIC_OPERATORS = {
-    # Ring 0
-    "PLURIBUS": {"glyph": "Ω", "ring": 0, "desc": "Kernel-level modality"},
-    "PBLOCK": {"glyph": "⛔", "ring": 0, "desc": "Milestone freeze"},
-    "PBDEEP": {"glyph": "🔬", "ring": 0, "desc": "Deep forensic audit"},
-    # Ring 1
-    "OITERATE": {"glyph": "∞", "ring": 1, "desc": "Omega-loop with Büchi liveness"},
-    "CKIN": {"glyph": "📥", "ring": 1, "desc": "Check-in status"},
-    "DKIN": {"glyph": "📋", "ring": 1, "desc": "Dashboard status"},
-    "REALAGENTS": {"glyph": "🤖", "ring": 1, "desc": "Deep implementation dispatch"},
-    "PBPAIR": {"glyph": "👥", "ring": 1, "desc": "Paired model consultation"},
-    "PBLANES": {"glyph": "🛤", "ring": 1, "desc": "Multi-agent lane coordination"},
-    # Ring 2
-    "ITERATE": {"glyph": "↻", "ring": 2, "desc": "Non-blocking iteration"},
-    "PBEPORT": {"glyph": "📡", "ring": 2, "desc": "Compact bus liveness"},
-    "PBTEST": {"glyph": "🧪", "ring": 2, "desc": "Neurosymbolic TDD"},
-    "CRUSH": {"glyph": "💥", "ring": 2, "desc": "CLI LLM integration"},
-    "BEAM": {"glyph": "✏", "ring": 2, "desc": "Discourse ledger append"},
-}
-
-def categorize_agent(actor: str) -> tuple:
-    """Return (category, glyph, ring, color) for an actor."""
-    for cat, meta in AGENT_TAXONOMY.items():
-        if actor in meta["agents"]:
-            return (cat, meta["glyph"], meta["ring"], meta["color"])
-    return ("unknown", "?", 3, "dim")

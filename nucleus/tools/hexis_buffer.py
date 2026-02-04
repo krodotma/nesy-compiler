@@ -1,510 +1,414 @@
 #!/usr/bin/env python3
 """
-hexis_buffer.py - HEXIS Epistemic Shim / Agent Inbox Buffer
+Hexis Buffer: Ephemeral FIFO ingress spool for inter-agent communication.
 
-"Hexis epistemic shim, equivariant polyfill..." - entelexis.md
-
-The HEXIS buffer provides per-agent inbox/outbox for notifications
-and acknowledgements in the portal inception flow.
-
-Ring: 1 (Infrastructure)
-Protocol: DKIN v28 | PAIP v15 | Citizen v1
+Constitution: The bus remains system of record. Every consumed buffer message
+MUST be mirrored as an append-only bus artifact before deletion/ack.
 
 Usage:
-    python3 hexis_buffer.py publish <agent> <message> [--data JSON] [--ttl SECONDS]
-    python3 hexis_buffer.py consume <agent> [--ack] [--limit N]
-    python3 hexis_buffer.py status [<agent>]
-    python3 hexis_buffer.py gc [--dry-run]
-
-Bus Topics:
-    hexis.buffer.published
-    hexis.buffer.consumed
-    hexis.buffer.expired
+    hexis_buffer.py pub --agent <name> --json '{"goal": "..."}'
+    hexis_buffer.py pull --agent <name> [--max N]
+    hexis_buffer.py ack --agent <name> --msg-id <uuid>
+    hexis_buffer.py drain --agent <name> --limit N
+    hexis_buffer.py status [--agent <name>]
 """
+from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import sys
 import time
 import uuid
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any
+
+sys.dont_write_bytecode = True
+
+def buffer_dir() -> Path:
+    return Path(os.environ.get("HEXIS_BUFFER_DIR", "/tmp"))
 
 
-# Configuration
-HEXIS_DIR = Path(os.environ.get("PLURIBUS_HEXIS_DIR", "/tmp/hexis"))
-BUS_DIR = Path(os.environ.get("PLURIBUS_BUS_DIR", ".pluribus/bus"))
-DEFAULT_TTL_S = 3600  # 1 hour
+def resolve_bus_events_path() -> Path:
+    """Resolve a writable bus events file, with the same fallback logic as agent_bus.py."""
+    bus_dir = os.environ.get("PLURIBUS_BUS_DIR") or "/pluribus/.pluribus/bus"
+    fallback_dir = os.environ.get("PLURIBUS_FALLBACK_BUS_DIR") or "/pluribus/.pluribus_local/bus"
+    try:
+        import agent_bus  # type: ignore
+        if hasattr(agent_bus, "resolve_bus_paths"):
+            paths = agent_bus.resolve_bus_paths(bus_dir)
+            return Path(paths.events_path)
+    except Exception:
+        pass
 
-# Stigmergic buffer path (old convention for /tmp/<agent>.buffer)
-# Used by: hexis_status.py, hexis_entelechy_bridge.py, pbnotify_operator.py
-STIGMERGIC_BUFFER_DIR = Path(os.environ.get("HEXIS_BUFFER_DIR", "/tmp"))
+    def _ensure_events(path: Path) -> Path:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(path), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+        os.close(fd)
+        return path
+
+    primary = Path(bus_dir) / "events.ndjson"
+    try:
+        return _ensure_events(primary)
+    except Exception:
+        return _ensure_events(Path(fallback_dir) / "events.ndjson")
+
+
+def now_iso() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def now_ts() -> float:
+    return time.time()
 
 
 @dataclass
 class HexisMessage:
-    """A message in the HEXIS buffer."""
-    id: str
-    sender: str
-    recipient: str
-    message: str
-    data: Dict[str, Any] = field(default_factory=dict)
-    created_ts: float = field(default_factory=time.time)
-    expires_ts: float = 0.0
-    acked: bool = False
-    acked_ts: Optional[float] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "HexisMessage":
-        return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
-
-    def is_expired(self) -> bool:
-        return self.expires_ts > 0 and time.time() > self.expires_ts
-
-
-# =============================================================================
-# Stigmergic Buffer API (for pbnotify_operator, hexis_entelechy_bridge, etc.)
-# =============================================================================
-
-def buffer_path(agent: str) -> Path:
-    """
-    Return path to agent's stigmergic buffer file.
-
-    Convention: /tmp/<agent>.buffer (ephemeral pheromone trail)
-    Used by: pbnotify_operator.py, hexis_status.py, hexis_entelechy_bridge.py
-    """
-    return STIGMERGIC_BUFFER_DIR / f"{agent}.buffer"
-
-
-@dataclass
-class HexisNotifyMessage:
-    """
-    Notify-style message for stigmergic buffers (agent_notify_protocol_v1).
-
-    This is the format expected by pbnotify_operator.py and documented
-    in pluribus_lexicon.md §6.3.
-    """
+    """Infercell packet for inter-agent handoff."""
     msg_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    ts: float = field(default_factory=time.time)
-    iso: str = field(default_factory=lambda: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
-    actor: str = ""
-    agent_type: str = "worker"
+    ts: float = field(default_factory=now_ts)
+    iso: str = field(default_factory=now_iso)
+    actor: str = "unknown"
+    agent_type: str = "worker"  # ring0|subagent|worker
     req_id: str = ""
     trace_id: str = ""
-    topic: str = "agent.notify"
-    kind: str = "request"
-    effects: str = "none"
-    lane: str = "strp"
-    topology: str = "single"
-    payload: Dict[str, Any] = field(default_factory=dict)
+    topic: str = "hexis.message"
+    kind: str = "request"  # request|response|artifact|metric
+    effects: str = "none"  # none|file|network|unknown
+    lane: str = "strp"  # dialogos|pbpair|strp
+    topology: str = "single"  # single|star|peer_debate
+    payload: dict = field(default_factory=dict)
+    # Flow tracking
+    flow: dict = field(default_factory=lambda: {
+        "intra": [],  # same agent type
+        "inter": [],  # different agent within pluribus
+        "extra": [],  # external agents (codex, gemini, etc.)
+    })
 
-    def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+
+def buffer_path(agent: str) -> Path:
+    """Get buffer file path for agent."""
+    return buffer_dir() / f"{agent}.buffer"
 
 
-def emit_bus_event(
-    topic: str,
-    kind: str,
-    level: str,
-    actor: str,
-    data: Dict[str, Any],
-) -> None:
-    """
-    Emit event to Pluribus bus (module-level convenience function).
-
-    Used by pbnotify_operator.py for hexis.buffer.published events.
-    """
-    events_path = BUS_DIR / "events.ndjson"
-    events_path.parent.mkdir(parents=True, exist_ok=True)
-
+def emit_bus_event(topic: str, kind: str, level: str, actor: str, data: dict) -> None:
+    """Emit event to Pluribus bus (evidence trail)."""
     event = {
         "id": str(uuid.uuid4()),
-        "ts": time.time(),
-        "iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "ts": now_ts(),
+        "iso": now_iso(),
         "topic": topic,
         "kind": kind,
         "level": level,
         "actor": actor,
         "data": data,
     }
-
-    with open(events_path, "a", encoding="utf-8") as f:
+    events_path = resolve_bus_events_path()
+    events_path.parent.mkdir(parents=True, exist_ok=True)
+    with events_path.open("a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
         f.write(json.dumps(event, ensure_ascii=False) + "\n")
+        fcntl.flock(f, fcntl.LOCK_UN)
 
 
-class HexisBuffer:
-    """
-    Per-agent inbox/outbox buffer for HEXIS notifications.
-    
-    Features:
-    - File-based persistence per agent
-    - TTL expiration
-    - Acknowledgement tracking
-    - Bus event integration
-    """
+def cmd_pub(args: argparse.Namespace) -> int:
+    """Publish message to agent buffer."""
+    try:
+        payload = json.loads(args.json) if args.json else {}
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON: {e}", file=sys.stderr)
+        return 1
 
-    def __init__(self, hexis_dir: Path = None, bus_dir: Path = None):
-        self.hexis_dir = hexis_dir or HEXIS_DIR
-        self.bus_dir = bus_dir or BUS_DIR
-        self.hexis_dir.mkdir(parents=True, exist_ok=True)
+    msg = HexisMessage(
+        actor=args.actor or os.environ.get("PLURIBUS_ACTOR", "unknown"),
+        agent_type=args.agent_type,
+        req_id=args.req_id or str(uuid.uuid4()),
+        trace_id=args.trace_id or str(uuid.uuid4()),
+        topic=args.topic,
+        kind=args.kind,
+        effects=args.effects,
+        lane=args.lane,
+        topology=args.topology,
+        payload=payload,
+    )
 
-    def _inbox_path(self, agent: str) -> Path:
-        """Get the inbox file path for an agent."""
-        return self.hexis_dir / agent / "inbox.ndjson"
+    # Track flow
+    if args.flow_intra:
+        msg.flow["intra"] = args.flow_intra
+    if args.flow_inter:
+        msg.flow["inter"] = args.flow_inter
+    if args.flow_extra:
+        msg.flow["extra"] = args.flow_extra
 
-    def _outbox_path(self, agent: str) -> Path:
-        """Get the outbox file path for an agent."""
-        return self.hexis_dir / agent / "outbox.ndjson"
+    path = buffer_path(args.agent)
+    path.parent.mkdir(parents=True, exist_ok=True)
 
-    def _load_inbox(self, agent: str) -> List[HexisMessage]:
-        """Load all messages from an agent's inbox."""
-        inbox_path = self._inbox_path(agent)
-        if not inbox_path.exists():
-            return []
-        
-        messages = []
-        for line in inbox_path.read_text().strip().split("\n"):
+    with path.open("a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.write(json.dumps(asdict(msg), ensure_ascii=False) + "\n")
+        fcntl.flock(f, fcntl.LOCK_UN)
+
+    # Emit bus evidence
+    emit_bus_event(
+        topic="hexis.buffer.published",
+        kind="metric",
+        level="debug",
+        actor=msg.actor,
+        data={
+            "msg_id": msg.msg_id,
+            "req_id": msg.req_id,
+            "trace_id": msg.trace_id,
+            "agent": args.agent,
+            "topic": msg.topic,
+            "kind": msg.kind,
+            "effects": msg.effects,
+            "lane": msg.lane,
+            "topology": msg.topology,
+        },
+    )
+
+    print(msg.msg_id)
+    return 0
+
+
+def cmd_pull(args: argparse.Namespace) -> int:
+    """Pull messages from agent buffer (FIFO, non-destructive peek)."""
+    path = buffer_path(args.agent)
+    if not path.exists():
+        return 0
+
+    messages = []
+    with path.open("r") as f:
+        fcntl.flock(f, fcntl.LOCK_SH)
+        for i, line in enumerate(f):
+            if args.max and i >= args.max:
+                break
+            line = line.strip()
             if line:
                 try:
-                    msg = HexisMessage.from_dict(json.loads(line))
-                    messages.append(msg)
-                except (json.JSONDecodeError, TypeError):
+                    messages.append(json.loads(line))
+                except json.JSONDecodeError:
                     continue
-        return messages
+        fcntl.flock(f, fcntl.LOCK_UN)
 
-    def _save_inbox(self, agent: str, messages: List[HexisMessage]):
-        """Save messages to an agent's inbox."""
-        inbox_path = self._inbox_path(agent)
-        inbox_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(inbox_path, "w") as f:
-            for msg in messages:
-                f.write(json.dumps(msg.to_dict()) + "\n")
-
-    def _emit_bus_event(self, topic: str, data: Dict[str, Any], level: str = "info"):
-        """Emit event to the Pluribus bus."""
-        bus_path = self.bus_dir / "events.ndjson"
-        bus_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        event = {
-            "id": uuid.uuid4().hex,
-            "ts": time.time(),
-            "iso": datetime.now(timezone.utc).isoformat(),
-            "topic": topic,
-            "kind": "event",
-            "level": level,
-            "actor": "hexis_buffer",
-            "data": data,
-        }
-        
-        with open(bus_path, "a") as f:
-            f.write(json.dumps(event) + "\n")
-
-    def publish(
-        self,
-        sender: str,
-        recipient: str,
-        message: str,
-        data: Dict[str, Any] = None,
-        ttl_s: int = DEFAULT_TTL_S,
-        emit_bus: bool = True,
-    ) -> HexisMessage:
-        """
-        Publish a message to an agent's inbox.
-        
-        Args:
-            sender: Sending agent ID
-            recipient: Receiving agent ID
-            message: Text message
-            data: Optional JSON payload
-            ttl_s: Time to live in seconds (0 = no expiry)
-            emit_bus: Whether to emit bus event
-            
-        Returns:
-            The created HexisMessage
-        """
-        msg = HexisMessage(
-            id=uuid.uuid4().hex[:16],
-            sender=sender,
-            recipient=recipient,
-            message=message,
-            data=data or {},
-            created_ts=time.time(),
-            expires_ts=time.time() + ttl_s if ttl_s > 0 else 0.0,
-        )
-        
-        # Append to recipient's inbox
-        inbox_path = self._inbox_path(recipient)
-        inbox_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(inbox_path, "a") as f:
-            f.write(json.dumps(msg.to_dict()) + "\n")
-        
-        # Also record in sender's outbox
-        outbox_path = self._outbox_path(sender)
-        outbox_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(outbox_path, "a") as f:
-            f.write(json.dumps(msg.to_dict()) + "\n")
-        
-        if emit_bus:
-            self._emit_bus_event("hexis.buffer.published", {
-                "msg_id": msg.id,
-                "sender": sender,
-                "recipient": recipient,
-                "message": message[:100],
-                "ttl_s": ttl_s,
-            })
-        
-        return msg
-
-    def consume(
-        self,
-        agent: str,
-        ack: bool = False,
-        limit: int = 10,
-        emit_bus: bool = True,
-    ) -> List[HexisMessage]:
-        """
-        Consume messages from an agent's inbox.
-        
-        Args:
-            agent: Agent ID
-            ack: Whether to mark messages as acknowledged
-            limit: Maximum number of messages to return
-            emit_bus: Whether to emit bus event
-            
-        Returns:
-            List of HexisMessage objects
-        """
-        messages = self._load_inbox(agent)
-        
-        # Filter out expired and optionally already-acked
-        valid = [m for m in messages if not m.is_expired()]
-        unacked = [m for m in valid if not m.acked]
-        
-        # Take up to limit
-        result = unacked[:limit]
-        
-        if ack and result:
-            # Mark as acknowledged
-            ack_ts = time.time()
-            for msg in result:
-                msg.acked = True
-                msg.acked_ts = ack_ts
-            
-            # Update inbox
-            self._save_inbox(agent, valid)
-            
-            if emit_bus:
-                self._emit_bus_event("hexis.buffer.consumed", {
-                    "agent": agent,
-                    "msg_ids": [m.id for m in result],
-                    "count": len(result),
-                })
-        
-        return result
-
-    def status(self, agent: str = None) -> Dict[str, Any]:
-        """
-        Get buffer status for one or all agents.
-        
-        Args:
-            agent: Optional agent ID (None for all agents)
-            
-        Returns:
-            Status dictionary
-        """
-        if agent:
-            messages = self._load_inbox(agent)
-            valid = [m for m in messages if not m.is_expired()]
-            return {
-                "agent": agent,
-                "total": len(messages),
-                "valid": len(valid),
-                "unacked": len([m for m in valid if not m.acked]),
-                "expired": len(messages) - len(valid),
-            }
-        
-        # All agents
-        result = {"agents": {}}
-        for agent_dir in self.hexis_dir.iterdir():
-            if agent_dir.is_dir():
-                agent_name = agent_dir.name
-                messages = self._load_inbox(agent_name)
-                valid = [m for m in messages if not m.is_expired()]
-                result["agents"][agent_name] = {
-                    "total": len(messages),
-                    "unacked": len([m for m in valid if not m.acked]),
-                }
-        
-        result["agent_count"] = len(result["agents"])
-        return result
-
-    def gc(self, dry_run: bool = False) -> Dict[str, int]:
-        """
-        Garbage collect expired messages.
-        
-        Args:
-            dry_run: If True, don't actually delete
-            
-        Returns:
-            Dict with counts of removed messages per agent
-        """
-        removed = {}
-        
-        for agent_dir in self.hexis_dir.iterdir():
-            if not agent_dir.is_dir():
-                continue
-            
-            agent = agent_dir.name
-            messages = self._load_inbox(agent)
-            valid = [m for m in messages if not m.is_expired()]
-            expired_count = len(messages) - len(valid)
-            
-            if expired_count > 0:
-                removed[agent] = expired_count
-                if not dry_run:
-                    self._save_inbox(agent, valid)
-                    self._emit_bus_event("hexis.buffer.expired", {
-                        "agent": agent,
-                        "expired_count": expired_count,
-                    })
-        
-        return removed
-
-
-def cmd_publish(args):
-    """Publish a message to an agent."""
-    buffer = HexisBuffer()
-    
-    data = {}
-    if args.data:
-        try:
-            data = json.loads(args.data)
-        except json.JSONDecodeError:
-            print(f"Error: Invalid JSON data", file=sys.stderr)
-            return 1
-    
-    msg = buffer.publish(
-        sender=os.environ.get("PLURIBUS_ACTOR", "operator"),
-        recipient=args.agent,
-        message=args.message,
-        data=data,
-        ttl_s=args.ttl or DEFAULT_TTL_S,
-    )
-    
-    print(f"Published: {msg.id}")
-    print(f"To: {args.agent}")
-    print(f"Expires: {datetime.fromtimestamp(msg.expires_ts).isoformat() if msg.expires_ts else 'never'}")
-    return 0
-
-
-def cmd_consume(args):
-    """Consume messages from an agent's inbox."""
-    buffer = HexisBuffer()
-    
-    messages = buffer.consume(
-        agent=args.agent,
-        ack=args.ack,
-        limit=args.limit or 10,
-    )
-    
-    if not messages:
-        print("No unread messages")
-        return 0
-    
     for msg in messages:
-        ts = datetime.fromtimestamp(msg.created_ts).strftime("%H:%M:%S")
-        print(f"[{ts}] {msg.sender}: {msg.message}")
-        if msg.data:
-            print(f"    Data: {json.dumps(msg.data)[:100]}")
-    
-    print(f"\n{len(messages)} message(s){' (acknowledged)' if args.ack else ''}")
+        print(json.dumps(msg, ensure_ascii=False))
+
     return 0
 
 
-def cmd_status(args):
-    """Show buffer status."""
-    buffer = HexisBuffer()
-    status = buffer.status(args.agent)
-    
-    if args.agent:
-        print(f"Agent: {status['agent']}")
-        print(f"  Total:   {status['total']}")
-        print(f"  Unacked: {status['unacked']}")
-        print(f"  Expired: {status['expired']}")
-    else:
-        print(f"HEXIS Buffer Status")
-        print(f"  Agents: {status['agent_count']}")
-        for agent, data in status["agents"].items():
-            print(f"  {agent}: {data['unacked']} unacked / {data['total']} total")
-    
+def cmd_ack(args: argparse.Namespace) -> int:
+    """Acknowledge (destructively remove) message from buffer."""
+    path = buffer_path(args.agent)
+    if not path.exists():
+        print("Buffer not found", file=sys.stderr)
+        return 1
+
+    remaining = []
+    acked_msg = None
+
+    with path.open("r") as f:
+        fcntl.flock(f, fcntl.LOCK_SH)
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                msg = json.loads(line)
+                if msg.get("msg_id") == args.msg_id:
+                    acked_msg = msg
+                else:
+                    remaining.append(line)
+            except json.JSONDecodeError:
+                remaining.append(line)
+        fcntl.flock(f, fcntl.LOCK_UN)
+
+    if not acked_msg:
+        print(f"Message {args.msg_id} not found", file=sys.stderr)
+        return 1
+
+    # Mirror to bus BEFORE deletion (constitutional requirement)
+    emit_bus_event(
+        topic="hexis.buffer.consumed",
+        kind="artifact",
+        level="info",
+        actor=acked_msg.get("actor", "unknown"),
+        data={
+            "msg_id": args.msg_id,
+            "req_id": acked_msg.get("req_id") or "",
+            "trace_id": acked_msg.get("trace_id") or "",
+            "agent": args.agent,
+            "topic": acked_msg.get("topic"),
+            "kind": acked_msg.get("kind"),
+            "effects": acked_msg.get("effects"),
+            "lane": acked_msg.get("lane"),
+            "topology": acked_msg.get("topology"),
+            "payload": acked_msg.get("payload"),
+            "flow": acked_msg.get("flow"),
+        },
+    )
+
+    # Now safe to delete
+    with path.open("w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        for line in remaining:
+            f.write(line + "\n")
+        fcntl.flock(f, fcntl.LOCK_UN)
+
+    emit_bus_event(
+        topic="hexis.buffer.acked",
+        kind="metric",
+        level="debug",
+        actor=acked_msg.get("actor", "unknown"),
+        data={
+            "msg_id": args.msg_id,
+            "req_id": acked_msg.get("req_id") or "",
+            "trace_id": acked_msg.get("trace_id") or "",
+            "agent": args.agent,
+        },
+    )
+
+    print(f"Acked: {args.msg_id}")
     return 0
 
 
-def cmd_gc(args):
-    """Garbage collect expired messages."""
-    buffer = HexisBuffer()
-    removed = buffer.gc(dry_run=args.dry_run)
-    
-    if not removed:
-        print("No expired messages found")
+def cmd_drain(args: argparse.Namespace) -> int:
+    """Drain up to N messages (pull + ack in one operation)."""
+    path = buffer_path(args.agent)
+    if not path.exists():
         return 0
-    
-    total = sum(removed.values())
-    prefix = "[Dry run] Would remove" if args.dry_run else "Removed"
-    print(f"{prefix} {total} expired messages:")
-    for agent, count in removed.items():
-        print(f"  {agent}: {count}")
-    
+
+    all_lines = []
+    with path.open("r") as f:
+        fcntl.flock(f, fcntl.LOCK_SH)
+        all_lines = [l.strip() for l in f if l.strip()]
+        fcntl.flock(f, fcntl.LOCK_UN)
+
+    to_drain = all_lines[:args.limit]
+    remaining = all_lines[args.limit:]
+
+    for line in to_drain:
+        try:
+            msg = json.loads(line)
+            # Mirror to bus before deletion
+            emit_bus_event(
+                topic="hexis.buffer.consumed",
+                kind="artifact",
+                level="info",
+                actor=msg.get("actor", "unknown"),
+                data={
+                    "msg_id": msg.get("msg_id"),
+                    "req_id": msg.get("req_id") or "",
+                    "trace_id": msg.get("trace_id") or "",
+                    "agent": args.agent,
+                    "topic": msg.get("topic"),
+                    "kind": msg.get("kind"),
+                    "effects": msg.get("effects"),
+                    "lane": msg.get("lane"),
+                    "topology": msg.get("topology"),
+                    "payload": msg.get("payload"),
+                    "flow": msg.get("flow"),
+                },
+            )
+            print(json.dumps(msg, ensure_ascii=False))
+        except json.JSONDecodeError:
+            continue
+
+    with path.open("w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        for line in remaining:
+            f.write(line + "\n")
+        fcntl.flock(f, fcntl.LOCK_UN)
+
     return 0
 
 
-def main():
-    parser = argparse.ArgumentParser(description="HEXIS Buffer - Agent Inbox System")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    
-    # publish
-    p_pub = subparsers.add_parser("publish", help="Publish a message")
-    p_pub.add_argument("agent", help="Recipient agent ID")
-    p_pub.add_argument("message", help="Message text")
-    p_pub.add_argument("--data", help="JSON payload")
-    p_pub.add_argument("--ttl", type=int, help="TTL in seconds")
-    
-    # consume
-    p_con = subparsers.add_parser("consume", help="Consume messages")
-    p_con.add_argument("agent", help="Agent ID")
-    p_con.add_argument("--ack", action="store_true", help="Acknowledge messages")
-    p_con.add_argument("--limit", type=int, help="Max messages")
-    
+def cmd_status(args: argparse.Namespace) -> int:
+    """Show buffer status."""
+    if args.agent:
+        agents = [args.agent]
+    else:
+        agents = [p.stem for p in buffer_dir().glob("*.buffer")]
+
+    status = {}
+    for agent in agents:
+        path = buffer_path(agent)
+        if path.exists():
+            with path.open("r") as f:
+                lines = [l for l in f if l.strip()]
+            status[agent] = {
+                "pending": len(lines),
+                "path": str(path),
+            }
+            if lines:
+                try:
+                    oldest = json.loads(lines[0])
+                    status[agent]["oldest_iso"] = oldest.get("iso")
+                    status[agent]["oldest_topic"] = oldest.get("topic")
+                except json.JSONDecodeError:
+                    pass
+
+    print(json.dumps(status, indent=2))
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="hexis_buffer.py",
+        description="Ephemeral FIFO buffer for inter-agent handoff (bus remains SoR).",
+    )
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    # pub
+    pub = sub.add_parser("pub", help="Publish message to agent buffer")
+    pub.add_argument("--agent", required=True, help="Target agent name")
+    pub.add_argument("--json", default="{}", help="Payload JSON")
+    pub.add_argument("--actor", default=None, help="Source actor")
+    pub.add_argument("--agent-type", default="worker", help="ring0|subagent|worker")
+    pub.add_argument("--req-id", default=None, help="Request ID for correlation")
+    pub.add_argument("--trace-id", default=None, help="Trace ID for distributed tracing")
+    pub.add_argument("--topic", default="hexis.message", help="Topic")
+    pub.add_argument("--kind", default="request", help="request|response|artifact|metric")
+    pub.add_argument("--effects", default="none", help="none|file|network|unknown")
+    pub.add_argument("--lane", default="strp", help="dialogos|pbpair|strp")
+    pub.add_argument("--topology", default="single", help="single|star|peer_debate")
+    pub.add_argument("--flow-intra", nargs="*", default=[], help="Intra-agent flows")
+    pub.add_argument("--flow-inter", nargs="*", default=[], help="Inter-agent flows")
+    pub.add_argument("--flow-extra", nargs="*", default=[], help="Extra-agent flows")
+    pub.set_defaults(func=cmd_pub)
+
+    # pull
+    pull = sub.add_parser("pull", help="Pull messages from buffer (non-destructive)")
+    pull.add_argument("--agent", required=True, help="Agent name")
+    pull.add_argument("--max", type=int, default=None, help="Max messages to pull")
+    pull.set_defaults(func=cmd_pull)
+
+    # ack
+    ack = sub.add_parser("ack", help="Acknowledge (remove) message")
+    ack.add_argument("--agent", required=True, help="Agent name")
+    ack.add_argument("--msg-id", required=True, help="Message ID to ack")
+    ack.set_defaults(func=cmd_ack)
+
+    # drain
+    drain = sub.add_parser("drain", help="Drain N messages (pull + ack)")
+    drain.add_argument("--agent", required=True, help="Agent name")
+    drain.add_argument("--limit", type=int, required=True, help="Max messages to drain")
+    drain.set_defaults(func=cmd_drain)
+
     # status
-    p_status = subparsers.add_parser("status", help="Show status")
-    p_status.add_argument("agent", nargs="?", help="Agent ID (optional)")
-    
-    # gc
-    p_gc = subparsers.add_parser("gc", help="Garbage collect")
-    p_gc.add_argument("--dry-run", action="store_true", help="Dry run")
-    
-    args = parser.parse_args()
-    
-    if args.command == "publish":
-        return cmd_publish(args)
-    elif args.command == "consume":
-        return cmd_consume(args)
-    elif args.command == "status":
-        return cmd_status(args)
-    elif args.command == "gc":
-        return cmd_gc(args)
-    
-    return 0
+    status = sub.add_parser("status", help="Show buffer status")
+    status.add_argument("--agent", default=None, help="Specific agent (or all)")
+    status.set_defaults(func=cmd_status)
+
+    return p
+
+
+def main(argv: list[str]) -> int:
+    args = build_parser().parse_args(argv)
+    return args.func(args)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main(sys.argv[1:]))

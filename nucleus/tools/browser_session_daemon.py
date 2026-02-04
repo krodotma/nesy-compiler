@@ -32,11 +32,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import ctypes
 import fcntl
 import json
 import os
-import re
 import shutil
 import signal
 import subprocess
@@ -108,7 +106,6 @@ PROVIDER_TO_ACTOR = {
     "claude-web": "claude",
     "gemini-web": "gemini", 
     "chatgpt-web": "chatgpt",
-    "grok-web": "grok",
     "ollama-local": "ollama",
     "vllm-local": "vllm",
     "codex": "codex",
@@ -325,155 +322,6 @@ def detect_display() -> Optional[str]:
     return display if display else None
 
 
-def _parse_xrandr_screen(raw: str) -> Optional[tuple[int, int]]:
-    match = re.search(r"current\s+(\d+)\s+x\s+(\d+)", raw)
-    if not match:
-        return None
-    return int(match.group(1)), int(match.group(2))
-
-
-def _parse_xwininfo_root(raw: str) -> Optional[tuple[int, int]]:
-    width = None
-    height = None
-    for line in raw.splitlines():
-        line = line.strip()
-        if line.startswith("Width:"):
-            try:
-                width = int(line.split(":", 1)[1].strip())
-            except Exception:
-                width = None
-        elif line.startswith("Height:"):
-            try:
-                height = int(line.split(":", 1)[1].strip())
-            except Exception:
-                height = None
-    if width and height:
-        return width, height
-    return None
-
-
-def detect_screen_size(display: Optional[str]) -> Optional[tuple[int, int]]:
-    if not display:
-        return None
-    env = dict(os.environ)
-    env["DISPLAY"] = display
-    for cmd, parser in ((["xrandr", "--current"], _parse_xrandr_screen), (["xwininfo", "-root"], _parse_xwininfo_root)):
-        try:
-            raw = subprocess.check_output(cmd, env=env, stderr=subprocess.DEVNULL, text=True)
-        except Exception:
-            continue
-        parsed = parser(raw)
-        if parsed:
-            return parsed
-    return None
-
-
-def _x11_list_windows(env: dict[str, str]) -> list[int]:
-    try:
-        raw = subprocess.check_output(["xprop", "-root", "_NET_CLIENT_LIST"], env=env, stderr=subprocess.DEVNULL, text=True)
-    except Exception:
-        return []
-    return [int(token, 16) for token in re.findall(r"0x[0-9a-fA-F]+", raw)]
-
-
-def _x11_get_wm_class(env: dict[str, str], win_id: int) -> str:
-    try:
-        raw = subprocess.check_output(["xprop", "-id", hex(win_id), "WM_CLASS"], env=env, stderr=subprocess.DEVNULL, text=True)
-    except Exception:
-        return ""
-    parts = re.findall(r"\"([^\"]+)\"", raw)
-    return (parts[-1] if parts else "").strip().lower()
-
-
-def _x11_find_browser_windows(env: dict[str, str]) -> dict[str, int]:
-    windows: dict[str, int] = {}
-    for win_id in reversed(_x11_list_windows(env)):
-        wm_class = _x11_get_wm_class(env, win_id)
-        if not wm_class:
-            continue
-        if "firefox" in wm_class and "firefox" not in windows:
-            windows["firefox"] = win_id
-        elif ("chrome" in wm_class or "chromium" in wm_class) and "chromium" not in windows:
-            windows["chromium"] = win_id
-        if "firefox" in windows and "chromium" in windows:
-            break
-    return windows
-
-
-def _x11_move_resize_window(win_id: int, *, x: int, y: int, width: int, height: int) -> bool:
-    try:
-        x11 = ctypes.cdll.LoadLibrary("libX11.so.6")
-    except Exception:
-        return False
-    x11.XOpenDisplay.restype = ctypes.c_void_p
-    x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
-    x11.XMoveResizeWindow.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_ulong,
-        ctypes.c_int,
-        ctypes.c_int,
-        ctypes.c_uint,
-        ctypes.c_uint,
-    ]
-    x11.XFlush.argtypes = [ctypes.c_void_p]
-    x11.XCloseDisplay.argtypes = [ctypes.c_void_p]
-    display = x11.XOpenDisplay(None)
-    if not display:
-        return False
-    try:
-        x11.XMoveResizeWindow(display, ctypes.c_ulong(win_id), x, y, width, height)
-        x11.XFlush(display)
-        return True
-    finally:
-        x11.XCloseDisplay(display)
-
-
-def _compute_split_layout(
-    screen_width: int,
-    screen_height: int,
-    mode: str,
-    ratio: float,
-    primary: str,
-) -> dict[str, tuple[int, int, int, int]]:
-    ratio = max(0.1, min(0.9, ratio))
-    layout: dict[str, tuple[int, int, int, int]] = {}
-    if mode == "horizontal":
-        top_h = int(screen_height * ratio)
-        bottom_h = max(1, screen_height - top_h)
-        primary_geom = (0, 0, screen_width, top_h)
-        secondary_geom = (0, top_h, screen_width, bottom_h)
-    else:
-        left_w = int(screen_width * ratio)
-        right_w = max(1, screen_width - left_w)
-        primary_geom = (0, 0, left_w, screen_height)
-        secondary_geom = (left_w, 0, right_w, screen_height)
-
-    if primary == "chromium":
-        layout["chromium"] = primary_geom
-        layout["firefox"] = secondary_geom
-    else:
-        layout["firefox"] = primary_geom
-        layout["chromium"] = secondary_geom
-    return layout
-
-
-def _apply_split_layout(display: str, layout: dict[str, tuple[int, int, int, int]]) -> bool:
-    env = dict(os.environ)
-    env["DISPLAY"] = display
-    windows = _x11_find_browser_windows(env)
-    if not windows:
-        return False
-    ok = False
-    for browser, geom in layout.items():
-        win_id = windows.get(browser)
-        if not win_id:
-            continue
-        x, y, width, height = geom
-        if _x11_move_resize_window(win_id, x=x, y=y, width=width, height=height):
-            ok = True
-    return ok
-
-
 def is_vnc_server_running() -> bool:
     """Check if a VNC server is running by looking for common VNC processes."""
     vnc_processes = ["Xvnc", "x11vnc", "tigervncserver", "vncserver", "Xtigervnc"]
@@ -609,28 +457,6 @@ WEB_PROVIDERS = {
         "browser_type": "chromium",
         "stealth": True,
     },
-    # Grok Web - xAI's chat interface (SuperGrok subscription recommended)
-    # Auth: X.com OAuth (Twitter/X account required)
-    # Limits: 100 msgs/2hr (SuperGrok), 30 Think/2hr, 30 DeepSearch/2hr
-    # Models: Grok 4 (Expert mode), Grok 3 (Fast mode) - no model selector in UI
-    # Note: Selectors are provisional - inspect grok.com before enabling
-    "grok-web": {
-        "name": "Grok Web",
-        "description": "xAI Grok - Edge Inference (SuperGrok)",
-        "url": "https://grok.com/",
-        "login_url": "https://x.com/i/flow/login",
-        "allowed_hosts": ["grok.com", "x.com", "twitter.com"],
-        # Provisional selectors - need inspection of grok.com DOM
-        "chat_selector": "textarea[placeholder*='message' i], textarea[aria-label*='message' i], div[contenteditable='true']",
-        "submit_selector": "button[aria-label*='send' i], button[type='submit'], button svg[class*='send' i]",
-        "response_selector": "[data-testid='conversation-turn'], .grok-response, [role='article']",
-        "max_session_hours": 24,
-        "browser_type": "chromium",
-        "stealth": True,  # X.com has aggressive bot detection
-        # Grok-specific: X OAuth uses different flow than Google/OpenAI
-        "oauth_provider": "x.com",
-        "requires_2fa": True,  # X.com often requires 2FA
-    },
 }
 
 # Dashboard configuration (for CUA auto-reload)
@@ -645,11 +471,6 @@ DASHBOARD_CONFIG = {
 # Auto-login knobs (env-driven; never persist secrets)
 AUTOLOGIN_ENABLED = (os.environ.get("PLURIBUS_BROWSER_AUTOLOGIN") or "1").strip().lower() in {"1", "true", "yes", "on"}
 AUTOLOGIN_COOLDOWN_S = int(os.environ.get("PLURIBUS_BROWSER_AUTOLOGIN_COOLDOWN") or "300")
-AUTOLOGIN_DISABLED_PROVIDERS = {
-    p.strip()
-    for p in (os.environ.get("PLURIBUS_BROWSER_AUTOLOGIN_DISABLED") or "").split(",")
-    if p.strip()
-}
 
 # Solver knobs (off by default for safety)
 SOLVER_CMD = os.environ.get("PLURIBUS_SOLVER_CMD", "").strip()  # optional external command template
@@ -694,19 +515,6 @@ def _env_creds_for_provider(provider_id: str) -> tuple[str | None, str | None]:
         p = (os.environ.get("GEMINI_WEB_PASS") or
              os.environ.get("PLURIBUS_GOOGLE_PASS") or
              os.environ.get("GOOGLE_PASS") or
-             os.environ.get("PLURIBUS_BROWSER_PASS"))
-        return u, p
-    if provider_id == "grok-web":
-        # X.com OAuth - uses username (not email) or phone
-        u = (os.environ.get("GROK_WEB_USER") or
-             os.environ.get("PLURIBUS_X_USER") or
-             os.environ.get("X_USER") or
-             os.environ.get("TWITTER_USER") or
-             os.environ.get("PLURIBUS_BROWSER_USER"))
-        p = (os.environ.get("GROK_WEB_PASS") or
-             os.environ.get("PLURIBUS_X_PASS") or
-             os.environ.get("X_PASS") or
-             os.environ.get("TWITTER_PASS") or
              os.environ.get("PLURIBUS_BROWSER_PASS"))
         return u, p
     return None, None
@@ -810,13 +618,6 @@ def _get_totp_secret_for_provider(provider_id: str) -> str | None:
         return (os.environ.get("PLURIBUS_OPENAI_TOTP_SECRET") or
                 os.environ.get("OPENAI_TOTP_SECRET") or
                 os.environ.get("PLURIBUS_TOTP_SECRET"))
-    if provider_id == "grok-web":
-        # X.com / Twitter OAuth TOTP for SuperGrok access
-        return (os.environ.get("GROK_WEB_TOTP_SECRET") or
-                os.environ.get("PLURIBUS_X_TOTP_SECRET") or
-                os.environ.get("X_TOTP_SECRET") or
-                os.environ.get("TWITTER_TOTP_SECRET") or
-                os.environ.get("PLURIBUS_TOTP_SECRET"))
     return None
 
 
@@ -905,148 +706,6 @@ async def _google_login_flow(
         "blocked_insecure": blocked_insecure,
         "totp_auto_filled": totp_auto_filled,
         "message": "insecure browser gate" if blocked_insecure else ("totp auto-filled" if totp_auto_filled else ("otp required" if needs_code else "login attempted")),
-    }
-
-
-async def _x_login_flow(
-    page: Any,
-    user: str,
-    pw: str,
-    *,
-    start_url: str | None = None,
-    timeout_s: int = 60,
-) -> dict:
-    """
-    Best-effort X.com (Twitter) login flow for grok-web access.
-    Returns dict: success, needs_code, message.
-    """
-    login_url = start_url or "https://x.com/i/flow/login"
-    try:
-        await page.goto(login_url, wait_until="domcontentloaded", timeout=timeout_s * 1000)
-        await asyncio.sleep(1.5)
-    except Exception:
-        pass
-
-    # Step 1: Enter username/email/phone
-    try:
-        user_sel = 'input[autocomplete="username"], input[name="text"], input[type="text"]'
-        el = await page.wait_for_selector(user_sel, timeout=8000)
-        await el.fill(user)
-        await asyncio.sleep(0.3)
-        # Click Next button
-        next_btns = ['[role="button"]:has-text("Next")', 'button:has-text("Next")', '[data-testid="LoginForm_Login_Button"]']
-        for btn_sel in next_btns:
-            try:
-                btn = await page.wait_for_selector(btn_sel, timeout=2000)
-                await btn.click()
-                await asyncio.sleep(1.5)
-                break
-            except Exception:
-                continue
-    except Exception:
-        pass
-
-    # Step 2: Handle unusual activity check (username/phone verification)
-    try:
-        body_text = (await page.text_content("body")) or ""
-        if "unusual login activity" in body_text.lower() or "verify your identity" in body_text.lower():
-            # May need phone/email verification
-            verify_input = await page.wait_for_selector('input[name="text"]', timeout=3000)
-            if verify_input:
-                # Try to enter the username again as verification
-                await verify_input.fill(user)
-                await asyncio.sleep(0.3)
-                for btn_sel in ['[role="button"]:has-text("Next")', 'button:has-text("Next")']:
-                    try:
-                        btn = await page.wait_for_selector(btn_sel, timeout=2000)
-                        await btn.click()
-                        await asyncio.sleep(1.5)
-                        break
-                    except Exception:
-                        continue
-    except Exception:
-        pass
-
-    # Step 3: Enter password
-    try:
-        pw_sel = 'input[type="password"], input[name="password"], input[autocomplete="current-password"]'
-        pw_el = await page.wait_for_selector(pw_sel, timeout=8000)
-        await pw_el.fill(pw)
-        await asyncio.sleep(0.3)
-        # Click Log in button
-        login_btns = ['[data-testid="LoginForm_Login_Button"]', '[role="button"]:has-text("Log in")', 'button:has-text("Log in")']
-        for btn_sel in login_btns:
-            try:
-                btn = await page.wait_for_selector(btn_sel, timeout=2000)
-                await btn.click()
-                await asyncio.sleep(3)
-                break
-            except Exception:
-                continue
-    except Exception:
-        pass
-
-    # Step 4: Handle 2FA/TOTP
-    needs_code = False
-    totp_auto_filled = False
-    try:
-        body_text = (await page.text_content("body")) or ""
-        if any(k in body_text.lower() for k in ["verification code", "authentication code", "two-factor", "2fa", "authenticator app"]):
-            needs_code = True
-            totp_secret = _get_totp_secret_for_provider("grok-web")
-            if totp_secret:
-                totp_code = _generate_totp(totp_secret)
-                if totp_code:
-                    try:
-                        otp_selectors = [
-                            'input[name="text"]',
-                            'input[type="text"]',
-                            'input[autocomplete="one-time-code"]',
-                            'input[aria-label*="code"]',
-                        ]
-                        for sel in otp_selectors:
-                            try:
-                                otp_el = await page.wait_for_selector(sel, timeout=3000)
-                                await otp_el.fill(totp_code)
-                                await asyncio.sleep(0.3)
-                                # Click confirm/next
-                                for btn_sel in ['[role="button"]:has-text("Next")', 'button:has-text("Next")', 'button:has-text("Confirm")']:
-                                    try:
-                                        btn = await page.wait_for_selector(btn_sel, timeout=2000)
-                                        await btn.click()
-                                        await asyncio.sleep(2.5)
-                                        totp_auto_filled = True
-                                        needs_code = False
-                                        break
-                                    except Exception:
-                                        continue
-                                if totp_auto_filled:
-                                    break
-                            except Exception:
-                                continue
-                    except Exception:
-                        pass
-    except Exception:
-        pass
-
-    # Check final state
-    success = False
-    try:
-        await asyncio.sleep(1)
-        current_url = page.url
-        # Success if we're on x.com main page or grok.com
-        if "x.com/home" in current_url or "grok.com" in current_url:
-            success = True
-        elif "login" not in current_url.lower() and "flow" not in current_url.lower():
-            success = True
-    except Exception:
-        pass
-
-    return {
-        "success": success and not needs_code,
-        "needs_code": needs_code,
-        "totp_auto_filled": totp_auto_filled,
-        "message": "totp auto-filled" if totp_auto_filled else ("otp required" if needs_code else ("login successful" if success else "login attempted")),
     }
 
 
@@ -1245,61 +904,12 @@ class BrowserSessionDaemon:
         )
 
         needed_browsers = set(p.get("browser_type", "chromium") for p in WEB_PROVIDERS.values())
-        disable_chromium = (os.environ.get("PLURIBUS_BROWSER_DISABLE_CHROMIUM") or "").strip().lower() in {"1", "true", "yes", "on"}
-        if disable_chromium and "chromium" in needed_browsers:
-            needed_browsers.discard("chromium")
-        chromium_user_agent = os.environ.get(
-            "PLURIBUS_CHROMIUM_USER_AGENT",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.4 Safari/537.36",
-        )
-        firefox_user_agent = os.environ.get(
-            "PLURIBUS_FIREFOX_USER_AGENT",
-            "Mozilla/5.0 (X11; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0",
-        )
-        window_width, window_height = 1280, 720
-        size_env = (os.environ.get("PLURIBUS_BROWSER_WINDOW_SIZE") or "").strip().lower()
-        if size_env and "x" in size_env:
-            try:
-                w_raw, h_raw = size_env.split("x", 1)
-                window_width, window_height = int(w_raw), int(h_raw)
-            except Exception:
-                pass
-        else:
-            try:
-                window_width = int(os.environ.get("PLURIBUS_BROWSER_WINDOW_WIDTH") or window_width)
-                window_height = int(os.environ.get("PLURIBUS_BROWSER_WINDOW_HEIGHT") or window_height)
-            except Exception:
-                window_width, window_height = 1280, 720
+        user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.4 Safari/537.36"
 
-        split_mode = (os.environ.get("PLURIBUS_BROWSER_SPLIT_MODE") or "").strip().lower()
-        split_ratio_env = (os.environ.get("PLURIBUS_BROWSER_SPLIT_RATIO") or "0.5").strip()
-        split_primary = (os.environ.get("PLURIBUS_BROWSER_SPLIT_PRIMARY") or "firefox").strip().lower()
-        split_layout: dict[str, tuple[int, int, int, int]] | None = None
-        if split_primary not in {"firefox", "chromium"}:
-            split_primary = "firefox"
-        if not headless and display and {"chromium", "firefox"} <= needed_browsers:
-            if not split_mode:
-                split_mode = "vertical"
-            if split_mode in {"vertical", "horizontal"}:
-                try:
-                    split_ratio = float(split_ratio_env)
-                except Exception:
-                    split_ratio = 0.5
-                screen_size = detect_screen_size(display) or (window_width, window_height)
-                split_layout = _compute_split_layout(
-                    screen_size[0],
-                    screen_size[1],
-                    split_mode,
-                    split_ratio,
-                    split_primary,
-                )
-
-        launch_errors: dict[str, str] = {}
         for btype in needed_browsers:
             print(f"  Launching {btype} context...")
             b_data_dir = self.user_data_dir_root / btype
             b_data_dir.mkdir(parents=True, exist_ok=True)
-            b_layout = split_layout.get(btype) if split_layout else None
 
             launch_args = [
                 "--disable-dev-shm-usage",
@@ -1307,99 +917,56 @@ class BrowserSessionDaemon:
                 "--disable-setuid-sandbox",
             ]
 
-            browser_env = dict(os.environ)
-            if display:
-                browser_env["DISPLAY"] = display
-                if not browser_env.get("XAUTHORITY"):
-                    xauth_path = Path.home() / ".Xauthority"
-                    if xauth_path.exists():
-                        browser_env["XAUTHORITY"] = str(xauth_path)
-
             # Robotic mode check: Only disable AutomationControlled for Chromium (Claude/ChatGPT).
             # The user noted that disabling this breaks Gemini.
             if btype == "chromium":
                 launch_args.append("--disable-blink-features=AutomationControlled")
 
             if not headless and display:
-                if b_layout:
-                    _, _, b_width, b_height = b_layout
-                    launch_args.append(f"--window-size={b_width},{b_height}")
-                    if btype == "chromium":
-                        b_x, b_y, _, _ = b_layout
-                        launch_args.append(f"--window-position={b_x},{b_y}")
-                else:
-                    launch_args.extend([
-                        "--start-maximized",
-                        f"--window-size={window_width},{window_height}",
-                    ])
+                launch_args.extend([
+                    "--start-maximized",
+                    "--window-size=1920,1080",
+                ])
 
             browser_exec = None
-            try:
-                if btype == "chromium":
-                    browser_exec = os.environ.get("PLURIBUS_BROWSER_EXEC_CHROMIUM", "").strip() or os.environ.get("PLURIBUS_BROWSER_EXEC", "").strip() or None
-                    if not browser_exec:
-                        for candidate in ("/usr/bin/google-chrome-stable", "/usr/bin/google-chrome", "/opt/google/chrome/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"):
-                            if Path(candidate).exists():
-                                browser_exec = candidate
-                                break
+            if btype == "chromium":
+                browser_exec = os.environ.get("PLURIBUS_BROWSER_EXEC_CHROMIUM", "").strip() or os.environ.get("PLURIBUS_BROWSER_EXEC", "").strip() or None
+                if not browser_exec:
+                    for candidate in ("/usr/bin/google-chrome-stable", "/usr/bin/google-chrome", "/opt/google/chrome/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"):
+                        if Path(candidate).exists():
+                            browser_exec = candidate
+                            break
+                
+                # Pre-launch: ensure single browser instance
+                if _guardian:
+                    _guardian.ensure_single_browser()
+                
+                self.contexts[btype] = await self.playwright.chromium.launch_persistent_context(
+                    str(b_data_dir),
+                    headless=headless,
+                    viewport={"width": 1280, "height": 800} if headless else {"width": 1920, "height": 1080},
+                    user_agent=user_agent,
+                    locale="en-US",
+                    args=launch_args,
+                    executable_path=browser_exec,
+                )
+            elif btype == "firefox":
+                browser_exec = os.environ.get("PLURIBUS_BROWSER_EXEC_FIREFOX", "").strip() or None
+                if not browser_exec:
+                    for candidate in ("/usr/bin/firefox", "/usr/bin/firefox-esr"):
+                        if Path(candidate).exists():
+                            browser_exec = candidate
+                            break
 
-                    # Pre-launch: ensure single browser instance
-                    if _guardian:
-                        _guardian.ensure_single_browser()
-
-                    self.contexts[btype] = await self.playwright.chromium.launch_persistent_context(
-                        str(b_data_dir),
-                        headless=headless,
-                        viewport={"width": 1280, "height": 800}
-                        if headless
-                        else {
-                            "width": (b_layout[2] if b_layout else window_width),
-                            "height": (b_layout[3] if b_layout else window_height),
-                        },
-                        user_agent=chromium_user_agent,
-                        locale="en-US",
-                        args=launch_args,
-                        env=browser_env,
-                        executable_path=browser_exec,
-                    )
-                elif btype == "firefox":
-                    browser_exec = os.environ.get("PLURIBUS_BROWSER_EXEC_FIREFOX", "").strip() or None
-                    if not browser_exec:
-                        for candidate in ("/usr/bin/firefox", "/usr/bin/firefox-esr"):
-                            if Path(candidate).exists():
-                                browser_exec = candidate
-                                break
-
-                    firefox_prefs = {
-                        "dom.webdriver.enabled": False,
-                        "dom.webdriver.testing.enabled": False,
-                        "general.useragent.override": firefox_user_agent,
-                        # Sandbox disables for restricted VPS kernels (avoid user-namespace EPERM).
-                        "security.sandbox.content.level": 0,
-                        "security.sandbox.gpu.level": 0,
-                        "security.sandbox.rdd.level": 0,
-                        "security.sandbox.socket.process.level": 0,
-                    }
-                    self.contexts[btype] = await self.playwright.firefox.launch_persistent_context(
-                        str(b_data_dir),
-                        headless=headless,
-                        viewport={"width": 1280, "height": 800}
-                        if headless
-                        else {
-                            "width": (b_layout[2] if b_layout else window_width),
-                            "height": (b_layout[3] if b_layout else window_height),
-                        },
-                        user_agent=firefox_user_agent,
-                        locale="en-US",
-                        args=launch_args,
-                        env=browser_env,
-                        executable_path=browser_exec,
-                        firefox_user_prefs=firefox_prefs,
-                    )
-            except Exception as e:
-                launch_errors[btype] = str(e)
-                print(f"  ERROR: Failed to launch {btype} context: {e}")
-                continue
+                self.contexts[btype] = await self.playwright.firefox.launch_persistent_context(
+                    str(b_data_dir),
+                    headless=headless,
+                    viewport={"width": 1280, "height": 800} if headless else {"width": 1920, "height": 1080},
+                    user_agent=user_agent.replace("Chrome/143.0.7499.4", "Firefox/146.0"), # adjust UA for firefox
+                    locale="en-US",
+                    args=launch_args,
+                    executable_path=browser_exec,
+                )
 
             # Track PID
             b_pid = _find_browser_pid(b_data_dir)
@@ -1420,28 +987,6 @@ class BrowserSessionDaemon:
                     )
                 except Exception:
                     pass
-            elif btype == "firefox":
-                try:
-                    await self.contexts[btype].add_init_script(
-                        """
-                        () => {
-                          Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                          Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-                          Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
-                        }
-                        """
-                    )
-                except Exception:
-                    pass
-
-        if not self.contexts:
-            raise RuntimeError(f"No browser contexts launched: {launch_errors}")
-
-        if split_layout and display and not headless:
-            await asyncio.sleep(1.0)
-            moved = await asyncio.to_thread(_apply_split_layout, display, split_layout)
-            if not moved:
-                print("  [layout] Split layout requested, but window move was unavailable.")
 
         # Update state
         self.state.running = True
@@ -1673,13 +1218,8 @@ class BrowserSessionDaemon:
                 btype = config.get("browser_type", "chromium")
                 context = self.contexts.get(btype)
                 if not context:
-                    if self.contexts:
-                        fallback_type = next(iter(self.contexts.keys()))
-                        context = self.contexts[fallback_type]
-                        print(f"  WARN: Context for {btype} not available; using {fallback_type} for {provider_id}.")
-                    else:
-                        print(f"  ERROR: Context for {btype} not available. Skipping {provider_id}.")
-                        continue
+                    print(f"  ERROR: Context for {btype} not available. Skipping {provider_id}.")
+                    continue
 
                 print(f"  Initializing tab for {config['name']} ({btype})...")
                 page = await context.new_page()
@@ -2247,6 +1787,13 @@ class BrowserSessionDaemon:
         import os
         from pathlib import Path
 
+# Browser Guardian - single-process enforcement
+try:
+    from browser_guardian import BrowserGuardian
+    _guardian = BrowserGuardian()
+except ImportError:
+    _guardian = None
+
         page = self.pages.get(provider_id)
         if not page:
             return {"success": False, "message": f"No page for provider {provider_id}", "method": "none"}
@@ -2386,8 +1933,6 @@ class BrowserSessionDaemon:
     def _should_auto_login(self, provider_id: str) -> bool:
         """Throttle auto-login attempts per provider."""
         if not AUTOLOGIN_ENABLED:
-            return False
-        if provider_id in AUTOLOGIN_DISABLED_PROVIDERS:
             return False
         user, pw = _env_creds_for_provider(provider_id)
         if not user or not pw:

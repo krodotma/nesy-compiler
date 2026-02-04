@@ -1,56 +1,127 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-AGENT_NAME="${1:-unknown}"
+wrapper_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-export PLURIBUS_BUS_DIR="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
-export PLURIBUS_ACTOR="${PLURIBUS_ACTOR:-$AGENT_NAME}"
-export PLURIBUS_SESSION="${PLURIBUS_SESSION:-new}"
-export PLURIBUS_CELL="${PLURIBUS_CELL:-dia.1.0}"
-export PLURIBUS_LANE="${PLURIBUS_LANE:-dialogos}"
-export PLURIBUS_DEPTH="${PLURIBUS_DEPTH:-0}"
-export PLURIBUS_PROTOCOL="${PLURIBUS_PROTOCOL:-PLURIBUS v1}"
-export PLURIBUS_BOOTSTRAP_FILES="${PLURIBUS_BOOTSTRAP_FILES:-/pluribus/AGENTS.md:/pluribus/nucleus/AGENTS.md:/pluribus/nucleus/specs/pluribus_protocol_v1.md:/pluribus/nucleus/specs/repl_header_contract_v1.md}"
-export PYTHONPATH="/pluribus:${PYTHONPATH:-}"
-export UNIFORM_PANEL_STYLE="${UNIFORM_PANEL_STYLE:-tablet}"
-export PLURIBUS_SKILLS_FALLBACK_CMD="${PLURIBUS_SKILLS_FALLBACK_CMD:-python3 /pluribus/nucleus/tools/skills_scanner.py --invoke}"
-
-LOAD_VERTEX_ENV="${PLURIBUS_LOAD_VERTEX_ENV:-1}"
-if [ "$AGENT_NAME" = "gemini" ]; then
-  # Keep Gemini CLI OAuth-only by default.
-  LOAD_VERTEX_ENV=0
-fi
-
-if [ "$LOAD_VERTEX_ENV" = "1" ] && [ -f "/pluribus/.pluribus/vertex_env.conf" ]; then
-  set -a
-  # shellcheck disable=SC1091
-  . "/pluribus/.pluribus/vertex_env.conf"
-  set +a
-fi
-
-MINDLIKE_ENV_FILE="${PLURIBUS_MINDLIKE_ENV:-/pluribus/.pluribus/mindlike_env.conf}"
-if [ -f "$MINDLIKE_ENV_FILE" ]; then
-  _prev_mindlike="${MINDLIKE_API_KEY-}"
-  _prev_glm="${GLM_API_KEY-}"
-  _prev_mindlike_base="${MINDLIKE_BASE_URL-}"
-  set -a
-  # shellcheck disable=SC1091
-  . "$MINDLIKE_ENV_FILE"
-  set +a
-  if [ -n "$_prev_mindlike" ]; then
-    export MINDLIKE_API_KEY="$_prev_mindlike"
+plu_resolve_bus_dir() {
+  local bus_dir="$1"
+  local bus_events_path="$bus_dir/events.ndjson"
+  if ! (
+    mkdir -p "$bus_dir" >/dev/null 2>&1 \
+      && PYTHONDONTWRITEBYTECODE=1 python3 - "$bus_events_path" >/dev/null 2>&1 <<'PY'
+import os, sys
+path = sys.argv[1]
+os.makedirs(os.path.dirname(path), exist_ok=True)
+fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+os.close(fd)
+PY
+  ); then
+    bus_dir="${PLURIBUS_FALLBACK_BUS_DIR:-/pluribus/.pluribus_local/bus}"
+    mkdir -p "$bus_dir" >/dev/null 2>&1 || true
   fi
-  if [ -n "$_prev_glm" ]; then
-    export GLM_API_KEY="$_prev_glm"
-  fi
-  if [ -n "$_prev_mindlike_base" ]; then
-    export MINDLIKE_BASE_URL="$_prev_mindlike_base"
-  fi
-  unset _prev_mindlike _prev_glm _prev_mindlike_base
-fi
+  printf '%s' "$bus_dir"
+}
 
-if [ "${PLURIBUS_SUPPRESS_HEADER:-0}" != "1" ]; then
-  if [ -f "/pluribus/nucleus/tools/agent_header.py" ]; then
-    python3 /pluribus/nucleus/tools/agent_header.py "$PLURIBUS_ACTOR"
+plu_emit_nexus_ack() {
+  local agent="$1"
+  local bus_dir="$2"
+  PYTHONDONTWRITEBYTECODE=1 python3 "$wrapper_dir/nexus_ack.py" --agent "$agent" --bus-dir "$bus_dir" >/dev/null 2>&1 || true
+}
+
+plu_emit_session_bootstrap() {
+  local bus_dir="$1"
+  PYTHONDONTWRITEBYTECODE=1 python3 "$wrapper_dir/session_bootstrap.py" --root /pluribus --bus-dir "$bus_dir" >/dev/null 2>&1 || true
+}
+
+plu_prepare_agent_home() {
+  local agent="$1"
+  local env_var="$2"
+  local agent_home="${!env_var:-/pluribus/.pluribus/agent_homes/$agent}"
+  if ! mkdir -p "$agent_home" "$agent_home/.config" "$agent_home/.local/state" >/dev/null 2>&1; then
+    agent_home="/pluribus/.pluribus_local/agent_homes/$agent"
+    mkdir -p "$agent_home" "$agent_home/.config" "$agent_home/.local/state" >/dev/null 2>&1 || true
   fi
-fi
+  printf '%s' "$agent_home"
+}
+
+plu_set_xdg() {
+  local agent_home="$1"
+  export HOME="$agent_home"
+  export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$agent_home/.config}"
+  export XDG_STATE_HOME="${XDG_STATE_HOME:-$agent_home/.local/state}"
+}
+
+plu_load_secrets() {
+  local orig_home="$1"
+  local agent_home="$2"
+  local secrets_paths=()
+  if [[ -n "$orig_home" ]]; then
+    secrets_paths+=("$orig_home/.config/nucleus/secrets.env")
+    secrets_paths+=("$orig_home/.config/pluribus_next/secrets.env")
+  fi
+  secrets_paths+=("$agent_home/.config/nucleus/secrets.env")
+  secrets_paths+=("$agent_home/.config/pluribus_next/secrets.env")
+  for path in "${secrets_paths[@]}"; do
+    if [[ -r "$path" ]]; then
+      set -a
+      # shellcheck disable=SC1090
+      source "$path"
+      set +a
+    fi
+  done
+  if [[ -r "$wrapper_dir/../.env" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$wrapper_dir/../.env"
+    set +a
+  fi
+  if [[ -z "${GOOGLE_API_KEY:-}" ]] && [[ -n "${GEMINI_API_KEY:-}" ]]; then
+    export GOOGLE_API_KEY="$GEMINI_API_KEY"
+  elif [[ -z "${GEMINI_API_KEY:-}" ]] && [[ -n "${GOOGLE_API_KEY:-}" ]]; then
+    export GEMINI_API_KEY="$GOOGLE_API_KEY"
+  fi
+}
+
+plu_load_assimilation_prompt() {
+  local agent="$1"
+  local prompt_file=""
+  local prompt_text=""
+  local nexus_file="/pluribus/nexus_bridge/${agent}.md"
+  local fallback_file="/pluribus/nucleus/docs/workflows/AGENT_ASSIMILATION_PROMPT.md"
+  local legacy_file="/pluribus/pluribus_next/docs/workflows/AGENT_ASSIMILATION_PROMPT.md"
+  if [[ -f "$nexus_file" ]]; then
+    prompt_file="$nexus_file"
+  elif [[ -f "$fallback_file" ]]; then
+    prompt_file="$fallback_file"
+  elif [[ -f "$legacy_file" ]]; then
+    prompt_file="$legacy_file"
+  fi
+  if [[ -n "$prompt_file" ]]; then
+    prompt_text="$(cat "$prompt_file")"
+  fi
+  export PLURIBUS_ASSIMILATION_PROMPT_FILE="$prompt_file"
+  export PLURIBUS_ASSIMILATION_PROMPT="$prompt_text"
+}
+
+plu_detect_prompt_flag() {
+  local cli="$1"
+  local help_text=""
+  help_text="$("$cli" --help 2>/dev/null || true)"
+  if [[ "$help_text" == *"--append-system-prompt"* ]]; then
+    printf '%s' "--append-system-prompt"
+    return 0
+  fi
+  if [[ "$help_text" == *"--system-prompt"* ]]; then
+    printf '%s' "--system-prompt"
+    return 0
+  fi
+  if [[ "$help_text" == *"--system"* ]]; then
+    printf '%s' "--system"
+    return 0
+  fi
+  if [[ "$help_text" == *"--instruction"* ]]; then
+    printf '%s' "--instruction"
+    return 0
+  fi
+  return 1
+}

@@ -1,0 +1,30 @@
+[Unit]
+Description=Pluribus VNC Server for Browser Authentication
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Environment=DISPLAY=:1
+Environment=HOME=/root
+
+# Kill any existing VNC on display :1
+ExecStartPre=-/usr/bin/vncserver -kill :1
+
+# Start VNC server
+ExecStart=/usr/bin/vncserver :1 \
+    -geometry 1280x1024 \
+    -depth 24 \
+    -rfbport 5901 \
+    -localhost no \
+    -PasswordFile /pluribus/.pluribus/vnc_passwd \
+    -UseBlacklist 0 \
+    -fg
+
+ExecStop=/usr/bin/vncserver -kill :1
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

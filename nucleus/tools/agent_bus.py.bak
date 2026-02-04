@@ -1,0 +1,224 @@
+#!/usr/bin/env python3
+"""
+agent_bus.py - Append-Only NDJSON Event Bus
+
+Core infrastructure for Pluribus agent communication.
+All events persist to .pluribus/bus/events.ndjson
+"""
+
+import json
+import os
+import time
+import uuid
+from dataclasses import dataclass, asdict
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Optional, Generator
+
+
+class EventKind(Enum):
+    REQUEST = "request"
+    RESPONSE = "response"
+    EVENT = "event"
+    ERROR = "error"
+
+
+class EventLevel(Enum):
+    DEBUG = "debug"
+    INFO = "info"
+    WARN = "warn"
+    ERROR = "error"
+
+
+@dataclass
+class BusEvent:
+    """Canonical bus event structure with lineage tracking for CMP."""
+    id: str
+    ts: float
+    iso: str
+    topic: str
+    kind: str
+    level: str
+    actor: str
+    data: dict
+    # Lineage tracking for CMP (DUALITY-BIND Phase 1)
+    lineage_id: Optional[str] = None
+    parent_lineage_id: Optional[str] = None
+    mutation_op: Optional[str] = None  # e.g., "prompt_edit", "tool_rebind", "hgt_splice"
+
+    @classmethod
+    def create(
+        cls,
+        topic: str,
+        actor: str,
+        data: dict,
+        kind: EventKind = EventKind.EVENT,
+        level: EventLevel = EventLevel.INFO,
+        lineage_id: Optional[str] = None,
+        parent_lineage_id: Optional[str] = None,
+        mutation_op: Optional[str] = None,
+    ) -> "BusEvent":
+        now = time.time()
+        return cls(
+            id=str(uuid.uuid4()),
+            ts=now,
+            iso=datetime.utcfromtimestamp(now).isoformat() + "Z",
+            topic=topic,
+            kind=kind.value,
+            level=level.value,
+            actor=actor,
+            data=data,
+            lineage_id=lineage_id,
+            parent_lineage_id=parent_lineage_id,
+            mutation_op=mutation_op,
+        )
+
+
+class AgentBus:
+    """Append-only NDJSON event bus."""
+
+    def __init__(self, bus_dir: Optional[Path] = None):
+        self.bus_dir = bus_dir or Path.home() / "pluribus_evolution" / ".pluribus" / "bus"
+        self.events_file = self.bus_dir / "events.ndjson"
+        self._ensure_dirs()
+
+    def _ensure_dirs(self):
+        self.bus_dir.mkdir(parents=True, exist_ok=True)
+
+    def emit(self, event: BusEvent) -> str:
+        """Append event to bus. Returns event ID."""
+        with open(self.events_file, "a") as f:
+            f.write(json.dumps(asdict(event)) + "\n")
+        return event.id
+
+    def tail(self, n: int = 10) -> list[BusEvent]:
+        """Get last n events from bus."""
+        if not self.events_file.exists():
+            return []
+        
+        with open(self.events_file, "r") as f:
+            lines = f.readlines()
+        
+        events = []
+        for line in lines[-n:]:
+            try:
+                data = json.loads(line.strip())
+                events.append(BusEvent(**data))
+            except (json.JSONDecodeError, TypeError):
+                continue
+        return events
+
+    def watch(self, topic_filter: Optional[str] = None) -> Generator[BusEvent, None, None]:
+        """Watch bus for new events (blocking generator)."""
+        if not self.events_file.exists():
+            self.events_file.touch()
+        
+        with open(self.events_file, "r") as f:
+            f.seek(0, 2)  # Seek to end
+            while True:
+                line = f.readline()
+                if line:
+                    try:
+                        data = json.loads(line.strip())
+                        event = BusEvent(**data)
+                        if topic_filter is None or event.topic.startswith(topic_filter):
+                            yield event
+                    except (json.JSONDecodeError, TypeError):
+                        continue
+                else:
+                    time.sleep(0.1)
+
+    def query(self, topic_filter: Optional[str] = None, limit: int = 100) -> list[BusEvent]:
+        """Query events matching topic filter."""
+        events = []
+        if not self.events_file.exists():
+            return events
+        
+        with open(self.events_file, "r") as f:
+            for line in f:
+                try:
+                    data = json.loads(line.strip())
+                    event = BusEvent(**data)
+                    if topic_filter is None or event.topic.startswith(topic_filter):
+                        events.append(event)
+                        if len(events) >= limit:
+                            break
+                except (json.JSONDecodeError, TypeError):
+                    continue
+        return events
+
+
+def emit_bus_event(
+    topic: str,
+    actor: str,
+    data: dict,
+    kind: EventKind = EventKind.EVENT,
+    level: EventLevel = EventLevel.INFO,
+    lineage_id: Optional[str] = None,
+    parent_lineage_id: Optional[str] = None,
+    mutation_op: Optional[str] = None,
+) -> str:
+    """Convenience function to emit a bus event with optional lineage tracking."""
+    bus = AgentBus()
+    event = BusEvent.create(
+        topic, actor, data, kind, level,
+        lineage_id=lineage_id,
+        parent_lineage_id=parent_lineage_id,
+        mutation_op=mutation_op,
+    )
+    return bus.emit(event)
+
+
+def get_agent_id() -> str:
+    """Get current agent ID from environment."""
+    return os.environ.get("CAGENT_ID", "unknown_agent")
+
+
+# Topic constants
+class Topics:
+    # CAGENT lifecycle
+    CAGENT_BOOTSTRAP_START = "cagent.bootstrap.start"
+    CAGENT_BOOTSTRAP_COMPLETE = "cagent.bootstrap.complete"
+    CAGENT_TASK_START = "cagent.task.start"
+    CAGENT_TASK_UPDATE = "cagent.task.update"
+    CAGENT_TASK_COMPLETE = "cagent.task.complete"
+    CAGENT_TASK_RESUME = "cagent.task.resume"
+    CAGENT_DELEGATE_REQUEST = "cagent.delegate.request"
+    CAGENT_ESCALATE_REQUEST = "cagent.escalate.request"
+    
+    # Dialogos
+    DIALOGOS_SUBMIT = "dialogos.submit"
+    DIALOGOS_CELL = "dialogos.cell"
+    DIALOGOS_ERROR = "dialogos.error"
+    DIALOGOS_TIMEOUT = "dialogos.timeout"
+    
+    # PAIP
+    PAIP_CLONE_CREATED = "paip.clone.created"
+    PAIP_CLONE_SYNCED = "paip.clone.synced"
+    PAIP_CLONE_DELETED = "paip.clone.deleted"
+    PAIP_ORPHAN_DETECTED = "paip.orphan.detected"
+    
+    # Amber preservation
+    AMBER_PRESERVATION_START = "amber.preservation.start"
+    AMBER_PRESERVATION_COMPLETE = "amber.preservation.complete"
+    
+    # Operator
+    OPERATOR_COMMAND = "operator.command"
+    OPERATOR_RESPONSE = "operator.response"
+
+
+if __name__ == "__main__":
+    # Test emission
+    event_id = emit_bus_event(
+        topic=Topics.CAGENT_BOOTSTRAP_COMPLETE,
+        actor="agent_bus_test",
+        data={"message": "Bus infrastructure initialized", "phase": 0, "step": 15},
+    )
+    print(f"✅ Emitted event: {event_id}")
+    
+    # Verify
+    bus = AgentBus()
+    events = bus.tail(1)
+    if events:
+        print(f"✅ Verified: {events[0].topic}")

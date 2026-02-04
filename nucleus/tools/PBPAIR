@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Convenience wrapper: semantic keyword as a command.
+#
+# Examples:
+#   PBPAIR --provider gemini-cli --role planner --prompt "Plan X"
+#   PBPAIR --provider claude-cli --role debugger --mode lite --include pluribus_next/tools/strp_worker.py --prompt "Find bug"
+
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+
+flow_arg=""
+if [[ "${1:-}" == "A" || "${1:-}" == "m" ]]; then
+  flow_arg="--flow ${1}"
+  shift
+fi
+
+exec python3 /pluribus/pluribus_next/tools/pbpair.py --bus-dir "$bus_dir" $flow_arg "$@"

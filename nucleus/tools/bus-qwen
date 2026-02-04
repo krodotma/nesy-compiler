@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$script_dir/agent_wrapper_common.sh"
+
+orig_home="${HOME:-}"
+bus_dir="${PLURIBUS_BUS_DIR:-/pluribus/.pluribus/bus}"
+bus_dir="$(plu_resolve_bus_dir "$bus_dir")"
+topic_prefix="${PLURIBUS_TOPIC_PREFIX:-agent.qwen}"
+export PLURIBUS_ACTOR="qwen"
+export PLURIBUS_TASKS_FROM_BUS_RUN=1
+
+plu_emit_nexus_ack "qwen" "$bus_dir"
+
+agent_home="$(plu_prepare_agent_home "qwen" "PLURIBUS_QWEN_HOME")"
+plu_set_xdg "$agent_home"
+plu_load_secrets "$orig_home" "$agent_home"
+plu_load_assimilation_prompt "qwen"
+plu_emit_session_bootstrap "$bus_dir"
+
+# Find real qwen binary (not alias to this script)
+qwen_cmd=""
+for path in /root/.local/node20/bin/qwen /usr/local/bin/qwen /usr/bin/qwen ~/.local/bin/qwen; do
+  if [[ -x "$path" ]]; then
+    qwen_cmd="$path"
+    break
+  fi
+done
+if [[ -z "$qwen_cmd" ]]; then
+  qwen_cmd="qwen"  # fallback
+fi
+
+# Generate preamble using agent_header.py for Qwen
+preamble="$(python3 "$script_dir/agent_header.py" --preamble qwen 2>/dev/null || true)"
+
+# Check if user passed -p (non-interactive mode)
+user_args=("$@")
+has_prompt_flag=false
+for arg in "$@"; do
+  if [[ "$arg" == "-p" || "$arg" == "--prompt" ]]; then
+    has_prompt_flag=true
+    break
+  fi
+done
+
+if [[ "$has_prompt_flag" == "true" ]]; then
+  # Non-interactive mode: prepend preamble to the -p value
+  # Reconstruct args with preamble prepended to prompt
+  new_args=()
+  next_is_prompt=false
+  for arg in "$@"; do
+    if [[ "$next_is_prompt" == "true" ]]; then
+      new_args+=("$preamble"$'\n\n'"User request: $arg")
+      next_is_prompt=false
+    elif [[ "$arg" == "-p" || "$arg" == "--prompt" ]]; then
+      new_args+=("$arg")
+      next_is_prompt=true
+    else
+      new_args+=("$arg")
+    fi
+  done
+  exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$qwen_cmd" "${new_args[@]}"
+else
+  # Interactive mode: use -i to inject preamble at session start
+  if [[ -n "$preamble" ]]; then
+    exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$qwen_cmd" -i "$preamble" "$@"
+  else
+    exec "$script_dir/bus-run" --bus-dir "$bus_dir" --topic-prefix "$topic_prefix" -- "$qwen_cmd" "$@"
+  fi
+fi
