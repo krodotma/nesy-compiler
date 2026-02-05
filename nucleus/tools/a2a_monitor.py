@@ -44,6 +44,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Set
 
+# Import agent_bus for proper file-locked event emission
+try:
+    from agent_bus import emit_event as emit_bus_event, resolve_bus_paths
+    AGENT_BUS_AVAILABLE = True
+except ImportError:
+    AGENT_BUS_AVAILABLE = False
+
 
 # DR-gating for NDJSON reads (DKIN v30 bus policy)
 def _ndjson_read_allowed() -> bool:
@@ -144,9 +151,28 @@ class A2AMonitor:
         self.state_file.write_text(json.dumps(data, indent=2))
 
     def _emit_bus_event(self, topic: str, data: Dict[str, Any], level: str = "info"):
-        """Emit event to the Pluribus bus."""
+        """Emit event to the Pluribus bus with proper file locking."""
+        if AGENT_BUS_AVAILABLE:
+            # Use agent_bus for proper fcntl.flock() protected writes
+            try:
+                paths = resolve_bus_paths(str(self.bus_path.parent))
+                return emit_bus_event(
+                    paths,
+                    topic=topic,
+                    kind="event",
+                    level=level,
+                    actor="a2a_monitor",
+                    data=data,
+                    trace_id=None,
+                    run_id=None,
+                    durable=False,
+                )
+            except Exception:
+                pass  # Fall through to direct write
+
+        # Fallback: direct write (no file locking)
         self.bus_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         event = {
             "id": uuid.uuid4().hex,
             "ts": time.time(),
@@ -157,10 +183,10 @@ class A2AMonitor:
             "actor": "a2a_monitor",
             "data": data,
         }
-        
+
         with open(self.bus_path, "a") as f:
             f.write(json.dumps(event) + "\n")
-        
+
         return event["id"]
 
     def propose_collaboration(

@@ -52,6 +52,13 @@ from pathlib import Path
 from threading import Lock
 from typing import Optional, Any, Callable
 
+# Import agent_bus for proper file-locked event emission
+try:
+    from agent_bus import emit_event as emit_bus_event, resolve_bus_paths
+    AGENT_BUS_AVAILABLE = True
+except ImportError:
+    AGENT_BUS_AVAILABLE = False
+
 # =============================================================================
 # CONSTANTS
 # =============================================================================
@@ -276,7 +283,26 @@ class QuotaManager:
             json.dump(data, f, indent=2, default=str)
 
     def _emit_bus_event(self, topic: str, data: dict, level: str = "info") -> str:
-        """Emit event to the Pluribus bus."""
+        """Emit event to the Pluribus bus with proper file locking."""
+        if AGENT_BUS_AVAILABLE:
+            # Use agent_bus for proper fcntl.flock() protected writes
+            try:
+                paths = resolve_bus_paths(str(Path(self.working_dir) / ".pluribus" / "bus"))
+                return emit_bus_event(
+                    paths,
+                    topic=topic,
+                    kind="event",
+                    level=level,
+                    actor="quota_manager",
+                    data=data,
+                    trace_id=None,
+                    run_id=None,
+                    durable=False,
+                )
+            except Exception:
+                pass  # Fall through to direct write
+
+        # Fallback: direct write (no file locking)
         bus_path = Path(self.working_dir) / BUS_PATH
         bus_path.parent.mkdir(parents=True, exist_ok=True)
 
