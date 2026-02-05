@@ -1,0 +1,42 @@
+{
+  "name": "swarm-ontology-audit",
+  "purpose": "Deep Ontological Analysis of Pluribus Architecture",
+  "agents": [
+    {
+      "id": "sonnet-analyst-1",
+      "role": "Lead Analyst",
+      "runner": "claude",
+      "prompt": "Analyze the 'Ontology of Intent' for Pluribus. Compare 'nucleus/tools' (Python) vs 'neo-pluribus' (TypeScript). Determine if the 'Big Prune' was a mistake or a transition. Output a verdict on 'Legacy Regression' vs 'Modernization'.",
+      "ring": 2
+    },
+    {
+      "id": "sonnet-analyst-2",
+      "role": "History Mapper",
+      "runner": "claude",
+      "prompt": "Map the Git History of 'agent_conductor.py' and 'world_router.py'. Did they move to 'PIB'? Did they move to 'neo-pluribus'? Trace their lineage to find the definitive version.",
+      "ring": 2
+    },
+    {
+      "id": "sonnet-analyst-3",
+      "role": "Doc Auditor",
+      "runner": "claude",
+      "prompt": "Audit 'docs/specs/' and 'agent_reports/'. Find the 'Big Last Subtask' mentioned by the user. Look for mentions of 'Voice Research', 'Supersymmetry', or 'IRKG Phase 5'.",
+      "ring": 2
+    },
+    {
+      "id": "codex-arch-1",
+      "role": "Code Architect",
+      "runner": "codex",
+      "prompt": "Analyze 'neo-pluribus/packages'. Is 'ark-orchestrator' missing? If so, scaffold a plan to port 'tmux_swarm_orchestrator.py' to TypeScript to close the loop.",
+      "ring": 2
+    },
+    {
+      "id": "codex-arch-2",
+      "role": "Integration Specialist",
+      "runner": "codex",
+      "prompt": "Verify the 'FalkorDB First' architecture. Check 'agent_bus.py' and 'falkordb_bus_events.py'. Confirm that NDJSON is strictly for DR. Propose a 'Hard Cutover' plan if needed.",
+      "ring": 2
+    }
+  ],
+  "iterations_planned": 1
+}

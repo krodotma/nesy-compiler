@@ -1,0 +1,31 @@
+{
+  "name": "swarm-supersymmetry-integration",
+  "purpose": "Integrate Auralux Voice Stack into Supersymmetry (WASM)",
+  "agents": [
+    {
+      "id": "codex-sym-1",
+      "role": "WASM Port Engineer",
+      "runner": "codex",
+      "prompt": "Port 'nucleus/auralux/*.ts' logic to a new Supersymmetry package '@sym/auralux'. Ensure it uses '@sym/wasm' for audio processing instead of Node.js buffers.",
+      "ring": 2,
+      "working_dir": "supersymmetry"
+    },
+    {
+      "id": "codex-sym-2",
+      "role": "Compute Integrator",
+      "runner": "codex",
+      "prompt": "Wire '@sym/auralux' into '@sym/compute'. Create a WebGPU compute shader for VAD (Voice Activity Detection) if possible, or fallback to WASM.",
+      "ring": 2,
+      "working_dir": "supersymmetry"
+    },
+    {
+      "id": "opus-sym-arch",
+      "role": "System Architect",
+      "runner": "claude",
+      "prompt": "Review the Supersymmetry constitution. Ensure the new Auralux integration respects the 'Decentralized Control Plane' architecture.",
+      "ring": 1,
+      "working_dir": "supersymmetry"
+    }
+  ],
+  "iterations_planned": 3
+}

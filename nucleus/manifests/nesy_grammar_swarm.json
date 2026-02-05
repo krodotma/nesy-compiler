@@ -1,0 +1,35 @@
+{
+  "name": "swarm-nesy-grammar",
+  "purpose": "Crystallize Chronic Regression Pattern into NeSy Grammar",
+  "agents": [
+    {
+      "id": "opus-ultra-1",
+      "role": "Grammarian",
+      "runner": "claude",
+      "prompt": "Analyze the 'Tool Regression' antipattern. Map it to the NeSy Grammar of Symbols. Is it a failure of 'Lineage' (L) or 'Omega' (Ω)? Define the formal symbols for 'Lossless Evolution'.",
+      "ring": 1
+    },
+    {
+      "id": "opus-ultra-2",
+      "role": "Pattern Architect",
+      "runner": "claude",
+      "prompt": "Design a 'Deep Learning Template' for AlphaLearn that recognizes this pattern (Prune -> Inferior Restore). How do we train the model to reject the 'Golden Commit' if a 'TUI Commit' exists?",
+      "ring": 1
+    },
+    {
+      "id": "codex-xhigh-1",
+      "role": "Rule Implementer",
+      "runner": "codex",
+      "prompt": "Translate the Grammarian's insights into a TypeScript Gate rule for '@nesy/pipeline'. Implement 'LineageMonotonicityCheck'.",
+      "ring": 2
+    },
+    {
+      "id": "codex-xhigh-2",
+      "role": "Verifier",
+      "runner": "codex",
+      "prompt": "Verify the new grammar rule against the git history of 'tmux_swarm_orchestrator.py'. Ensure it would have flagged the Jan 23 restore as a regression compared to Jan 28.",
+      "ring": 2
+    }
+  ],
+  "iterations_planned": 1
+}
