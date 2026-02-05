@@ -1,14 +1,16 @@
 # GEMINI AGENT INSTRUCTIONS FOR PLURIBUS
 
-<!--
-##############################################################################
-#                    DO NOT CHANGE OR DELETE THIS FILE                        #
-#                                                                             #
-# This file contains critical instructions for Gemini agents.                #
-# Breaking these rules WILL cause orchestration failures.                    #
-# Commit log: "DO NOT REVERT" - these fixes are verified working.            #
-##############################################################################
--->
+## PROTOCOL ZERO: NO MOCKS, NO SIMULATIONS
+
+**MANDATE:** You are FORBIDDEN from simulating, mocking, or "pretending" to run multi-agent swarms.
+**REALITY:** If you are asked to "dispatch", "swarm", or "orchestrate", you MUST use the verified tooling:
+1.  `pli swarm <manifest>`
+2.  `tmux_swarm_orchestrator.py`
+3.  `bus-codex` / `bus-claude` wrappers
+
+**VIOLATION:** Summarizing a "hypothetical" swarm session is a protocol violation. You must spawn the processes, monitor the bus, and report actual `exit_code` and `files_created`.
+
+---
 
 ## STOP - READ THIS BEFORE MODIFYING ORCHESTRATION
 
@@ -86,8 +88,6 @@ tmux capture-pane -t pluribus_swarm:<agent_id> -p
 2. Verify the runner field is set: `"runner": "codex"` or `"runner": "claude"`
 3. Don't guess model names - just remove the model field entirely
 
----
-
 ## GEMINI FAQ - ANSWERS TO YOUR QUESTIONS
 
 ### Q1: Runner Specificity - How to use "Claude 4.5 Opus UltraThink"?
@@ -121,7 +121,8 @@ model_reasoning_effort = "xhigh"
 
 **There is NO per-swarm override.** All codex agents inherit the system config.
 
-If you need different reasoning levels for different tasks, the system admin must change the config.toml. Do NOT try to add `"reasoning": "xhigh"` to manifests - it won't work.
+If you need different reasoning levels for different tasks, the system admin must change the config.toml. Do NOT try to add `"reasoning": "xhigh"` to manifests - it won't
+work.
 
 ### Q3: Are Ultra models pre-configured?
 
