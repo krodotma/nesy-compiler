@@ -22,6 +22,16 @@ The Deploy Agent handles:
 - CI/CD integrations (Step 228)
 - REST API (Step 229)
 - CLI interface (Step 230)
+- Plugin system (Step 231)
+- Caching layer (Step 232)
+- Performance metrics (Step 233)
+- Structured logging (Step 234)
+- Error handling (Step 235)
+- Config management (Step 236)
+- Health monitoring (Step 237)
+- Rate limiting (Step 238)
+- Batch processing (Step 239)
+- Event emission (Step 240)
 
 PBTSO Phases:
 - SKILL: Bootstrap and initialization
@@ -53,12 +63,22 @@ A2A Bus Topics:
 - deploy.comparison.compare/diff
 - deploy.integration.trigger/webhook
 - deploy.api.request/response
+- deploy.plugin.register/load/execute
+- deploy.cache.hit/miss/evict
+- deploy.metrics.performance.record/aggregate
+- deploy.logging.write/error/audit
+- deploy.error.occurred/recovered
+- deploy.configmgr.load/update/validate
+- deploy.healthcheck.run/pass/fail
+- deploy.ratelimit.allowed/denied
+- deploy.batch.start/progress/complete
+- deploy.events.emit/subscribe
 
 Protocol: DKIN v30, CITIZEN v2, PAIP v16, HOLON v2
 """
 from __future__ import annotations
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __all__ = [
     # Bootstrap (Step 201)
     "DeployAgentConfig",
@@ -102,6 +122,26 @@ __all__ = [
     "DeploymentAPI",
     # CLI (Step 230)
     "DeployCLI",
+    # Plugin System (Step 231)
+    "DeployPluginSystem",
+    # Caching Layer (Step 232)
+    "DeployCachingLayer",
+    # Performance Metrics (Step 233)
+    "DeployMetricsSystem",
+    # Structured Logging (Step 234)
+    "DeployLoggingSystem",
+    # Error Handler (Step 235)
+    "DeployErrorHandler",
+    # Config Manager (Step 236)
+    "DeployConfigManager",
+    # Health Monitor (Step 237)
+    "DeployHealthMonitor",
+    # Rate Limiter (Step 238)
+    "DeployRateLimiter",
+    # Batch Processor (Step 239)
+    "DeployBatchProcessor",
+    # Event Emitter (Step 240)
+    "DeployEventEmitter",
 ]
 
 # Lazy imports to avoid circular dependencies
@@ -185,4 +225,44 @@ def __getattr__(name: str):
     if name == "DeployCLI":
         from .cli.main import DeployCLI
         return DeployCLI
+    # Step 231: Plugin System
+    if name == "DeployPluginSystem":
+        from .plugin.system import DeployPluginSystem
+        return DeployPluginSystem
+    # Step 232: Caching Layer
+    if name == "DeployCachingLayer":
+        from .cache.layer import DeployCachingLayer
+        return DeployCachingLayer
+    # Step 233: Performance Metrics
+    if name == "DeployMetricsSystem":
+        from .metrics.performance import DeployMetricsSystem
+        return DeployMetricsSystem
+    # Step 234: Structured Logging
+    if name == "DeployLoggingSystem":
+        from .logging.structured import DeployLoggingSystem
+        return DeployLoggingSystem
+    # Step 235: Error Handler
+    if name == "DeployErrorHandler":
+        from .errors.handler import DeployErrorHandler
+        return DeployErrorHandler
+    # Step 236: Config Manager
+    if name == "DeployConfigManager":
+        from .configmgr.manager import DeployConfigManager
+        return DeployConfigManager
+    # Step 237: Health Monitor
+    if name == "DeployHealthMonitor":
+        from .healthcheck.monitor import DeployHealthMonitor
+        return DeployHealthMonitor
+    # Step 238: Rate Limiter
+    if name == "DeployRateLimiter":
+        from .ratelimit.limiter import DeployRateLimiter
+        return DeployRateLimiter
+    # Step 239: Batch Processor
+    if name == "DeployBatchProcessor":
+        from .batch.processor import DeployBatchProcessor
+        return DeployBatchProcessor
+    # Step 240: Event Emitter
+    if name == "DeployEventEmitter":
+        from .events.emitter import DeployEventEmitter
+        return DeployEventEmitter
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

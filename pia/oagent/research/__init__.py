@@ -5,9 +5,10 @@ Research Agent - Oagent Subagent 1 (Steps 1-50)
 The Research Agent handles codebase exploration, documentation retrieval,
 knowledge graph population, and context optimization.
 
-PBTSO Phases: SKILL, SEQUESTER, RESEARCH, DISTILL, PLAN, ITERATE, INTERFACE
+PBTSO Phases: SKILL, SEQUESTER, RESEARCH, DISTILL, PLAN, ITERATE, INTERFACE,
+              EXTEND, MONITOR, PROTECT, OPTIMIZE, COORDINATE
 
-Steps 21-30 (This module adds):
+Steps 21-30:
 - Step 21: Query Executor - Execute planned research queries
 - Step 22: Result Ranker - Rank and prioritize results
 - Step 23: Answer Synthesizer - Generate coherent answers
@@ -18,6 +19,18 @@ Steps 21-30 (This module adds):
 - Step 28: Multi-Repo Manager - Handle multiple repositories
 - Step 29: Research API - REST API for research queries
 - Step 30: Research CLI - Complete CLI interface
+
+Steps 31-40 (Infrastructure):
+- Step 31: Plugin System - Extensible plugin architecture
+- Step 32: Caching Layer - Multi-tier caching (memory, disk, distributed)
+- Step 33: Metrics - Performance and usage metrics
+- Step 34: Logging - Structured logging system
+- Step 35: Error Handler - Comprehensive error handling
+- Step 36: Config Manager - Configuration management
+- Step 37: Health Check - Health monitoring
+- Step 38: Rate Limiter - API rate limiting
+- Step 39: Batch Processor - Batch query processing
+- Step 40: Event Emitter - Event emission system
 
 Bus Topics:
 - a2a.research.bootstrap.start
@@ -100,6 +113,71 @@ from .cli import (
     ResearchCLI,
 )
 
+# Steps 31-40: Infrastructure components
+from .infra import (
+    # Step 31: Plugin System
+    PluginManager,
+    Plugin,
+    PluginConfig,
+    PluginMetadata,
+    PluginHook,
+    # Step 32: Caching Layer
+    TieredCache,
+    CacheTier,
+    TieredCacheConfig,
+    # Step 33: Metrics
+    MetricsCollector,
+    Metric,
+    MetricType,
+    MetricsConfig,
+    Timer,
+    Counter,
+    Gauge,
+    Histogram,
+    # Step 34: Logging
+    StructuredLogger,
+    LogConfig,
+    LogLevel,
+    LogEntry,
+    # Step 35: Error Handler
+    ErrorHandler,
+    ResearchError,
+    ErrorCode,
+    ErrorContext,
+    ErrorConfig,
+    # Step 36: Config Manager
+    ConfigManager,
+    ConfigSource,
+    ConfigValue,
+    ConfigSchema,
+    ConfigType,
+    # Step 37: Health Check
+    HealthChecker,
+    HealthStatus,
+    HealthCheck,
+    HealthConfig,
+    ComponentHealth,
+    CheckType,
+    # Step 38: Rate Limiter
+    RateLimiter,
+    RateLimitConfig,
+    RateLimitResult,
+    TokenBucket,
+    SlidingWindow,
+    # Step 39: Batch Processor
+    BatchProcessor,
+    BatchConfig,
+    BatchJob,
+    BatchResult,
+    BatchStatus,
+    # Step 40: Event Emitter
+    EventEmitter,
+    Event,
+    EventConfig,
+    EventHandler,
+    EventFilter,
+)
+
 __all__ = [
     # Core
     "ResearchAgentBootstrap",
@@ -142,4 +220,65 @@ __all__ = [
     "APIConfig",
     # Step 30: Research CLI
     "ResearchCLI",
+    # Step 31: Plugin System
+    "PluginManager",
+    "Plugin",
+    "PluginConfig",
+    "PluginMetadata",
+    "PluginHook",
+    # Step 32: Caching Layer
+    "TieredCache",
+    "CacheTier",
+    "TieredCacheConfig",
+    # Step 33: Metrics
+    "MetricsCollector",
+    "Metric",
+    "MetricType",
+    "MetricsConfig",
+    "Timer",
+    "Counter",
+    "Gauge",
+    "Histogram",
+    # Step 34: Logging
+    "StructuredLogger",
+    "LogConfig",
+    "LogLevel",
+    "LogEntry",
+    # Step 35: Error Handler
+    "ErrorHandler",
+    "ResearchError",
+    "ErrorCode",
+    "ErrorContext",
+    "ErrorConfig",
+    # Step 36: Config Manager
+    "ConfigManager",
+    "ConfigSource",
+    "ConfigValue",
+    "ConfigSchema",
+    "ConfigType",
+    # Step 37: Health Check
+    "HealthChecker",
+    "HealthStatus",
+    "HealthCheck",
+    "HealthConfig",
+    "ComponentHealth",
+    "CheckType",
+    # Step 38: Rate Limiter
+    "RateLimiter",
+    "RateLimitConfig",
+    "RateLimitResult",
+    "TokenBucket",
+    "SlidingWindow",
+    # Step 39: Batch Processor
+    "BatchProcessor",
+    "BatchConfig",
+    "BatchJob",
+    "BatchResult",
+    "BatchStatus",
+    # Step 40: Event Emitter
+    "EventEmitter",
+    "Event",
+    "EventConfig",
+    "EventHandler",
+    "EventFilter",
 ]
