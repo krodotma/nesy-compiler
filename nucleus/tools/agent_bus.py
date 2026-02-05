@@ -22,10 +22,11 @@ except Exception:  # pragma: no cover
 
 BUS_PARTITION_DEFAULT = "topics"
 BUS_PARTITION_CONFIG_ENV = "PLURIBUS_BUS_PARTITION_CONFIG"
-BUS_MIN_RETAIN_MB_DEFAULT = 100.0
-BUS_RETAIN_MB_DEFAULT = 100.0
-BUS_ROTATE_MB_DEFAULT = 100.0
-BUS_ROTATE_HEADROOM_MB_DEFAULT = 0.0
+# Rotation thresholds (lowered from 100MB to 10MB per 50-step enhancement plan)
+BUS_MIN_RETAIN_MB_DEFAULT = 5.0   # Keep at least 5MB after rotation
+BUS_RETAIN_MB_DEFAULT = 5.0       # Retain 5MB tail after rotation
+BUS_ROTATE_MB_DEFAULT = 10.0      # Trigger rotation at 10MB
+BUS_ROTATE_HEADROOM_MB_DEFAULT = 2.0  # Headroom to prevent thrashing
 _PARTITION_CONFIG_CACHE: dict | None = None
 
 
@@ -625,6 +626,66 @@ def cmd_resolve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_rotate_status(args: argparse.Namespace) -> int:
+    """Show rotation status and optionally trigger rotation."""
+    paths = resolve_bus_paths(args.bus_dir)
+    rotate_bytes, retain_bytes = _rotation_limits()
+
+    def format_size(size_bytes: int) -> str:
+        if size_bytes >= 1024 * 1024:
+            return f"{size_bytes / (1024 * 1024):.2f} MB"
+        elif size_bytes >= 1024:
+            return f"{size_bytes / 1024:.2f} KB"
+        return f"{size_bytes} bytes"
+
+    try:
+        events_size = os.path.getsize(paths.events_path)
+    except OSError:
+        events_size = 0
+
+    status = {
+        "events_path": paths.events_path,
+        "current_size": events_size,
+        "current_size_human": format_size(events_size),
+        "rotate_threshold": rotate_bytes,
+        "rotate_threshold_human": format_size(rotate_bytes),
+        "retain_size": retain_bytes,
+        "retain_size_human": format_size(retain_bytes),
+        "needs_rotation": events_size > rotate_bytes,
+        "rotation_enabled": _env_flag("PLURIBUS_BUS_ROTATE", True),
+    }
+
+    if args.json:
+        sys.stdout.write(json.dumps(status, indent=2, ensure_ascii=False) + "\n")
+    else:
+        print(f"Events file: {status['events_path']}")
+        print(f"Current size: {status['current_size_human']} ({status['current_size']} bytes)")
+        print(f"Rotate at: {status['rotate_threshold_human']} ({status['rotate_threshold']} bytes)")
+        print(f"Retain after rotation: {status['retain_size_human']}")
+        print(f"Rotation enabled: {status['rotation_enabled']}")
+        print(f"Needs rotation: {status['needs_rotation']}")
+
+    if args.force and status['rotation_enabled']:
+        archive_dir = os.path.join(paths.active_dir, "archive")
+        result = rotate_log_tail(
+            paths.events_path,
+            retain_bytes=retain_bytes,
+            archive_dir=archive_dir,
+            durable=args.durable,
+        )
+        if result:
+            print(f"\nRotated! Archive created: {result}")
+            try:
+                new_size = os.path.getsize(paths.events_path)
+                print(f"New events.ndjson size: {format_size(new_size)}")
+            except OSError:
+                pass
+        else:
+            print("\nNo rotation needed (file below threshold or rotation failed)")
+
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="agent_bus.py", description="Append-only agent IPC bus (NDJSON).")
     p.add_argument("--bus-dir", default=None, help="Bus directory (default: $PLURIBUS_BUS_DIR or ./.pluribus/bus)")
@@ -656,6 +717,12 @@ def build_parser() -> argparse.ArgumentParser:
     resolve.add_argument("--json", action="store_true", help="Print JSON with active/primary/fallback and events_path.")
     resolve.add_argument("--events-path", action="store_true", help="Print the resolved events.ndjson path.")
     resolve.set_defaults(func=cmd_resolve)
+
+    rotate = sub.add_parser("rotate-status", help="Show rotation status and optionally force rotation.")
+    rotate.add_argument("--json", action="store_true", help="Output as JSON")
+    rotate.add_argument("--force", action="store_true", help="Force rotation now (if enabled)")
+    rotate.add_argument("--durable", action="store_true", help="fsync after rotation")
+    rotate.set_defaults(func=cmd_rotate_status)
 
     return p
 

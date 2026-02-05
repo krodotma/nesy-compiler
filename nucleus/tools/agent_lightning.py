@@ -141,8 +141,8 @@ class AgentLightning:
                 span = TrainingSpan(**data)
                 if trace_id is None or span.trace_id == trace_id:
                     spans.append(span)
-            except:
-                continue
+            except (json.JSONDecodeError, OSError, TypeError, KeyError):
+                continue  # Skip malformed or unreadable span files
         return spans
     
     def compute_credit_assignment(self, trace_id: str) -> Dict[str, float]:

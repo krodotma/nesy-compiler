@@ -59,11 +59,27 @@ try:
 except ImportError:
     AGENT_BUS_AVAILABLE = False
 
+# Import circuit breaker for failure isolation
+try:
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent / "ark" / "perf"))
+    from circuit import CircuitBreaker, CircuitOpenError, CircuitState
+    CIRCUIT_BREAKER_AVAILABLE = True
+except ImportError:
+    CIRCUIT_BREAKER_AVAILABLE = False
+    # Stub classes if import fails
+    class CircuitOpenError(Exception):
+        pass
+    class CircuitState:
+        CLOSED = "closed"
+        OPEN = "open"
+        HALF_OPEN = "half_open"
+
 # =============================================================================
 # CONSTANTS
 # =============================================================================
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"  # Added circuit breaker integration
 
 # Bus path
 BUS_PATH = Path(os.environ.get("PLURIBUS_BUS_PATH", ".pluribus/bus/events.ndjson"))
@@ -216,6 +232,17 @@ class QuotaManager:
 
         # Callbacks for status updates
         self._status_callbacks: list[Callable] = []
+
+        # Circuit breakers per provider for failure isolation
+        self.circuit_breakers: dict[Provider, CircuitBreaker] = {}
+        if CIRCUIT_BREAKER_AVAILABLE:
+            for provider in Provider:
+                self.circuit_breakers[provider] = CircuitBreaker(
+                    name=f"quota_{provider.value}",
+                    failure_threshold=5,      # Open after 5 consecutive failures
+                    recovery_timeout=60.0,    # Try recovery after 60s
+                    half_open_max=2           # 2 successful calls to fully close
+                )
 
     def _load_cost_model(self) -> dict:
         """Load the provider cost model."""
@@ -392,6 +419,16 @@ class QuotaManager:
         Returns a GatingResult with decision and recommendations.
         """
         with self._lock:
+            # Check circuit breaker first (failure isolation)
+            if CIRCUIT_BREAKER_AVAILABLE and provider in self.circuit_breakers:
+                cb = self.circuit_breakers[provider]
+                if not cb.can_execute():
+                    return GatingResult(
+                        decision=GatingDecision.REJECT,
+                        reason=f"Circuit breaker OPEN for {provider.value} (failures: {cb.stats.failures})",
+                        wait_seconds=int(cb.recovery_timeout - (time.time() - (cb.opened_at or 0)))
+                    )
+
             state = self.budget_states[provider]
             shape = self.get_metering_shape(provider)
             cost = self.predict_cost(provider, tokens_in, **kwargs)
@@ -685,6 +722,69 @@ class QuotaManager:
         provider_config = self.cost_model.get("providers", {}).get(provider.value, {})
         return provider_config.get("optimization_rules", [])
 
+    # =========================================================================
+    # CIRCUIT BREAKER API
+    # =========================================================================
+
+    def record_provider_success(self, provider: Provider) -> None:
+        """
+        Record a successful provider call.
+
+        Call this after a successful API interaction with the provider.
+        Helps the circuit breaker track provider health.
+        """
+        if CIRCUIT_BREAKER_AVAILABLE and provider in self.circuit_breakers:
+            cb = self.circuit_breakers[provider]
+            old_state = cb.state
+            cb.record_success()
+            if cb.state != old_state:
+                self._emit_bus_event("circuit.state_change", {
+                    "provider": provider.value,
+                    "old_state": old_state.value,
+                    "new_state": cb.state.value,
+                    "reason": "success"
+                })
+
+    def record_provider_failure(self, provider: Provider, error: Optional[str] = None) -> None:
+        """
+        Record a failed provider call.
+
+        Call this after a failed API interaction (timeout, error, etc.).
+        After enough failures, the circuit breaker will trip open.
+        """
+        if CIRCUIT_BREAKER_AVAILABLE and provider in self.circuit_breakers:
+            cb = self.circuit_breakers[provider]
+            old_state = cb.state
+            cb.record_failure()
+            if cb.state != old_state:
+                self._emit_bus_event("circuit.state_change", {
+                    "provider": provider.value,
+                    "old_state": old_state.value,
+                    "new_state": cb.state.value,
+                    "reason": "failure",
+                    "error": error,
+                    "failure_count": cb.stats.failures
+                }, level="warning")
+
+    def reset_circuit(self, provider: Provider) -> None:
+        """
+        Manually reset a circuit breaker to closed state.
+
+        Use this to force-recover a provider after fixing issues.
+        """
+        if CIRCUIT_BREAKER_AVAILABLE and provider in self.circuit_breakers:
+            self.circuit_breakers[provider].reset()
+            self._emit_bus_event("circuit.reset", {
+                "provider": provider.value,
+                "manual": True
+            })
+
+    def get_circuit_status(self, provider: Provider) -> dict:
+        """Get circuit breaker status for a provider."""
+        if CIRCUIT_BREAKER_AVAILABLE and provider in self.circuit_breakers:
+            return self.circuit_breakers[provider].get_status()
+        return {"state": "unavailable", "reason": "circuit breaker not available"}
+
     def format_status_report(self) -> str:
         """Generate a human-readable status report."""
         lines = [
@@ -710,9 +810,20 @@ class QuotaManager:
 
             # WIP meter
             pct = state.remaining_session_pct if shape == MeteringShape.COMPUTE_METERED else state.remaining_long_pct
+            # Handle NaN/inf cases
+            if pct != pct or pct == float('inf'):  # NaN check
+                pct = 100.0
+            pct = max(0.0, min(100.0, pct))  # Clamp to 0-100
             filled = int(pct / 10)
             meter = "[" + "#" * filled + "-" * (10 - filled) + "]"
             lines.append(f"  Budget Meter:   {meter} {pct:.1f}%")
+
+            # Circuit breaker status
+            if CIRCUIT_BREAKER_AVAILABLE and provider in self.circuit_breakers:
+                cb = self.circuit_breakers[provider]
+                cb_state = cb.state.value.upper()
+                cb_icon = {"closed": "✓", "open": "✗", "half_open": "~"}.get(cb.state.value, "?")
+                lines.append(f"  Circuit:        [{cb_icon}] {cb_state} (failures: {cb.stats.failures})")
             lines.append("")
 
         return "\n".join(lines)
@@ -754,6 +865,8 @@ def main():
         print("  python3 quota_manager.py select              # Select optimal provider")
         print("  python3 quota_manager.py reset-session       # Reset 5h budgets")
         print("  python3 quota_manager.py reset-long          # Reset daily/weekly budgets")
+        print("  python3 quota_manager.py circuit <provider>  # Show circuit breaker status")
+        print("  python3 quota_manager.py reset-circuit <p>   # Reset circuit breaker")
         print("\nSemops: PBQUOTA")
         sys.exit(1)
 
@@ -790,6 +903,26 @@ def main():
     elif cmd == "reset-long":
         qm.reset_long_budgets()
         print("Daily/weekly budgets reset.")
+
+    elif cmd == "circuit":
+        if len(sys.argv) < 3:
+            print("Usage: quota_manager.py circuit <provider>")
+            sys.exit(1)
+        provider = Provider(sys.argv[2])
+        status = qm.get_circuit_status(provider)
+        print(f"Circuit Breaker: {provider.value}")
+        print(f"  State:      {status.get('state', 'unknown').upper()}")
+        print(f"  Failures:   {status.get('failures', 0)}")
+        print(f"  Successes:  {status.get('successes', 0)}")
+        print(f"  Rejections: {status.get('rejections', 0)}")
+
+    elif cmd == "reset-circuit":
+        if len(sys.argv) < 3:
+            print("Usage: quota_manager.py reset-circuit <provider>")
+            sys.exit(1)
+        provider = Provider(sys.argv[2])
+        qm.reset_circuit(provider)
+        print(f"Circuit breaker for {provider.value} reset to CLOSED.")
 
     else:
         print(f"Unknown command: {cmd}")

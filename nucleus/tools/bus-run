@@ -11,6 +11,10 @@ bus_py="$script_dir/agent_bus.py"
 statusline_py="$script_dir/statusline.py"
 task_ledger_py="$script_dir/task_ledger.py"
 
+# Source common functions including plu_retry for exponential backoff
+# shellcheck disable=SC1091
+source "$script_dir/agent_wrapper_common.sh"
+
 usage() {
   cat <<'EOF'
 bus-run — wrap a command and emit append-only bus events
@@ -112,14 +116,16 @@ print(json.dumps(meta, ensure_ascii=False))
 PY
 )" || task_start_meta="{}"
 
-PYTHONDONTWRITEBYTECODE=1 python3 "$bus_py" --bus-dir "$bus_dir" pub \
-  --topic "${topic_prefix}.start" \
-  --kind log \
-  --level info \
-  --actor "$actor" \
-  --run-id "$run_id" \
-  --data "$start_data" \
-  >/dev/null
+# Use retry with backoff for bus writes (handles transient lock contention)
+plu_retry_bus_write -- \
+  PYTHONDONTWRITEBYTECODE=1 python3 "$bus_py" --bus-dir "$bus_dir" pub \
+    --topic "${topic_prefix}.start" \
+    --kind log \
+    --level info \
+    --actor "$actor" \
+    --run-id "$run_id" \
+    --data "$start_data" \
+  >/dev/null 2>&1 || true
 
 emit_task "in_progress" "$task_start_meta"
 
@@ -167,14 +173,17 @@ print(json.dumps(meta, ensure_ascii=False))
 PY
 )" || task_end_meta="{}"
 
-PYTHONDONTWRITEBYTECODE=1 python3 "$bus_py" --bus-dir "$bus_dir" pub \
-  --topic "${topic_prefix}.end" \
-  --kind log \
-  --level "$([[ $exit_code -eq 0 ]] && echo info || echo error)" \
-  --actor "$actor" \
-  --run-id "$run_id" \
-  --data "{\"exit_code\":$exit_code,\"duration_s\":$duration}" \
-  >/dev/null || true
+# Use retry with backoff for bus writes (handles transient lock contention)
+end_level="$([[ $exit_code -eq 0 ]] && echo info || echo error)"
+plu_retry_bus_write -- \
+  PYTHONDONTWRITEBYTECODE=1 python3 "$bus_py" --bus-dir "$bus_dir" pub \
+    --topic "${topic_prefix}.end" \
+    --kind log \
+    --level "$end_level" \
+    --actor "$actor" \
+    --run-id "$run_id" \
+    --data "{\"exit_code\":$exit_code,\"duration_s\":$duration}" \
+  >/dev/null 2>&1 || true
 
 emit_task "$task_end_status" "$task_end_meta"
 

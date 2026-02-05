@@ -168,3 +168,119 @@ plu_detect_prompt_flag() {
   fi
   return 1
 }
+
+# =============================================================================
+# EXPONENTIAL BACKOFF WITH RETRY
+# =============================================================================
+#
+# Usage:
+#   plu_retry [--max-attempts N] [--initial-delay S] [--max-delay S] [--jitter] -- command [args...]
+#
+# Environment variables:
+#   PLURIBUS_RETRY_MAX_ATTEMPTS (default: 3)
+#   PLURIBUS_RETRY_INITIAL_DELAY (default: 1.0 seconds)
+#   PLURIBUS_RETRY_MAX_DELAY (default: 30.0 seconds)
+#   PLURIBUS_RETRY_JITTER (default: 1 = enabled)
+#
+# Exit codes for which retry will NOT be attempted (permanent failures):
+#   1   - General error (may retry)
+#   2   - Misuse of shell command (won't retry)
+#   126 - Permission denied (won't retry)
+#   127 - Command not found (won't retry)
+#   128+ - Fatal signal (won't retry)
+#
+plu_retry() {
+  local max_attempts="${PLURIBUS_RETRY_MAX_ATTEMPTS:-3}"
+  local initial_delay="${PLURIBUS_RETRY_INITIAL_DELAY:-1.0}"
+  local max_delay="${PLURIBUS_RETRY_MAX_DELAY:-30.0}"
+  local jitter="${PLURIBUS_RETRY_JITTER:-1}"
+  local cmd=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --max-attempts) max_attempts="$2"; shift 2 ;;
+      --initial-delay) initial_delay="$2"; shift 2 ;;
+      --max-delay) max_delay="$2"; shift 2 ;;
+      --jitter) jitter="1"; shift ;;
+      --no-jitter) jitter="0"; shift ;;
+      --) shift; cmd=("$@"); break ;;
+      *) cmd=("$@"); break ;;
+    esac
+  done
+
+  if [[ ${#cmd[@]} -eq 0 ]]; then
+    echo "plu_retry: no command specified" >&2
+    return 2
+  fi
+
+  local attempt=0
+  local exit_code=0
+  local delay="$initial_delay"
+
+  while [[ $attempt -lt $max_attempts ]]; do
+    attempt=$((attempt + 1))
+
+    # Execute command
+    set +e
+    "${cmd[@]}"
+    exit_code=$?
+    set -e
+
+    # Success - done
+    if [[ $exit_code -eq 0 ]]; then
+      return 0
+    fi
+
+    # Non-retryable exit codes
+    case $exit_code in
+      2|126|127)
+        return $exit_code
+        ;;
+      *)
+        if [[ $exit_code -ge 128 ]]; then
+          return $exit_code
+        fi
+        ;;
+    esac
+
+    # Last attempt failed - return error
+    if [[ $attempt -ge $max_attempts ]]; then
+      return $exit_code
+    fi
+
+    # Calculate delay with optional jitter
+    local sleep_time="$delay"
+    if [[ "$jitter" == "1" ]]; then
+      sleep_time="$(PYTHONDONTWRITEBYTECODE=1 python3 - "$delay" <<'PY'
+import random, sys
+base = float(sys.argv[1])
+# Add ±20% jitter
+jittered = base * (0.8 + random.random() * 0.4)
+print(f"{jittered:.3f}")
+PY
+)"
+    fi
+
+    echo "plu_retry: attempt $attempt/$max_attempts failed (exit $exit_code), retrying in ${sleep_time}s..." >&2
+    sleep "$sleep_time"
+
+    # Exponential backoff: double the delay, capped at max
+    delay="$(PYTHONDONTWRITEBYTECODE=1 python3 - "$delay" "$max_delay" <<'PY'
+import sys
+current = float(sys.argv[1])
+max_d = float(sys.argv[2])
+print(min(current * 2, max_d))
+PY
+)"
+  done
+
+  return $exit_code
+}
+
+# Convenience function for retrying bus writes specifically
+plu_retry_bus_write() {
+  PLURIBUS_RETRY_MAX_ATTEMPTS="${PLURIBUS_RETRY_MAX_ATTEMPTS:-5}" \
+  PLURIBUS_RETRY_INITIAL_DELAY="${PLURIBUS_RETRY_INITIAL_DELAY:-0.5}" \
+  PLURIBUS_RETRY_MAX_DELAY="${PLURIBUS_RETRY_MAX_DELAY:-10.0}" \
+  plu_retry "$@"
+}
