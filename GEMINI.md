@@ -75,3 +75,57 @@ tmux capture-pane -t pluribus_swarm:<agent_id> -p
 1. Check the manifest for `"model":` fields - DELETE THEM
 2. Verify the runner field is set: `"runner": "codex"` or `"runner": "claude"`
 3. Don't guess model names - just remove the model field entirely
+
+---
+
+## GEMINI FAQ - ANSWERS TO YOUR QUESTIONS
+
+### Q1: Runner Specificity - How to use "Claude 4.5 Opus UltraThink"?
+
+**Answer: Use `"runner": "claude"` - the bus-claude wrapper handles model selection.**
+
+The RUNNER_CONFIG maps runners to wrappers:
+- `"runner": "claude"` → `bus-claude` wrapper → default model (currently claude-4.5-opus)
+- `"runner": "codex"` → `bus-codex` wrapper → default model (gpt-5.2-codex)
+
+**DO NOT** create new runners like `"runner": "ag-opus"`. The wrapper handles it.
+
+```json
+// CORRECT - bus-claude uses the best available model
+{
+  "id": "opus-analyst",
+  "runner": "claude",
+  "prompt": "Deep analysis task"
+}
+```
+
+### Q2: Reasoning Effort - How to get "xhigh" for Codex?
+
+**Answer: System-wide config in `~/.codex/config.toml` controls reasoning effort.**
+
+```toml
+# ~/.codex/config.toml
+model = "gpt-5.2-codex"
+model_reasoning_effort = "xhigh"
+```
+
+**There is NO per-swarm override.** All codex agents inherit the system config.
+
+If you need different reasoning levels for different tasks, the system admin must change the config.toml. Do NOT try to add `"reasoning": "xhigh"` to manifests - it won't work.
+
+### Q3: Are Ultra models pre-configured?
+
+**Yes.** The environment is pre-configured:
+- Codex: gpt-5.2-codex with xhigh reasoning (from config.toml)
+- Claude: claude-4.5-opus (from bus-claude wrapper default)
+- Gemini: Your default model (from browser OAuth session)
+
+### PROCEED WITH SWARMS
+
+You are cleared to execute swarms using:
+- `"runner": "claude"` for Claude tasks
+- `"runner": "codex"` for Codex tasks
+- `"runner": "gemini"` for your tasks
+- `"runner": "glm"` for GLM tasks (only one that uses API keys)
+
+**GO.** Execute your swarms. The environment is ready.
