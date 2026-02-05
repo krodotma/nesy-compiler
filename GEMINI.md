@@ -57,3 +57,42 @@
 2.  **Kick:** `tmux send-keys ... C-m C-m` (if stalled)
 3.  **Monitor:** `tail -f .pluribus/bus/events.ndjson`
 4.  **Verify:** `pli a2a --status`
+
+---
+
+## NEW INFRASTRUCTURE (50-Step Enhancement - DO NOT BREAK)
+
+### Circuit Breaker (quota_manager.py)
+Per-provider failure isolation. After 5 consecutive failures, provider is circuit-broken for 60s.
+```bash
+python3 nucleus/tools/quota_manager.py circuit claude    # Check circuit status
+python3 nucleus/tools/quota_manager.py reset-circuit claude  # Manual reset
+```
+
+### Exponential Backoff (agent_wrapper_common.sh)
+Retries with jitter for transient failures. Used automatically by bus-run.
+```bash
+plu_retry --max-attempts 3 --initial-delay 1.0 -- <command>
+```
+
+### NDJSON Rotation (10MB threshold)
+Auto-rotates events.ndjson at 10MB, retains 5MB tail, archives to .pluribus/bus/archive/.
+```bash
+python3 nucleus/tools/agent_bus.py rotate-status         # Check rotation status
+python3 nucleus/tools/agent_bus.py rotate-status --force # Force rotation
+```
+
+### Secret Vault (secret_vault.py)
+Unified secret management supporting env vars, SOPS, and plain files.
+```bash
+python3 nucleus/tools/secret_vault.py list    # List available secrets
+python3 nucleus/tools/secret_vault.py check   # Check vault backends
+```
+
+### Git Worktree (git_worktree.py)
+Replace PAIP temp dirs with worktrees (10x faster, shared .git).
+```bash
+python3 nucleus/tools/git_worktree.py create agent-task-123 main
+python3 nucleus/tools/git_worktree.py list
+python3 nucleus/tools/git_worktree.py cleanup 24  # Remove worktrees older than 24h
+```
