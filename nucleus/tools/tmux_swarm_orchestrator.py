@@ -314,6 +314,12 @@ class TmuxSwarmOrchestrator:
             "new-session", "-d", "-s", self.session_name, "-n", "control",
             "-c", self.working_dir
         ])
+        # Disable bracketed paste mode to prevent tmux send-keys issues with zsh
+        time.sleep(0.3)
+        self._run_tmux([
+            "send-keys", "-t", f"{self.session_name}:control",
+            "unset zle_bracketed_paste; printf '\\e[?2004l'", "Enter"
+        ])
         # Send a cd command to ensure we're in the right directory
         time.sleep(0.5)
         self._run_tmux([
@@ -332,7 +338,14 @@ class TmuxSwarmOrchestrator:
             "new-window", "-t", self.session_name, "-n", "monitor",
             "-c", self.working_dir
         ])
-        
+        # Disable bracketed paste
+        time.sleep(0.3)
+        self._run_tmux([
+            "send-keys", "-t", f"{self.session_name}:monitor",
+            "unset zle_bracketed_paste; printf '\\e[?2004l'", "Enter"
+        ])
+        time.sleep(0.3)
+
         # In a real setup, this would run the actual 'autoclaude' tool.
         # Here we simulate it with a python loop that tails logs.
         monitor_script = f"""
@@ -387,12 +400,18 @@ done
 
         # Create new window
         self._run_tmux([
-            "new-window", "-t", self.session_name, "-n", agent_id, 
+            "new-window", "-t", self.session_name, "-n", agent_id,
             "-c", self.working_dir
+        ])
+        # Disable bracketed paste to prevent zsh buffer issues
+        time.sleep(0.3)
+        self._run_tmux([
+            "send-keys", "-t", f"{self.session_name}:{agent_id}",
+            "unset zle_bracketed_paste; printf '\\e[?2004l'", "Enter"
         ])
 
         # Send command to window
-        time.sleep(1.5)  # INCREASED WAIT
+        time.sleep(1.2)  # Slightly reduced after paste fix
         if spawn_mode == "interactive":
             env_prefix = self._claude_env_prefix()
             runner_cmd = f"{env_prefix}{runner_cfg['bin']}"
@@ -460,10 +479,17 @@ done
         
         # Create window for this agent
         self._run_tmux([
-            "new-window", "-t", self.session_name, "-n", agent_id, 
+            "new-window", "-t", self.session_name, "-n", agent_id,
             "-c", self.working_dir
         ])
-        
+        # Disable bracketed paste to prevent zsh buffer issues
+        time.sleep(0.3)
+        self._run_tmux([
+            "send-keys", "-t", f"{self.session_name}:{agent_id}",
+            "unset zle_bracketed_paste; printf '\\e[?2004l'", "Enter"
+        ])
+        time.sleep(0.5)
+
         for iteration in range(1, max_iterations + 1):
             print(f"[Ralph] Iteration {iteration}/{max_iterations}")
             
