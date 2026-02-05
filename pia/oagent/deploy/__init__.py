@@ -32,6 +32,16 @@ The Deploy Agent handles:
 - Rate limiting (Step 238)
 - Batch processing (Step 239)
 - Event emission (Step 240)
+- Security Module (Step 241)
+- Validation Engine (Step 242)
+- Testing Framework (Step 243)
+- Documentation Generator (Step 244)
+- Migration Tools (Step 245)
+- Backup System (Step 246)
+- Telemetry Collector (Step 247)
+- Versioning System (Step 248)
+- Deprecation Manager (Step 249)
+- Final Orchestrator (Step 250)
 
 PBTSO Phases:
 - SKILL: Bootstrap and initialization
@@ -142,6 +152,26 @@ __all__ = [
     "DeployBatchProcessor",
     # Event Emitter (Step 240)
     "DeployEventEmitter",
+    # Security Module (Step 241)
+    "SecurityModule",
+    # Validation Engine (Step 242)
+    "ValidationEngine",
+    # Testing Framework (Step 243)
+    "TestingFramework",
+    # Documentation Generator (Step 244)
+    "DocumentationGenerator",
+    # Migration Tools (Step 245)
+    "MigrationTools",
+    # Backup System (Step 246)
+    "BackupSystem",
+    # Telemetry Collector (Step 247)
+    "TelemetryCollector",
+    # Versioning System (Step 248)
+    "VersioningSystem",
+    # Deprecation Manager (Step 249)
+    "DeprecationManager",
+    # Final Orchestrator (Step 250)
+    "FinalOrchestrator",
 ]
 
 # Lazy imports to avoid circular dependencies
@@ -265,4 +295,44 @@ def __getattr__(name: str):
     if name == "DeployEventEmitter":
         from .events.emitter import DeployEventEmitter
         return DeployEventEmitter
+    # Step 241: Security Module
+    if name == "SecurityModule":
+        from .security.auth import SecurityModule
+        return SecurityModule
+    # Step 242: Validation Engine
+    if name == "ValidationEngine":
+        from .validation.validator import ValidationEngine
+        return ValidationEngine
+    # Step 243: Testing Framework
+    if name == "TestingFramework":
+        from .testing.framework import TestingFramework
+        return TestingFramework
+    # Step 244: Documentation Generator
+    if name == "DocumentationGenerator":
+        from .documentation.generator import DocumentationGenerator
+        return DocumentationGenerator
+    # Step 245: Migration Tools
+    if name == "MigrationTools":
+        from .migration.tools import MigrationTools
+        return MigrationTools
+    # Step 246: Backup System
+    if name == "BackupSystem":
+        from .backup.system import BackupSystem
+        return BackupSystem
+    # Step 247: Telemetry Collector
+    if name == "TelemetryCollector":
+        from .telemetry.collector import TelemetryCollector
+        return TelemetryCollector
+    # Step 248: Versioning System
+    if name == "VersioningSystem":
+        from .versioning.system import VersioningSystem
+        return VersioningSystem
+    # Step 249: Deprecation Manager
+    if name == "DeprecationManager":
+        from .deprecation.manager import DeprecationManager
+        return DeprecationManager
+    # Step 250: Final Orchestrator
+    if name == "FinalOrchestrator":
+        from .final_orchestrator import FinalOrchestrator
+        return FinalOrchestrator
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
