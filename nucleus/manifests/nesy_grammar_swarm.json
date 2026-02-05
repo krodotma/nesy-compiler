@@ -29,6 +29,13 @@
       "runner": "codex",
       "prompt": "Verify the new grammar rule against the git history of 'tmux_swarm_orchestrator.py'. Ensure it would have flagged the Jan 23 restore as a regression compared to Jan 28.",
       "ring": 2
+    },
+    {
+      "id": "gemini-critic-1",
+      "role": "Synthesis Critic",
+      "runner": "gemini",
+      "prompt": "ULTRATHINK: Critique the 'LineageMonotonicityCheck' proposed by Codex. Does it account for 'Intentional Revert'? Ensure the grammar allows for strategic retreat (e.g. reverting a buggy feature) vs accidental regression.",
+      "ring": 1
     }
   ],
   "iterations_planned": 1
