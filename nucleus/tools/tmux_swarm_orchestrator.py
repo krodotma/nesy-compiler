@@ -240,10 +240,10 @@ class TmuxSwarmOrchestrator:
             runner = "claude"
         return RUNNER_CONFIG.get(runner, RUNNER_CONFIG["claude"])
 
-    def _build_runner_command(self, runner: str, prompt: str, model: Optional[str], use_heredoc: bool = False) -> str:
+    def _build_runner_command(self, runner: str, prompt: str, model: Optional[str], prompt_file: str = None) -> str:
         """Build a command for one-shot/exec runners.
 
-        If use_heredoc=True, returns a heredoc-style command for large prompts.
+        If prompt_file is provided, uses stdin redirection from the file.
         """
         cfg = self._resolve_runner(runner)
         env_prefix = self._claude_env_prefix()
@@ -258,12 +258,11 @@ class TmuxSwarmOrchestrator:
             else:
                 codex_bin = cfg["bin"]
 
-            if use_heredoc:
-                # Use heredoc for large prompts - escape for heredoc safety
-                heredoc_safe = prompt.replace("'", "'\\''")
+            if prompt_file:
+                # Use stdin redirection from temp file for large prompts
                 return (
-                    f"cat << 'PBTSO_EOF' | {codex_bin} exec --full-auto "
-                    f"-s {workspace_mode} {model_flag} -\n{heredoc_safe}\nPBTSO_EOF"
+                    f'{codex_bin} exec --full-auto '
+                    f'-s {workspace_mode} {model_flag} - < {shlex.quote(prompt_file)}'
                 )
             else:
                 escaped_prompt = self._shell_safe_prompt(prompt)
@@ -406,10 +405,19 @@ done
                 self._shell_safe_prompt(full_prompt), "Enter"
             ])
         else:
-            # Use heredoc for large prompts (CAGENT context can be > 1000 chars)
-            use_heredoc = len(full_prompt) > 500
-            runner_cmd = self._build_runner_command(runner, full_prompt, model, use_heredoc=use_heredoc)
-            print(f"[Orchestrator] Runner CMD (heredoc={use_heredoc}): {runner_cmd[:200]}...")
+            # For large prompts, write to temp file and use stdin redirection
+            prompt_file = None
+            if len(full_prompt) > 500:
+                import tempfile
+                prompt_dir = os.path.join(self.working_dir, ".pluribus", "swarm_prompts")
+                os.makedirs(prompt_dir, exist_ok=True)
+                prompt_file = os.path.join(prompt_dir, f"{agent_id}_{int(time.time())}.prompt")
+                with open(prompt_file, "w") as f:
+                    f.write(full_prompt)
+                print(f"[Orchestrator] Wrote prompt to: {prompt_file}")
+
+            runner_cmd = self._build_runner_command(runner, full_prompt, model, prompt_file=prompt_file)
+            print(f"[Orchestrator] Runner CMD: {runner_cmd[:200]}...")
             self._run_tmux([
                 "send-keys", "-t", f"{self.session_name}:{agent_id}",
                 f"cd {self.working_dir} && {runner_cmd}", "Enter"
