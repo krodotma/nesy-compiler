@@ -3,11 +3,11 @@
 a2a_monitor.py - Agent-to-Agent Collaboration Monitor
 
 Monitors active A2A collaborations to detect and recover from dissociation.
-Implements DKIN v29 A2A protocol. Integrates with OHM (Omega Heart Monitor)
+Implements DKIN v30 A2A protocol. Integrates with OHM (Omega Heart Monitor)
 on VPS for live agent liveness data.
 
 Ring: 1 (Infrastructure)
-Protocol: DKIN v29 | PAIP v15 | Citizen v1
+Protocol: DKIN v30 | PAIP v16 | Citizen v1
 
 OHM Integration:
     - VPS OHM at 69.169.104.17 emits ohm.status every ~30s
@@ -43,6 +43,16 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Set
+
+
+# DR-gating for NDJSON reads (DKIN v30 bus policy)
+def _ndjson_read_allowed() -> bool:
+    mode = (os.environ.get("PLURIBUS_NDJSON_MODE") or "").strip().lower()
+    if not mode or mode in {"allow", "enabled", "on"}:
+        return True
+    if mode in {"dr", "disaster", "recovery"}:
+        return os.environ.get("PLURIBUS_DR_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
+    return mode not in {"off", "disabled", "deny", "no"}
 
 
 # Configuration
@@ -321,7 +331,9 @@ class A2AMonitor:
         """Check if agent has recent bus activity."""
         if not self.bus_path.exists():
             return False
-        
+        if not _ndjson_read_allowed():
+            return False  # Cannot read NDJSON in non-DR mode
+
         cutoff = time.time() - window_s
         try:
             for line in self.bus_path.read_text().strip().split("\n")[-500:]:

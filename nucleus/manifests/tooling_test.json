@@ -1,0 +1,25 @@
+{
+  "name": "tooling-test-swarm",
+  "purpose": "PBTSO Tooling Restoration Test Contract",
+  "agents": [
+    {
+      "id": "test-claude-1",
+      "role": "Test Agent Claude",
+      "model": "claude-sonnet-4-20250514",
+      "runner": "claude",
+      "prompt": "You are a test agent. Confirm PBTSO bootstrap by outputting: BOOTSTRAP_OK. Then list the current working directory contents.",
+      "ring": 2,
+      "mode": "oneshot"
+    },
+    {
+      "id": "test-codex-1",
+      "role": "Test Agent Codex",
+      "model": "gpt-4o",
+      "runner": "codex",
+      "prompt": "You are a test agent. Confirm PBTSO bootstrap by outputting: BOOTSTRAP_OK. Then list the current working directory contents.",
+      "ring": 2,
+      "mode": "exec"
+    }
+  ],
+  "iterations_planned": 1
+}

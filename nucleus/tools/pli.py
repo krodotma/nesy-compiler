@@ -159,8 +159,49 @@ def cmd_ckin(args: argparse.Namespace) -> int:
     return run_tool("ckin_report.py", tool_args)
 
 
+def cmd_monitor(args: argparse.Namespace) -> int:
+    """Run TUI Bus Monitor."""
+    tool_args = []
+    if hasattr(args, 'timeout') and args.timeout:
+        tool_args.extend(["--timeout", str(args.timeout)])
+    return run_tool("bus_monitor_tui.py", tool_args)
+
 def cmd_iterate(args: argparse.Namespace) -> int:
     """Run ITERATE coordination kick."""
+    if args.start and args.swarm:
+        # PBTSO Mode
+        if str(TOOLS_DIR) not in sys.path:
+            sys.path.insert(0, str(TOOLS_DIR))
+        import json
+        import uuid
+        try:
+            from agent_bus import emit_event, resolve_bus_paths
+            paths = resolve_bus_paths(None)
+            
+            payload = {
+                "swarm_id": args.swarm,
+                "scope": args.scope or "default",
+                "status": "STARTED"
+            }
+            
+            emit_event(
+                paths,
+                topic="orchestration.iteration.start",
+                kind="request",
+                level="info",
+                actor="pli",
+                data=payload,
+                trace_id=str(uuid.uuid4()),
+                run_id=None,
+                durable=True
+            )
+            print(f"PBTSO: Iteration started for {args.swarm}")
+            return 0
+        except ImportError as e:
+            print(f"Error: agent_bus not available for PBTSO iteration: {e}", file=sys.stderr)
+            return 1
+
+    # Legacy Mode
     tool_args = []
     if args.agent:
         tool_args.extend(["--agent", args.agent])
@@ -199,13 +240,22 @@ def cmd_test(args: argparse.Namespace) -> int:
 
 def cmd_a2a(args: argparse.Namespace) -> int:
     """Run A2A agent-to-agent coordination."""
-    tool_args = [args.agent or os.environ.get("PLURIBUS_ACTOR", "pli")]
-    if args.heartbeat:
-        tool_args.append("--heartbeat")
-    if args.propose:
-        tool_args.extend(["--propose", args.propose])
+    # Determine the correct subcommand for tbtso_a2a.py
     if args.status:
-        tool_args.append("--status")
+        tool_args = ["status"]
+        if args.json:
+            tool_args.append("--json")
+    elif args.heartbeat:
+        tool_args = ["heartbeat", "default", args.agent or "pli"]
+    elif args.propose:
+        tool_args = ["init", "--agents", args.propose, "--scope", "handshake"]
+        if args.json:
+            tool_args.append("--json")
+    else:
+        # Default to status
+        tool_args = ["status"]
+        if args.json:
+            tool_args.append("--json")
     return run_tool("tbtso_a2a.py", tool_args)
 
 
@@ -330,9 +380,17 @@ Examples:
     p_ckin.add_argument("--compact", action="store_true", help="Compact output")
     p_ckin.set_defaults(func=cmd_ckin)
 
+    # monitor
+    p_monitor = subparsers.add_parser("monitor", help="PBMONITOR - TUI Bus Monitor")
+    p_monitor.add_argument("--timeout", type=int, help="Timeout in seconds")
+    p_monitor.set_defaults(func=cmd_monitor)
+
     # iterate
     p_iterate = subparsers.add_parser("iterate", help="ITERATE - Coordination kick")
     p_iterate.add_argument("--agent", help="Agent name")
+    p_iterate.add_argument("--start", action="store_true", help="Start iteration")
+    p_iterate.add_argument("--swarm", help="Swarm ID")
+    p_iterate.add_argument("--scope", help="Iteration scope")
     p_iterate.set_defaults(func=cmd_iterate)
 
     # swarm
@@ -361,6 +419,7 @@ Examples:
     p_a2a.add_argument("--heartbeat", action="store_true", help="Emit heartbeat")
     p_a2a.add_argument("--propose", metavar="TARGET", help="Propose handshake")
     p_a2a.add_argument("--status", action="store_true", help="Show A2A status")
+    p_a2a.add_argument("--json", action="store_true", help="JSON output")
     p_a2a.set_defaults(func=cmd_a2a)
 
     # affected

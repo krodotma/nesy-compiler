@@ -240,21 +240,40 @@ class TmuxSwarmOrchestrator:
             runner = "claude"
         return RUNNER_CONFIG.get(runner, RUNNER_CONFIG["claude"])
 
-    def _build_runner_command(self, runner: str, prompt: str, model: Optional[str]) -> str:
-        """Build a command for one-shot/exec runners."""
+    def _build_runner_command(self, runner: str, prompt: str, model: Optional[str], use_heredoc: bool = False) -> str:
+        """Build a command for one-shot/exec runners.
+
+        If use_heredoc=True, returns a heredoc-style command for large prompts.
+        """
         cfg = self._resolve_runner(runner)
         env_prefix = self._claude_env_prefix()
-        escaped_prompt = self._shell_safe_prompt(prompt)
         model_flag = f"--model {model}" if model else ""
 
         if cfg.get("style") == "codex_exec":
             workspace_mode = os.environ.get("PLURIBUS_CODEX_WORKSPACE", "workspace-write")
-            return (
-                f'{env_prefix}{cfg["bin"]} exec --full-auto --ask-for-approval never '
-                f'-s {workspace_mode} {model_flag} "{escaped_prompt}"'
-            )
+            # Prefer bus-codex wrapper for proper secret loading and bus events
+            wrapper_path = os.path.join(os.path.dirname(__file__), "bus-codex")
+            if os.path.isfile(wrapper_path) and os.access(wrapper_path, os.X_OK):
+                codex_bin = wrapper_path
+            else:
+                codex_bin = cfg["bin"]
+
+            if use_heredoc:
+                # Use heredoc for large prompts - escape for heredoc safety
+                heredoc_safe = prompt.replace("'", "'\\''")
+                return (
+                    f"cat << 'PBTSO_EOF' | {codex_bin} exec --full-auto "
+                    f"-s {workspace_mode} {model_flag} -\n{heredoc_safe}\nPBTSO_EOF"
+                )
+            else:
+                escaped_prompt = self._shell_safe_prompt(prompt)
+                return (
+                    f'{codex_bin} exec --full-auto '
+                    f'-s {workspace_mode} {model_flag} "{escaped_prompt}"'
+                )
 
         # Default to claude-style one-shot prompt
+        escaped_prompt = self._shell_safe_prompt(prompt)
         return f'{env_prefix}{cfg["bin"]} -p {model_flag} "{escaped_prompt}"'
 
     def _session_exists(self) -> bool:
@@ -365,10 +384,11 @@ done
         ])
 
         # Send command to window
-        time.sleep(0.3)
+        time.sleep(1.5)  # INCREASED WAIT
         if spawn_mode == "interactive":
             env_prefix = self._claude_env_prefix()
             runner_cmd = f"{env_prefix}{runner_cfg['bin']}"
+            print(f"[Orchestrator] Interactive CMD: {runner_cmd}")
             self._run_tmux([
                 "send-keys", "-t", f"{self.session_name}:{agent_id}",
                 f"cd {self.working_dir} && {runner_cmd}", "Enter"
@@ -386,7 +406,10 @@ done
                 self._shell_safe_prompt(full_prompt), "Enter"
             ])
         else:
-            runner_cmd = self._build_runner_command(runner, full_prompt, model)
+            # Use heredoc for large prompts (CAGENT context can be > 1000 chars)
+            use_heredoc = len(full_prompt) > 500
+            runner_cmd = self._build_runner_command(runner, full_prompt, model, use_heredoc=use_heredoc)
+            print(f"[Orchestrator] Runner CMD (heredoc={use_heredoc}): {runner_cmd[:200]}...")
             self._run_tmux([
                 "send-keys", "-t", f"{self.session_name}:{agent_id}",
                 f"cd {self.working_dir} && {runner_cmd}", "Enter"

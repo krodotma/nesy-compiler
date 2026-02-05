@@ -44,11 +44,36 @@ plu_prepare_agent_home() {
   printf '%s' "$agent_home"
 }
 
+plu_load_bus_policy() {
+  local agent_home="$1"
+  local policy_paths=()
+  policy_paths+=("/pluribus/.pluribus/config/bus_policy.env")
+  if [[ -n "$agent_home" ]]; then
+    policy_paths+=("$agent_home/.config/pluribus/bus_policy.env")
+    policy_paths+=("$agent_home/.config/nucleus/bus_policy.env")
+  fi
+  for path in "${policy_paths[@]}"; do
+    if [[ -r "$path" ]]; then
+      set -a
+      # shellcheck disable=SC1090
+      source "$path"
+      set +a
+    fi
+  done
+  if [[ -z "${PLURIBUS_BUS_BACKEND:-}" ]]; then
+    export PLURIBUS_BUS_BACKEND="falkordb"
+  fi
+  if [[ -z "${PLURIBUS_NDJSON_MODE:-}" ]]; then
+    export PLURIBUS_NDJSON_MODE="dr"
+  fi
+}
+
 plu_set_xdg() {
   local agent_home="$1"
   export HOME="$agent_home"
-  export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$agent_home/.config}"
-  export XDG_STATE_HOME="${XDG_STATE_HOME:-$agent_home/.local/state}"
+  export XDG_CONFIG_HOME="$agent_home/.config"
+  export XDG_STATE_HOME="$agent_home/.local/state"
+  plu_load_bus_policy "$agent_home"
 }
 
 plu_load_secrets() {
@@ -79,6 +104,24 @@ plu_load_secrets() {
     export GOOGLE_API_KEY="$GEMINI_API_KEY"
   elif [[ -z "${GEMINI_API_KEY:-}" ]] && [[ -n "${GOOGLE_API_KEY:-}" ]]; then
     export GEMINI_API_KEY="$GOOGLE_API_KEY"
+  fi
+
+  # Load Agent Wrapper Keys (Seed/Manual)
+  local wrapper_keys_file="${XDG_CONFIG_HOME:-$HOME/.config}/agent-wrapper/keys"
+  if [[ -r "$wrapper_keys_file" ]]; then
+    local first_key=""
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      [[ "$line" == \#* ]] && continue
+      first_key="$line"
+      break
+    done < "$wrapper_keys_file"
+    if [[ -n "$first_key" ]]; then
+      export MINDLIKE_API_KEY="$first_key"
+      export GLM_API_KEY="$first_key"
+      export CODEX_API_KEY="$first_key"
+      export OPENAI_API_KEY="$first_key"
+    fi
   fi
 }
 
