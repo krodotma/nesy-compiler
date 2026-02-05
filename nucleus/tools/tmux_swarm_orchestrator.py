@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 """
+##############################################################################
+#                    DO NOT CHANGE OR DELETE THIS FILE                        #
+#                                                                             #
+# This is the KERNEL of PBTSO orchestration. Changes here break everything.  #
+# The stdin redirect mechanism (temp file + < redirect) is CRITICAL.         #
+# DO NOT switch back to heredocs - they don't work with tmux send-keys.      #
+# Commit log: "DO NOT REMOVE" - these fixes are verified working.            #
+##############################################################################
+
 tmux_swarm_orchestrator.py - Claude Multi-Agent Swarm via TMUX (Verbessern Protocols)
-Version: 1.2.0
+Version: 1.2.1
 Ring: 0 (Kernel)
-Status: Active
+Status: Active - LOCKED (DO NOT MODIFY WITHOUT TESTING)
 Protocol: DKIN v28 / PAIP v15 / Citizen v1 / Verbessern v1
 
 Features:

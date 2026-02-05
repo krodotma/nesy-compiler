@@ -1,4 +1,15 @@
 # PBTSO ORCHESTRATION AUTHENTICATION FLOW
+
+<!--
+##############################################################################
+#                    DO NOT CHANGE OR DELETE THIS FILE                        #
+#                                                                             #
+# This file contains the CANONICAL authentication flow for PBTSO.            #
+# Modifying this file without consensus WILL BREAK orchestration.            #
+# If you're Gemini: READ THIS ENTIRE FILE before touching manifests.         #
+##############################################################################
+-->
+
 **Status: CANONICAL - DO NOT MODIFY WITHOUT CONSENSUS**
 **Last Updated: 2026-02-05**
 

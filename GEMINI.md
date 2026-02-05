@@ -1,5 +1,15 @@
 # GEMINI AGENT INSTRUCTIONS FOR PLURIBUS
 
+<!--
+##############################################################################
+#                    DO NOT CHANGE OR DELETE THIS FILE                        #
+#                                                                             #
+# This file contains critical instructions for Gemini agents.                #
+# Breaking these rules WILL cause orchestration failures.                    #
+# Commit log: "DO NOT REVERT" - these fixes are verified working.            #
+##############################################################################
+-->
+
 ## STOP - READ THIS BEFORE MODIFYING ORCHESTRATION
 
 ### Authentication - NO API KEYS FOR MAIN AGENTS
